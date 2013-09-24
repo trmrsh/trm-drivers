@@ -1,0 +1,93 @@
+<configure xmlns:ns0="http://www.w3.org/1999/xlink" datetime="21-Sept-2011" id="ccd201_winbin_app" user="David Atkinson">
+
+   <description>Ultraspec Application to read CCD201</description>
+
+
+   
+
+   
+
+   
+
+   <configure_camera>
+
+      
+
+      <executablecode force_download="no" ns0:href="ccd201_winbin_cfg.xml" />
+
+      
+
+
+      
+      <set_parameter ref="NUM_EXPS" value="1" />
+
+      
+      <set_parameter ref="DWELL" value="0" />
+
+      
+      <set_parameter ref="LED_FLSH" value="0" />
+
+      
+      <set_parameter ref="OUTPUT" value="0" />
+
+      
+      <set_parameter ref="HV_GAIN" value="0" />
+
+      
+      <set_parameter ref="EN_CLR" value="1" />
+
+      
+      <set_parameter ref="SPEED" value="2" />
+
+      
+      <set_parameter ref="X_SIZE" value="1072" />
+      <set_parameter ref="Y_SIZE" value="1072" />
+
+      
+      <set_parameter ref="X1_START" value="1" />
+      <set_parameter ref="Y1_START" value="1" />
+
+      
+      <set_parameter ref="X1_SIZE" value="100" />
+      <set_parameter ref="Y1_SIZE" value="100" />
+
+      
+      <set_parameter ref="X2_START" value="101" />
+      <set_parameter ref="Y2_START" value="101" />
+
+      
+      <set_parameter ref="X2_SIZE" value="100" />
+      <set_parameter ref="Y2_SIZE" value="100" />
+
+      
+      <set_parameter ref="X3_START" value="201" />
+      <set_parameter ref="Y3_START" value="201" />
+
+      
+      <set_parameter ref="X3_SIZE" value="100" />
+      <set_parameter ref="Y3_SIZE" value="100" />
+
+      
+      <set_parameter ref="X4_START" value="301" />
+      <set_parameter ref="Y4_START" value="301" />
+
+      
+      <set_parameter ref="X4_SIZE" value="100" />
+      <set_parameter ref="Y4_SIZE" value="100" />
+
+      
+      <set_parameter ref="X_BIN" value="1" />
+      <set_parameter ref="Y_BIN" value="1" />
+
+      
+
+   </configure_camera>
+
+<user ID="" Observers="" PI="" comment="" dtype="acquisition" target="">
+
+
+
+</user>
+
+
+</configure>

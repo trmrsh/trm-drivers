@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+
+<!-- This XML document describes the ESO 3.6m telescope environment
+
+     Author: Vik Dhillon, La Silla, 28-November-2006
+  -->
+
+<observatory name="European Southern Observatory, La Silla, Chile" time_zone="-5"
+xmlns:xlink="http://www.w3.org/1999/xlink">
+
+   <object_catalogue>  <!-- Name of this observatory's object catalogue (optional) -->
+/usr/local/etc/objects.dat
+   </object_catalogue>
+
+   <telescope name="ESO 3.6m Telescope" id="ESO3.6m">
+      <!-- Where exactly is the telescope? -->
+      <!-- Latitude in degrees North -->
+      <!-- Longitude in degrees West -->
+      <!-- Height in metres above sea level -->
+      <global_position latitude="-29.255" longitude="70.738" height="2400"/> 
+
+   </telescope>
+
+</observatory>

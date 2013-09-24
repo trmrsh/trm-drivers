@@ -1,0 +1,7 @@
+This is a development directory for Python replacements for the Java GUIs
+currently used to run ULTRACAM and ULTRASPEC. Basic reason is that Python 
+is so much cleaner and quicker to develop in which will make it easier to
+incorporate extra features for the Thai telescope, in particular checks on
+telescope position etc.
+
+Tom Marsh

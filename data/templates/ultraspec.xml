@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- This XML document contains a description of the Ultraspec instrument.
+
+     Author: vsd
+  --><instrument
+name="Ultraspec"
+type="camera"
+xmlns:xlink="http://www.w3.org/1999/xlink"
+><description
+> <!-- Textual description of the instrument (optional) --> Ultraspec is an
+L3CCD camera for high-speed, low-noise spectroscopy. It uses a CCD201 and is
+mounted on the EFOSC2 spectrograph of the ESO 3.6m telescope.</description
+> <!-- Operated through 2 outputs and a Window output.
+     --><processor
+name="PCI interface"
+ref="pci_interface"
+xlink:href="pci_hardware.xml"
+></processor
+><processor
+name="SDSU controller"
+ref="controller"
+xlink:href="sdsu_hardware.xml"
+></processor
+><!-- Description of the detector --><!-- The mapping of this chip to the instrument focal plane specifies...
+
+        xshift = The difference in fpunits between the centre of the
+                 chip and the instrument optical axis, projected onto
+                 the instrument X axis.
+
+        yshift = The difference in fpunits between the centre of the
+                 chip and the instrument optical axis, projected onto
+                 the instrument Y axis.
+
+        xscale = The number of fpunits per pixel along the detector's
+                 column axis.
+
+        yscale = The number of fpunits per pixel along the detector's
+                 row axis.
+
+        rotation = Any rotation in degrees clockwise between the chip's
+                   column axis and the instrument's X axis. (Should be
+                   zero of they are perfectly aligned).
+
+        fpunits = The name of the focal plane units (e.g. microns).
+     --><detector
+id="Ultraspec"
+type="L3CCD"
+><target_temperature
+> 160.0<!-- Default target temperature for the detector --> 160.0 </target_temperature
+><!-- One chip element for each detector chip --><chip
+columns="1072"
+id="1"
+name="CCD201"
+rows="1072"
+type="L3CCD-201"
+><!-- Mapping to instrument focal plane --><location
+fpunits="pixels"
+rotation="0.0"
+xscale="1.0"
+xshift="0.0"
+yscale="1.0"
+yshift="0.0"
+></location
+></chip
+></detector
+></instrument
+>

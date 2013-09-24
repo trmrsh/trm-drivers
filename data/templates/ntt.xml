@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+
+<!-- This XML document describes the New Technology Telescope (NTT) environment
+
+     Author: Vik Dhillon, Sheffield, 01-May-2009
+  -->
+
+<observatory name="European Southern Observatory, La Silla, Chile" time_zone="-5"
+xmlns:xlink="http://www.w3.org/1999/xlink">
+
+   <object_catalogue>  <!-- Name of this observatory's object catalogue (optional) -->
+/usr/local/etc/objects.dat
+   </object_catalogue>
+
+   <telescope name="New Technology Telescope" id="NTT">
+      <!-- Where exactly is the telescope? -->
+      <!-- Latitude in degrees North -->
+      <!-- Longitude in degrees West -->
+      <!-- Height in metres above sea level -->
+      <global_position latitude="-29.258" longitude="70.719" height="2377"/> 
+
+   </telescope>
+
+</observatory>

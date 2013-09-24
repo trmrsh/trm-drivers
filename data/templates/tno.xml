@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+
+<!-- This XML document describes the Thai National Observatory (TNO) environment
+
+     Author: Stu Littlefair, Sheffield, 13-Dec-2011
+  -->
+
+<observatory name="Thai National Observatory, Doi Inthanon, Thailand" time_zone="+7" xmlns:xlink="http://www.w3.org/1999/xlink">
+
+   <object_catalogue>  <!-- Name of this observatory's object catalogue (optional) -->
+/usr/local/etc/objects.dat
+   </object_catalogue>
+
+   <telescope name="Thai National Observatory 2.4m" id="TNO">
+      <!-- Where exactly is the telescope? -->
+      <!-- Latitude in degrees North -->
+      <!-- Longitude in degrees West -->
+      <!-- Height in metres above sea level -->
+      <global_position latitude="18.574" longitude="-98.482" height="2449"/> 
+
+   </telescope>
+
+</observatory>
