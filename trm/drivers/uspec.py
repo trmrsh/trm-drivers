@@ -20,7 +20,7 @@ class Window (object):
     and dimensions.
     """
 
-    def __init__(self, master, row, column, xstart, ystart, nx, ny, checker):
+    def __init__(self, master, row, column, xstart, ystart, nx, ny, xb, yb, checker):
         """
         Sets up a window pair as a row of values, initialised to
         the arguments supplied. The row is created within a sub-frame
@@ -52,9 +52,15 @@ class Window (object):
           ny :
             Y dimension of windows, unbinned pixels
 
-        checker : 
-           checker function to provide a global check and update in response
-           to any changes made to the values stored in a Window. Can be None. 
+          xb : 
+            xbinning factor; must have a 'get' method. Used to step nx.
+
+          yb : 
+            ybinning factor; must have a 'get' method. Used to step ny.
+
+          checker : 
+            checker function to provide a global check and update in response
+            to any changes made to the values stored in a Window. Can be None. 
         """
 
         # A window needs 4 parameters to specify it:
@@ -70,10 +76,10 @@ class Window (object):
         self.ystart = drvs.RangedPosInt(master, ystart, 1, 1072, checker, width=4)
         self.ystart.grid(row=row,column=column+1)
 
-        self.nx = drvs.RangedPosInt(master, nx, 1, 1056, checker, width=4)
+        self.nx = drvs.RangedPosMInt(master, nx, 1, 1056, xb, checker, width=4)
         self.nx.grid(row=row,column=column+2)
 
-        self.ny = drvs.RangedPosInt(master, ny, 1, 1072, checker, width=4)
+        self.ny = drvs.RangedPosMInt(master, ny, 1, 1072, yb, checker, width=4)
         self.ny.grid(row=row,column=column+3)
 
     def get(self):
@@ -156,9 +162,12 @@ class UspecWins(tk.Frame):
     Defines a block with window info
     """
 
-    def __init__(self, master, confpars, checker):
+    def __init__(self, master, confpars, xbin, ybin, checker):
         """
         master  : enclosing widget
+        confpars : configuration parameters
+        xbin    : xbinning factor (with a get method)
+        ybin    : ybinning factor (with a get method)
         checker : callback that runs checks on the setup parameters. It is passed down 
                   to the individual Windows so that it is run any time a parameter is
                   changed.
@@ -184,12 +193,14 @@ class UspecWins(tk.Frame):
         tk.Label(self, text='nx', font=small_font).grid(row=row,column=column+2)
         tk.Label(self, text='ny', font=small_font).grid(row=row,column=column+3)
         
-        # Now window rows
-        self.wins = []
+        # Now window rows. Keep the labels as well so they can be disabled.
+        self.wlabs = []
+        self.wins  = []
         column = 0
         for i in range(MAXWIN):
-            tk.Label(self, text='Window ' + str(i+1)).grid(row=i+2,column=column, sticky=tk.W)
-            self.wins.append(Window(self, i+2, column+2, 1+100*i, 1+100*i, 100, 100, checker))
+            self.wlabs.append(tk.Label(self, text='Window ' + str(i+1)))
+            self.wlabs[-1].grid(row=i+2,column=column, sticky=tk.W)
+            self.wins.append(Window(self, i+2, column+2, 1+100*i, 1+100*i, 100, 100, xbin, ybin, checker))
 
         # Save confpars parameters
         self.confpars = confpars
@@ -228,6 +239,44 @@ class UspecWins(tk.Frame):
                         print('DEBUG: windows',i+1,'and',i+j+2,'overlap.')
 
         return (status, synced)
+
+class Sync(drvs.ActButton):
+    """
+    Class defining the 'Sync' button's operation. This moves the windows to ensure that
+    the pixels are in step with a full-frame of the same binning.
+    """
+
+    def __init__(self, master, width, xbin, ybin, nwin, wframe, callback):
+        """
+        master   : containing widget
+        width    : width of button
+        xbin, ybin, nwin, wframe : window parameters
+        """
+        drvs.ActButton.__init__(self, master, width, {}, callback, text='Sync')        
+        self.xbin   = xbin
+        self.ybin   = ybin
+        self.nwin   = nwin
+        self.wframe = wframe
+
+    def act(self):
+        """
+        Carries out the action associated with the Sync button
+        """
+        xbin = self.xbin.get()
+        ybin = self.ybin.get()
+        nwin = self.nwin.get()
+        print('nwin=',nwin)
+        for win in self.wframe.wins[:nwin]:
+            print('here i am')
+            xstart = win.xstart.get()
+            xstart = xbin*((xstart-1)//xbin)+1
+            win.xstart.set(xstart)
+            ystart = win.ystart.get()
+            ystart = ybin*((ystart-1)//xbin)+1
+            win.ystart.set(ystart)
+        self.config(bg=drvs.COL_MAIN)
+        self.disable()
+        self.callback()
     
 class InstPars(tk.LabelFrame):
     """
@@ -254,7 +303,8 @@ class InstPars(tk.LabelFrame):
         tk.Label(self, text='Avalanche').grid(row=row,column=column,sticky=tk.W)
 
         row += 1
-        tk.Label(self, text='Avalanche gain').grid(row=row,column=column,sticky=tk.W)
+        self.avgainLabel = tk.Label(self, text='Avalanche gain')
+        self.avgainLabel.grid(row=row,column=column,sticky=tk.W)
 
         row += 1
         tk.Label(self, text='Readout speed').grid(row=row,column=column, sticky=tk.W)
@@ -354,17 +404,13 @@ class InstPars(tk.LabelFrame):
         
         # Third row: the windows
         row += 1
-        self.wframe = UspecWins(self, other['confpars'], self.check)
+        self.wframe = UspecWins(self, other['confpars'], self.xbin, self.ybin, self.check)
         self.wframe.grid(row=row,column=colstart,rowspan=6,columnspan=3,sticky=tk.W+tk.N)
 
-        # Final row: two buttons to override any freezing of input and to synchronise windows.
+        # Final row: buttons to synchronise windows.
         row += 1
-        bframe = tk.Frame(self)
-
-        self.sync = tk.Button(bframe, text="Sync", fg="black", \
-                                  command=lambda : print('you have pressed the sync button'))
-        self.sync.pack(side=tk.LEFT)
-        bframe.grid(row=7,column=colstart,sticky=tk.W)
+        self.sync = Sync(self, 5, self.xbin, self.ybin, self.nwin, self.wframe, self.check)
+        self.sync.grid(row=7,column=colstart,sticky=tk.W)
 
         # Store configuration parameters
         self.other = other
@@ -408,17 +454,23 @@ class InstPars(tk.LabelFrame):
         nwin = self.nwin.get()
         for win in self.wframe.wins[nwin:]:
             win.disable()
+        for wlab in self.wframe.wlabs[nwin:]:
+            wlab.configure(state='disable')
 
         if not self.frozen: 
             for win in self.wframe.wins[:nwin]:
                 win.enable()
+        for wlab in self.wframe.wlabs[:nwin]:
+            wlab.configure(state='normal')
 
         # check avalanche settings
         if self.avalanche():
             if not self.frozen: self.avgain.enable()
+            self.avgainLabel.configure(state='normal')
             self.avgain.val.set(0)
         else:
             self.avgain.disable()
+            self.avgainLabel.configure(state='disable')
  
        # finally check the window settings
         status, synced = self.wframe.check(self.nwin.get(),self.xbin.get(),self.ybin.get())
@@ -482,6 +534,31 @@ class InstPars(tk.LabelFrame):
         self.frozen = False
         self.check()
 
+    def getRtplotWins(self):
+        """
+        Returns a string suitable to sending off to rtplot when
+        it asks for window parameters. Returns null string '' if
+        the windows are not OK. This operates on the basis of
+        trying to send something back, even if it might not be 
+        OK as a window setup. Note that we have to take care
+        here not to update any GUI components because this is 
+        called outside of the main thread.
+        """
+        try:
+            xbin = self.xbin.val.get()
+            ybin = self.ybin.val.get()
+            nwin = self.nwin.val.get()
+            ret  = str(xbin) + ' ' + str(ybin) + ' ' + str(nwin) + '\r\n'
+            for win in self.wframe.wins[:nwin]:
+                xstart = win.xstart.val.get()
+                ystart = win.xstart.val.get()
+                nx     = win.nx.val.get()
+                ny     = win.ny.val.get()
+                ret   += str(xstart) + ' ' + str(ystart) + ' ' + str(nx) + ' ' + str(ny) + '\r\n'
+            return ret
+        except:
+            return ''
+
 class RunPars(tk.LabelFrame):
     """
     Run parameters
@@ -495,12 +572,6 @@ class RunPars(tk.LabelFrame):
         tk.Label(self, text='Target name').grid(row=row,column=column, sticky=tk.W)
 
         row += 1
-        tk.Label(self, text='Pre-run comment').grid(row=row,column=column, sticky=tk.W)
-
-        row += 1
-        tk.Label(self, text='Run type').grid(row=row,column=column, sticky=tk.W+tk.N)
-
-        row += 1
         tk.Label(self, text='Programme ID').grid(row=row,column=column, sticky=tk.W)
             
         row += 1
@@ -508,6 +579,13 @@ class RunPars(tk.LabelFrame):
             
         row += 1
         tk.Label(self, text='Observer(s)').grid(row=row,column=column, sticky=tk.W)
+
+        row += 1
+        tk.Label(self, text='Pre-run comment').grid(row=row,column=column, sticky=tk.W)
+
+        row += 1
+        tk.Label(self, text='Data type').grid(row=row,column=column, sticky=tk.W+tk.N)
+
             
         # spacer
         column += 1
@@ -519,9 +597,24 @@ class RunPars(tk.LabelFrame):
         self.target = drvs.TextEntry(self, width=30)
         self.target.grid(row=row, column=column, sticky=tk.W)
 
+        # programme ID
+        row += 1
+        self.progid = drvs.TextEntry(self, width=20)
+        self.progid.grid(row=row, column=column, sticky=tk.W)
+
+        # principal investigator
+        row += 1
+        self.pi = drvs.TextEntry(self, width=20)
+        self.pi.grid(row=row, column=column, sticky=tk.W)
+
+        # observers
+        row += 1
+        self.observers = drvs.TextEntry(self, width=20)
+        self.observers.grid(row=row, column=column, sticky=tk.W)
+
         # comment
         row += 1
-        self.comment = drvs.TextEntry(self, width=30)
+        self.comment = drvs.TextEntry(self, width=38)
         self.comment.grid(row=row, column=column, sticky=tk.W)
 
         # data types
@@ -529,7 +622,7 @@ class RunPars(tk.LabelFrame):
         DTYPES = ('acquisition','science','bias','flat','dark','technical')
     
         self.dtype = tk.StringVar()
-        self.dtype.set('acquisition') 
+        self.dtype.set('undef') 
     
         dtframe = tk.Frame(self)
         r, c = 0, 0
@@ -542,24 +635,6 @@ class RunPars(tk.LabelFrame):
                 c += 1
         dtframe.grid(row=row,column=column,sticky=tk.W)
 
-        # programme ID
-        row += 1
-        self.progid = drvs.TextEntry(self, width=20)
-        self.progid.grid(row=row, column=column, sticky=tk.W)
-
-#        row += 1
-#        self.progid = TextEntry(self, width=20)
-#        self.progid.grid(row=row, column=column, sticky=tk.W)
-
-        # principal investigator
-        row += 1
-        self.pi = drvs.TextEntry(self, width=20)
-        self.pi.grid(row=row, column=column, sticky=tk.W)
-
-        # observers
-        row += 1
-        self.observers = drvs.TextEntry(self, width=20)
-        self.observers.grid(row=row, column=column, sticky=tk.W)
 
     def check(self):
         """
@@ -694,32 +769,39 @@ class Post(drvs.ActButton):
     Class defining the 'Post' button's operation
     """
 
-    def __init__(self, master, width, other, callback):
+    def __init__(self, master, width, other):
         """
         master   : containing widget
         width    : width of button
-        other    : other objects 'confpars', 'instpars', 'runpars'
-        callback : function to be run after a successful Post. Will be called with argument 'Post'
+        other    : other objects 'confpars', 'instpars', 'runpars', 'commLog', 'respLog'
         """        
-        drvs.ActButton.__init__(self, master, width, other, callback, text="Post")
+        drvs.ActButton.__init__(self, master, width, other, text='Post')
 
-    def _act(self):
+    def act(self):
         """
         Carries out the action associated with Post button
         """
 
-        if not self.other['instpars'].check():
+        o = self.other
+        cpars, ipars, rpars, clog, rlog = \
+            o['confpars'], o['instpars'], o['runpars'], o['commLog'], o['respLog']
+        
+        if not ipars.check():
             # I hope the next message is never shown, but I leave it here for safety
             tkMessageBox.showwarning('Post failure','The current settings are invalid;\nplease fix them before posting.')
-            return
+            return False
 
         # Get XML from template
-        root = createXML(self.other['confpars'], self.other['instpars'], self.other['runpars'])
+        root = createXML(cpars, ipars, rpars)
 
         # Post to server
-        drvs.postXML(root, self.other['confpars'])
+        drvs.postXML(root, cpars, clog, rlog)
 
-        self.callback('Post')
+        # Update other buttons ?? need a test of whether
+        # a run is in progress
+        o['Start'].enable()
+
+        return True
 
 class Load(drvs.ActButton):
     """
@@ -737,15 +819,15 @@ class Load(drvs.ActButton):
         """
         drvs.ActButton.__init__(self, master, width, other, text='Load')
 
-    def _act(self):
+    def act(self):
         """
         Carries out the action associated with the Load button
         """
 
         fname = tkFileDialog.askopenfilename(defaultextension='.xml', filetypes=[('xml files', '.xml'),])
         if not fname: 
-            print('Aborted load from disk')
-            return
+            other['commLog'].warn('Aborted load from disk')
+            return False
 
         # load XML
         tree = ET.parse(fname)
@@ -813,37 +895,42 @@ class Load(drvs.ActButton):
         nwin  = instpars.nwin.get()
 
         # User parameters ...
-        
+
+        return True
+
 class Save(drvs.ActButton):
     """
     Class defining the 'Save' button's operation. This saves the
     current configuration to disk.
     """
 
-    def __init__(self, master, width, other, callback):
+    def __init__(self, master, width, other):
         """
         master  : containing widget
         width   : width of button
         other   : dictionary of other objects. Must have 'confpars' the configuration
                   parameters, 'instpars' the instrument setup parameters (windows etc), 
-                  and 'runpars' the run parameters (target name etc)
-        callback : function that will be called with argument 'Save' after a successful
-                   operation of the button
+                  and 'runpars' the run parameters (target name etc), 'commLog'
         """
-        drvs.ActButton.__init__(self, master, width, other, callback, text='Save')        
+        drvs.ActButton.__init__(self, master, width, other, text='Save')        
 
-    def _act(self):
+    def act(self):
         """
         Carries out the action associated with the Save button
         """
 
+        o = self.other
+        cpars, ipars, rpars, clog, rlog = \
+            o['confpars'], o['instpars'], o['runpars'], o['commLog'], o['respLog']
+
         # Get XML from template
-        root = createXML(self.other['confpars'], self.other['instpars'], self.other['runpars'])
+        root = createXML(cpars, ipars, rpars)
 
         # Save to disk
-        drvs.saveXML(root)
+        drvs.saveXML(root, clog)
 
-        self.callback('Save')
+        ipars.melt()
+        return True
 
 class Unfreeze(drvs.ActButton):
     """
@@ -859,7 +946,7 @@ class Unfreeze(drvs.ActButton):
         """
         drvs.ActButton.__init__(self, master, width, other, text='Unfreeze')
 
-    def _act(self):
+    def act(self):
         """
         Carries out the action associated with the Unfreeze button
         """
@@ -878,46 +965,59 @@ class Observe(tk.LabelFrame):
     
         tk.LabelFrame.__init__(self, master, text='Observing commands', padx=10, pady=10)
 
+        # create buttons
         width = 10
         self.load = Load(self, width, other)
-        self.load.grid(row=0,column=0)
-
-        self.save = Save(self, width, other, self.check)
-        self.save.grid(row=1,column=0)
-
+        self.save = Save(self, width, other)
         self.unfreeze = Unfreeze(self, width, other)
-        self.unfreeze.grid(row=2,column=0)
+        self.post = Post(self, width, other)
+        self.start = drvs.Start(self, width, other)
+        self.stop = drvs.Stop(self, width, other)
 
-        self.post = Post(self, width, other, self.check)
-        self.post.grid(row=0,column=1)
-
-        self.start = drvs.Start(self, width, other, self.check)
-        self.start.grid(row=1,column=1)
-        self.start.disable()
-
-        self.stop = drvs.Stop(self, width, other, self.check)
-        self.stop.grid(row=2,column=1)
-        self.stop.disable()
+        # pass all buttons to each other
+        other['Load']     = self.load
+        other['Save']     = self.save
+        other['Unfreeze'] = self.unfreeze
+        other['Post']     = self.post
+        other['Start']    = self.start
+        other['Stop']     = self.stop
 
         self.other = other
 
-    def check(self, *args):
-        """
-        Switch state of some action buttons
-        """
-        if self.other['instpars'].check():
-            self.post.configure(state='normal')
-        else:
-            self.post.configure(state='disable')
+        # Lay them out
+        self.load.grid(row=0,column=0)
+        self.save.grid(row=1,column=0)
+        self.unfreeze.grid(row=2,column=0)
+        self.post.grid(row=0,column=1)
+        self.start.grid(row=1,column=1)
+        self.stop.grid(row=2,column=1)
 
-        if len(args):
-            # various settings change according to the command
-            if args[0] == 'Post':
-                self.start.configure(state='normal')
-            elif args[0] == 'Start':
-                self.stop.configure(state='normal')
-                self.other['instpars'].freeze()
-            elif args[0] == 'Stop':
-                self.start.configure(state='normal')
-            elif args[0] == 'Save':
-                self.other['instpars'].melt()
+        # Define initial status
+        self.post.disable()
+        self.start.disable()
+        self.stop.disable()
+
+        # implement expert level
+        self.setExpertLevel(other['confpars']['expert_level'])
+
+    def setExpertLevel(self, level):
+        """
+        Set expert level
+        """
+
+        # now set whether buttons are permanently enabled or not
+        if level == 0 or level == 1:
+            self.load.setNonExpert()
+            self.save.setNonExpert()
+            self.unfreeze.setNonExpert()
+            self.post.setNonExpert()
+            self.start.setNonExpert()
+            self.stop.setNonExpert()
+
+        elif level == 2:
+            self.load.setExpert()
+            self.save.setExpert()
+            self.unfreeze.setExpert()
+            self.post.setExpert()
+            self.start.setExpert()
+            self.stop.setExpert()
