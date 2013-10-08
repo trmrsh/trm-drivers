@@ -12,11 +12,15 @@ import tkFont
 import xml.etree.ElementTree as ET
 import ConfigParser
 import tkFileDialog
+import urllib
 import urllib2
 import logging
 import time
 import BaseHTTPServer
 import SocketServer
+import threading
+import subprocess
+import time
 
 # may need this at some point
 #proxy_support = urllib2.ProxyHandler({})
@@ -45,6 +49,10 @@ COL_WARN     = '#f0c050'
 # Colour to switch text background as a warning of
 # problems that will prevent actions going ahead.
 COL_ERROR    = '#ffa0a0'
+
+# Colour to switch background to to show that 
+# somethin has positively worked.
+COL_OK      = '#a0ffa0'
 
 # Colours for the important start/stop action buttons.
 COL_START    = '#aaffaa'
@@ -112,7 +120,8 @@ def loadConfPars(fp):
                     'DEBUG' : 'boolean', 'HTTP_PATH_GET' : 'string', 
                     'HTTP_PATH_EXEC' : 'string', 'HTTP_PATH_CONFIG' : 'string',
                     'HTTP_SEARCH_ATTR_NAME' : 'string', 'TELESCOPE_APP' : 'string',
-                    'INSTRUMENT_APP' : 'string', 'POWER_ON' : 'string'}
+                    'INSTRUMENT_APP' : 'string', 'POWER_ON' : 'string',
+                    'FOCAL_PLANE_SLIDE' : 'string'}
 
     for key, value in SINGLE_ITEMS.iteritems():
         if value == 'boolean':
@@ -739,6 +748,7 @@ class Start(ActButton):
             self.disable()
             o['Stop'].enable()
             ipars.freeze()
+            o['info'].timer.start()
             return True
         else:
             clog.log.warn('Failed to start run\n')
@@ -778,6 +788,75 @@ class Stop(ActButton):
             clog.log.warn('Failed to stop run\n')
             return False
 
+class Target(tk.Frame):
+    """
+    Class wrapping up what is needed for a target name which
+    is an entry field and a verification button. The verification
+    button checks for simbad recognition and goes green or red
+    according to the results. If no check has been made, it has
+    a default colour.
+    """
+    def __init__(self, master, other):
+        tk.Frame.__init__(self, master)
+
+        # Entry field, linked to a StringVar which is traced for any modification
+        self.val    = tk.StringVar()
+        self.val.trace('w', self.modver)
+        self.entry  = tk.Entry(self, textvariable=self.val, fg=COL_TEXT, bg=COL_TEXT_BG, width=25)
+        self.entry.bind('<Enter>', lambda e : self.entry.focus())
+
+        # Verification button which accesses simbad to see if the target is recognised.
+        self.verify = tk.Button(self, fg='black', width=8, text='Verify', bg=COL_MAIN, command=self.act)
+        self.entry.pack(side=tk.LEFT,anchor=tk.W)
+        self.verify.pack(side=tk.LEFT,anchor=tk.W,padx=5)
+        self.verify.config(state='disable')
+        self.other  = other
+
+    def get(self):
+        """
+        Returns value.
+        """
+        return self.val.get()
+
+    def ok(self):
+        if self.val.get() == '' or self.val.get().isspace():
+            return False
+        else:
+            return True        
+
+    def modver(self, *args):
+        """
+        Switches colour of verify button
+        """
+        if self.ok():
+            self.verify.config(bg=COL_MAIN)
+            self.verify.config(state='normal')
+        else:
+            self.verify.config(bg=COL_MAIN)
+            self.verify.config(state='disable')
+
+    def act(self):
+        """
+        Carries out the action associated with Verify button
+        """
+
+        o = self.other
+        clog, rlog = o['commLog'], o['respLog']
+        tname = self.val.get()
+
+        clog.log.debug('Checking "' + tname + '" with simbad\n')
+        ret = checkSimbad(tname)
+        if len(ret) == 0:
+            self.verify.config(bg=COL_ERROR)
+            clog.log.warn('No matches to "' + tname + '" found\n')
+        else:
+            self.verify.config(bg=COL_MAIN)
+            self.verify.config(state='disable')
+            rlog.log.info('Target verified OK\n')
+            rlog.log.info('Found ' + str(len(ret)) + ' matches to "' + tname + '"\n')
+            for entry in ret:
+                rlog.log.info('Name: ' + entry['Name'] + ', position: ' + entry['Position'] + '\n')
+
 class ReadServer(object):
     """
     Class to field the xml responses sent back from the ULTRACAM servers
@@ -790,6 +869,7 @@ class ReadServer(object):
      err     : message if ok == False
      state   : state of the camera. Possibilties are: 
                'IDLE', 'BUSY', 'ERROR', 'ABORT', 'UNKNOWN'
+     run     : current or last run number
     """
 
     def __init__(self, resp):
@@ -817,8 +897,8 @@ class ReadServer(object):
             self.state = None
             return
 
-        self.ok = True
-        self.err    = ''
+        self.ok  = True
+        self.err = ''
         for key, value in sfind.attrib.iteritems():
             if value != 'OK':
                 self.ok  = False
@@ -836,6 +916,13 @@ class ReadServer(object):
             self.state = sfind.attrib['camera']
         else:
             self.state = sfind.attrib['server']
+
+        # Find current run number (set it to 0 if we fail)
+        sfind = self.root.find('lastfile')
+        if sfind is not None:
+            self.run = int(sfind.attrib['path'][:3])
+        else:
+            self.run = 0
 
     def resp(self):
         return ET.tostring(self.root)
@@ -1434,31 +1521,45 @@ class LogDisplay(tk.LabelFrame):
         
 class Switch(tk.Frame):
     """
-    Frame sub-class to switch between setup and observing frames. Provides
-    a couple of radio buttons and hides / shows one frame or the other.
+    Frame sub-class to switch between setup, focal plane slide and observing frames. 
+    Provides radio buttons and hides / shows respective frames
     """
-    def __init__(self, master, setup, observe):
+    def __init__(self, master, setup, fpslide, observe):
         tk.Frame.__init__(self, master)
 
         self.val = tk.StringVar()
         self.val.set('Setup') 
         self.val.trace('w', self._changed)
 
-        b = tk.Radiobutton(self, text='Setup', variable=self.val, value='Setup')
-        b.grid(row=0, column=0, sticky=tk.W)
-        b = tk.Radiobutton(self, text='Observe', variable=self.val, value='Observe')
-        b.grid(row=0, column=1, sticky=tk.W)
+        tk.Radiobutton(self, text='Setup', variable=self.val, 
+                       value='Setup').grid(row=0, column=0, sticky=tk.W)
+        tk.Radiobutton(self, text='Focal plane slide', variable=self.val, 
+                       value='Focal plane slide').grid(row=0, column=1, sticky=tk.W)
+        tk.Radiobutton(self, text='Observe', variable=self.val, 
+                       value='Observe').grid(row=0, column=2, sticky=tk.W)
         
         self.observe = observe
+        self.fpslide  = fpslide
         self.setup   = setup
 
     def _changed(self, *args):
-        if self.val.get() == 'Observe':
-            self.setup.pack_forget()
-            self.observe.pack(anchor=tk.W, pady=10)
-        else:
-            self.observe.pack_forget()
+        if self.val.get() == 'Setup':
             self.setup.pack(anchor=tk.W, pady=10)
+            self.fpslide.pack_forget()
+            self.observe.pack_forget()
+
+        elif self.val.get() == 'Focal plane slide':
+            self.setup.pack_forget()
+            self.fpslide.pack(anchor=tk.W, pady=10)
+            self.observe.pack_forget()
+
+        elif self.val.get() == 'Observe':
+            self.setup.pack_forget()
+            self.fpslide.pack_forget()
+            self.observe.pack(anchor=tk.W, pady=10)
+            
+        else:
+            raise DriverError('Unrecognised Switch value')
 
 class ExpertMenu(tk.Menu):
     """
@@ -1553,6 +1654,119 @@ class Timer(tk.Label):
     def stop(self):
         if self.id is not None:
             self.after_cancel(self.id)
+        self.id = None
+
+class CurrentRun(tk.Label):
+    """
+    Run indicator checks every second with the server
+    """
+    def __init__(self, master, other):
+        tk.Label.__init__(self, master, text='000')
+        self.other = other
+        self.run()
+
+    def run(self):
+        """
+        Runs the run number cheker, once per second.
+        """
+        o = self.other
+        cpars = o['confpars']
+        run = getRunNumber(cpars)
+        self.configure(text='%03d' % (run,))
+        self.after(1000, self.run)
+
+class FocalPlaneSlide(tk.LabelFrame):
+    """
+    Self-contained widget to deal with the focal plane slide
+    """
+
+    def __init__(self, master, other):
+        """
+        master  : containing widget
+        """
+        tk.LabelFrame.__init__(self, master, text='Focal plane slide',padx=10,pady=10)
+        width = 8
+        self.park  = tk.Button(self, fg='black', text='Park',  width=width, command=lambda: self.wrap('park'))
+        self.block = tk.Button(self, fg='black', text='Block', width=width, command=lambda: self.wrap('block'))
+        self.home  = tk.Button(self, fg='black', text='Home',  width=width, command=lambda: self.wrap('home'))
+        self.reset = tk.Button(self, fg='black', text='Reset', width=width, command=lambda: self.wrap('reset'))
+        
+        self.park.grid(row=0,column=0)
+        self.block.grid(row=1,column=0)
+        self.home.grid(row=0,column=1)
+        self.reset.grid(row=1,column=1)
+        self.where   = 'UNDEF'
+        self.running = False
+        self.other   = other
+
+    def wrap(self, comm):
+        """
+        Carries out an action wrapping it in a thread so that 
+        we don't have to sit around waiting for completion.
+        """
+        if not self.running:
+            o = self.other
+            cpars, clog = o['confpars'], o['commLog']
+            if comm == 'block':
+                comm = 'pos=-100px'
+            command = [cpars['focal_plane_slide'],comm]
+            clog.log.info('Focal plane slide operation started:\n')
+            clog.log.info(' '.join(command) + '\n')
+            t = threading.Thread(target=lambda: self.action(comm))
+            t.daemon = True
+            t.start()
+            self.running = True
+            self.check()
+        else:
+            print('focal plane slide command already underway')
+
+    def action(self, comm):
+        """
+        Send a command to the focal plane slide
+        """
+        o       = self.other
+        cpars   = o['confpars']
+        command = [cpars['focal_plane_slide'],comm] 
+
+        # place command here
+        time.sleep(10)
+        subprocess.call(command)
+
+        self.where = comm
+
+       # flag to tell the check routine to stop
+        self.running = False
+
+    def check(self):
+        """
+        Check for the end of the focal plane command
+        """
+        if self.running:
+            # check once per second
+            self.after(1000, self.check)
+        else:
+            o       = self.other
+            clog    = o['commLog']
+            clog.log.info('Focal plane slide operation finished\n')
+
+class InfoFrame(tk.LabelFrame):
+    """
+    Information frame: run number, exposure time, etc.
+    """
+    def __init__(self, master, other):
+        tk.LabelFrame.__init__(self, master, text='Current status')
+        tlabel = tk.Label(self,text='Exposure time:')
+        timer  = Timer(self)
+        clabel = tk.Label(self,text='Current run:')
+        currentRun = CurrentRun(self, other)
+        
+        tlabel.grid(row=0,column=0,padx=5,sticky=tk.W)
+        timer.grid(row=0,column=1,padx=5,sticky=tk.W)
+        tk.Label(self,text='secs').grid(row=0,column=2,padx=5,sticky=tk.W)
+        clabel.grid(row=1,column=0,padx=5,sticky=tk.W)
+        currentRun.grid(row=1,column=1,padx=5,sticky=tk.W)
+
+# various helper routines
 
 def isRunActive():
     """
@@ -1561,7 +1775,7 @@ def isRunActive():
     url = confpars['http_data_server'] + 'status'
     response = urllib2.urlopen(url)
     rs  = ReadServer(response.read())
-    respLog.log.deug('Data server response =\n' + rs.resp() + '\n')        
+    respLog.log.debug('Data server response =\n' + rs.resp() + '\n')        
     if not rs.ok:
         raise DriverError('Active run check error: ' + str(rs.err))
 
@@ -1572,20 +1786,46 @@ def isRunActive():
     else:
         raise DriverError('Active run check error, state = ' + rs.state)
 
-class InfoFrame(tk.LabelFrame):
+def getRunNumber(confpars):
     """
-    Information frame: run number, exposure time, etc.
+    Polls the data server to find the current run number. This
+    gets called often, so is designed to run silently. It therefore
+    traps all errors and returns 0 if there are any problems.
     """
-    def __init__(self, master):
-        tk.LabelFrame.__init__(self, master, text='Run status')
-        tlabel = tk.Label(self,text='Exposure time:')
-        timer  = Timer(self)
-        timer.start()
+    try:
+        url = confpars['http_data_server'] + 'fstatus'
+        response = urllib2.urlopen(url)
+        rs  = ReadServer(response.read())
+        return rs.run if rs.ok else 0
+    except:
+        return 0
 
-        tlabel.grid(row=0,column=0,padx=5)
-        timer.grid(row=0,column=1,padx=5)
-        tk.Label(self,text='secs').grid(row=0,column=2,padx=5)
+def checkSimbad(target, maxobj=5):
+    """
+    Sends off a request to Simbad to check whether a target is recognised.
+    Returns with a list of results. 
+    """
+    url   = 'http://simbad.u-strasbg.fr/simbad/sim-script'
+    q     = 'set limit ' + str(maxobj) + '\nformat object form1 "Target: %IDLIST(1) | %COO(A D;ICRS)"\nquery ' + target
+    query = urllib.urlencode({'submit' : 'submit script', 'script' : q})
+    resp  = urllib2.urlopen(url, query)
+    data  = False
+    error = False
+    results = []
+    for line in resp:
+        if line.startswith('::data::'):
+            data = True
+        if line.startswith('::error::'):
+            error = True
+        if data and line.startswith('Target:'):
+            name,coords = line[7:].split(' | ')
+            results.append({'Name' : name.strip(), 'Position' : coords.strip(), 'Frame' : 'ICRS'})
+    resp.close()
     
+    if error and len(results):
+        print('drivers.check: Simbad: there appear to be some results but an error was unexpectedly raised.')
+    return results
+
 class DriverError(Exception):
     pass
 
