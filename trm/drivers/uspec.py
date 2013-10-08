@@ -564,7 +564,7 @@ class RunPars(tk.LabelFrame):
     Run parameters
     """
         
-    def __init__(self, master):
+    def __init__(self, master, other):
         tk.LabelFrame.__init__(self, master, text='Run parameters', padx=10, pady=10)
 
         row     = 0
@@ -594,7 +594,7 @@ class RunPars(tk.LabelFrame):
         # target
         row     = 0
         column += 1
-        self.target = drvs.TextEntry(self, width=30)
+        self.target = drvs.Target(self,other)
         self.target.grid(row=row, column=column, sticky=tk.W)
 
         # programme ID
@@ -614,7 +614,7 @@ class RunPars(tk.LabelFrame):
 
         # comment
         row += 1
-        self.comment = drvs.TextEntry(self, width=38)
+        self.comment = drvs.TextEntry(self, width=40)
         self.comment.grid(row=row, column=column, sticky=tk.W)
 
         # data types
@@ -967,12 +967,12 @@ class Observe(tk.LabelFrame):
 
         # create buttons
         width = 10
-        self.load = Load(self, width, other)
-        self.save = Save(self, width, other)
+        self.load     = Load(self, width, other)
+        self.save     = Save(self, width, other)
         self.unfreeze = Unfreeze(self, width, other)
-        self.post = Post(self, width, other)
-        self.start = drvs.Start(self, width, other)
-        self.stop = drvs.Stop(self, width, other)
+        self.post     = Post(self, width, other)
+        self.start    = drvs.Start(self, width, other)
+        self.stop     = drvs.Stop(self, width, other)
 
         # pass all buttons to each other
         other['Load']     = self.load
@@ -997,7 +997,7 @@ class Observe(tk.LabelFrame):
         self.start.disable()
         self.stop.disable()
 
-        # implement expert level
+        # Implement expert level
         self.setExpertLevel(other['confpars']['expert_level'])
 
     def setExpertLevel(self, level):
