@@ -42,6 +42,10 @@ class GUI(tk.Tk):
         # Middle-left: information such as run number, exposure time. 
         # Middle-right: run parameters such as the target name.
 
+        # First the loggers, command and response
+        commLog = drvs.LogDisplay(self, 5, 50, 'Command log')
+        respLog = drvs.LogDisplay(self, 5, 58, 'Response log')
+
         # The right-hand side
 
         # Instrument setup frame. "instOther" is a container
@@ -54,10 +58,8 @@ class GUI(tk.Tk):
         instpars  = uspec.InstPars(self, instOther)
 
         # Run setup data frame
-        runpars = uspec.RunPars(self)
-
-        # Server response logger
-        respLog = drvs.LogDisplay(self, 6, 50, 'Response log')
+        runOther = {'commLog' : commLog, 'respLog' : respLog}
+        runpars = uspec.RunPars(self, runOther)
 
         # Grid vertically
         instpars.grid(row=0,column=1,sticky=tk.W+tk.N,padx=10,pady=10)
@@ -70,16 +72,22 @@ class GUI(tk.Tk):
         # between the two possibilities. The third frame is an 
         # information frame.
 
-        # Kick up with some frames that have to be available to the 
+        # Kick off with some frames that have to be available to the 
         # observation frame
-        # First the information frame
-        info = drvs.InfoFrame(self)
 
-        # Now the command log
-        commLog = drvs.LogDisplay(self, 6, 50, 'Command log')
 
-        # container frame for switch options and observe & setup parameters
+
+        # The information frame
+        inother = {'confpars' : confpars, 'commLog' : commLog, 'respLog' : respLog}
+        info = drvs.InfoFrame(self, inother)
+
+        # Container frame for switch options and observe & setup parameters
         topLhsFrame = tk.Frame(self)
+
+        # Focal plane slide frame
+        fpother = {'confpars' : confpars, 'commLog' : commLog,
+                   'respLog' : respLog, 'info' : info}
+        fpslide = drvs.FocalPlaneSlide(topLhsFrame, fpother)
 
         # Observe frame: needed for the setup frame so defined first.
         # observeOther serves the same purpose as instOther above
@@ -99,7 +107,7 @@ class GUI(tk.Tk):
 
         # Sub-frame to select between setup or observe
         # Requires both of the previous two frames to have been set.
-        switch = drvs.Switch(topLhsFrame, setup, observe)
+        switch = drvs.Switch(topLhsFrame, setup, fpslide, observe)
 
         # Pack vertically into the container frame
         switch.pack(pady=5,anchor=tk.W)
@@ -110,7 +118,6 @@ class GUI(tk.Tk):
         topLhsFrame.grid(row=0,column=0,sticky=tk.W+tk.N,padx=10,pady=10)
         info.grid(row=1,column=0,sticky=tk.W+tk.N,padx=10,pady=10)
         commLog.grid(row=2,column=0,sticky=tk.W,padx=10,pady=10)
-
 
         # Create top menubar
         menubar = tk.Menu(self)
