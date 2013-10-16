@@ -28,43 +28,41 @@ class GUI(tk.Tk):
     them from the rtplot server.
     """
 
-    def __init__(self, confpars):
+    def __init__(self, cpars):
+
+        # Create the main GUI
         tk.Tk.__init__(self)
         self.title('usdriver')
 
-        # Style the GUI
+        # Style it
         drvs.addStyle(self)
 
-        # The GUI has a grid layout with 3 rows by 2 columns. The bottom 
+        # The GUI has a grid layout with 4 rows by 2 columns. The bottom 
         # row is occupied by logger windows. Frames are used to group 
-        # widgets. Top-left: either the basic setup commands or 
-        # observing commands. Top-right: window and CCD parameters. 
-        # Middle-left: information such as run number, exposure time. 
-        # Middle-right: run parameters such as the target name.
+        # widgets. 
 
         # First the loggers, command and response
-        commLog = drvs.LogDisplay(self, 5, 50, 'Command log')
-        respLog = drvs.LogDisplay(self, 5, 58, 'Response log')
+        clog = drvs.LogDisplay(self, 5, 50, 'Command log')
+        rlog = drvs.LogDisplay(self, 5, 56, 'Response log')
+
+        # dictionary of objects to share. Used to pass the widgets 
+        # from one to another. Basically a thinly-disguised global
+        share = {'clog' : clog, 'rlog' : rlog, 'cpars' : cpars}
 
         # The right-hand side
 
-        # Instrument setup frame. "instOther" is a container
-        # for other objects that are accessed from within
-        # the InstPars widget. In particular, changes to InstPars
-        # have consequences for the Observe commands. At this
-        # point, they are undefined, therefore we just have a
-        # placeholder that will be updated later.
-        instOther = {'confpars' : confpars, 'observe' : None}
-        instpars  = uspec.InstPars(self, instOther)
+        # Instrument setup frame. 
+        instpars  = uspec.InstPars(self, share)
+        share.update({'instpars' : instpars})
 
         # Run setup data frame
-        runOther = {'commLog' : commLog, 'respLog' : respLog}
-        runpars = uspec.RunPars(self, runOther)
+        runpars = uspec.RunPars(self, share)
+        share.update({'runpars' : runpars})
 
         # Grid vertically
         instpars.grid(row=0,column=1,sticky=tk.W+tk.N,padx=10,pady=10)
-        runpars.grid(row=1,column=1,sticky=tk.W+tk.N,padx=10,pady=10)
-        respLog.grid(row=2,column=1,sticky=tk.W,padx=10,pady=10)
+        runpars.grid(row=1,column=1,rowspan=2,sticky=tk.W+tk.N,padx=10,pady=10)
+        rlog.grid(row=3,column=1,sticky=tk.W,padx=10,pady=10)
 
         # The left-hand side: 3 frames at top, 1 log
         # at the bottom. First frame simply provides switches 
@@ -75,49 +73,44 @@ class GUI(tk.Tk):
         # Kick off with some frames that have to be available to the 
         # observation frame
 
-
-
         # The information frame
-        inother = {'confpars' : confpars, 'commLog' : commLog, 'respLog' : respLog}
-        info = drvs.InfoFrame(self, inother)
+        info = drvs.InfoFrame(self, share)
+        share.update({'info' : info})
 
         # Container frame for switch options and observe & setup parameters
         topLhsFrame = tk.Frame(self)
 
         # Focal plane slide frame
-        fpother = {'confpars' : confpars, 'commLog' : commLog,
-                   'respLog' : respLog, 'info' : info}
-        fpslide = drvs.FocalPlaneSlide(topLhsFrame, fpother)
+        fpslide = drvs.FocalPlaneSlide(topLhsFrame, share)
+        share.update({'fpslide' : fpslide})
 
         # Observe frame: needed for the setup frame so defined first.
         # observeOther serves the same purpose as instOther above
-        observeOther = {'confpars' : confpars, 'instpars' : instpars, 
-                        'runpars' : runpars, 'commLog' : commLog,
-                        'respLog' : respLog, 'info' : info}
-        observe = uspec.Observe(topLhsFrame, observeOther)
-
-        # Update instOther
-        instOther['observe'] = observe
+        observe = uspec.Observe(topLhsFrame, share)
+        share.update({'observe' : observe})
 
         # Setup frame. Pass the actions frame to it. This
         # one is visible at the start.
-        setupOther =  {'confpars' : confpars, 'observe' : observe,
-                       'commLog' : commLog, 'respLog' : respLog}
-        setup = drvs.InstSetup(topLhsFrame, setupOther)
+        setup = drvs.InstSetup(topLhsFrame, share)
+        share.update({'setup' : setup})
+
+        # Astronomical information frame
+        astro = drvs.AstroFrame(self, share)
 
         # Sub-frame to select between setup or observe
         # Requires both of the previous two frames to have been set.
-        switch = drvs.Switch(topLhsFrame, setup, fpslide, observe)
+        switch = drvs.Switch(topLhsFrame, share)
 
         # Pack vertically into the container frame
         switch.pack(pady=5,anchor=tk.W)
         setup.pack(pady=5,anchor=tk.W)
 
-        # Now format the left-hand side: container frame, info and commLog
-        # arranged in a vertical grid.
+        # Now format the left-hand side: container frame, info, astro
+        # and clog arranged in a vertical grid.
         topLhsFrame.grid(row=0,column=0,sticky=tk.W+tk.N,padx=10,pady=10)
         info.grid(row=1,column=0,sticky=tk.W+tk.N,padx=10,pady=10)
-        commLog.grid(row=2,column=0,sticky=tk.W,padx=10,pady=10)
+        astro.grid(row=2,column=0,sticky=tk.W+tk.N,padx=10,pady=10)
+        clog.grid(row=3,column=0,sticky=tk.W,padx=10,pady=10)
 
         # Create top menubar
         menubar = tk.Menu(self)
@@ -125,18 +118,22 @@ class GUI(tk.Tk):
 
         # Settings
         settingsMenu = tk.Menu(menubar, tearoff=0)
-        expertMenu = drvs.ExpertMenu(settingsMenu, confpars, setup, observe)
+        expertMenu = drvs.ExpertMenu(settingsMenu, cpars, observe, setup)
         settingsMenu.add_cascade(label='Expert', menu=expertMenu)
         menubar.add_cascade(label='Settings', menu=settingsMenu)
 
         # Stick the menubar in place
         self.config(menu=menubar)
 
+
+        # Everything now defined, so we can run checks
+        instpars.check()
+
         # Save some attributes for setting up the rtplot server
-        self.confpars = confpars
+        self.cpars    = cpars
         self.instpars = instpars
 
-        if confpars['rtplot_server_on']:
+        if cpars['rtplot_server_on']:
             # the rtplot server is tricky since it needs to run all the time
             # along with the GUI which brings in issues such as concurrency,
             # threads etc.
@@ -145,7 +142,7 @@ class GUI(tk.Tk):
                 t = threading.Thread(target=self.startRtplotServer, args=[q,])
                 t.daemon = True
                 t.start()
-                print('rtplot server started on port',confpars['rtplot_server_port'])
+                print('rtplot server started on port',cpars['rtplot_server_port'])
             except Exception as e:
                 print('Problem trying to start rtplot server:', e)
         else:
@@ -157,7 +154,7 @@ class GUI(tk.Tk):
         It is at this point that we pass the window parameters
         to the server.
         """
-        self.server = drvs.RtplotServer(self.instpars, self.confpars['rtplot_server_port'])
+        self.server = drvs.RtplotServer(self.instpars, self.cpars['rtplot_server_port'])
         self.server.run()
 
 
@@ -170,26 +167,23 @@ if __name__ == '__main__':
     # parser.add_argument('run', help='run to plot, e.g. "run045"')
 
     # optional
-    parser.add_argument('-c', dest='confpars', default='usdriver.conf', type=argparse.FileType('r'), \
-                            help='configuration file name')
-
-    # parser.add_argument('-plo', type=float, default=2., help='Lower percentile for intensity display')
-    # parser.add_argument('-r', dest='back', action='store_true', help='remove median background from each window')
+    parser.add_argument('-c', dest='cpars', default='usdriver.conf', 
+                        help='configuration file name')
     
     try:
         # OK, parse arguments
         args = parser.parse_args()
 
-        # Load configuration parameters
-        confpars = drvs.loadConfPars(args.confpars)
+        with open(args.cpars) as fp:
+            cpars = drvs.loadCpars(fp)
 
-        if confpars['debug']:
+        if cpars['debug']:
             logging.basicConfig(level=logging.DEBUG)
         else:
             logging.basicConfig(level=logging.INFO)
 
         # The main window.
-        gui = GUI(confpars)
+        gui = GUI(cpars)
         gui.mainloop()
 
         # be nice on exit
@@ -198,8 +192,7 @@ if __name__ == '__main__':
         print('\n... delivering you a faster camera ...\n')
 
     except IOError, err:
-        print('\nERROR: failed to load configuration file.')
-        print('Error message from argument parser:',err)
+        print('\nERROR:',err)
         print('You might want to use the -c option to specify the name')
         print('Script aborted.')
         exit(1)
