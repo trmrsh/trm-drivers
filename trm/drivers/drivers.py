@@ -21,6 +21,18 @@ import SocketServer
 import threading
 import subprocess
 import time
+import math
+import datetime
+
+# thirparty
+import ephem
+
+# Zeropoints (days) of MJD, unix time and ephem,
+# number of seconds in a day
+MJD0  = datetime.date(1858,11,17).toordinal()
+UNIX0 = datetime.date(1970,1,1).toordinal()
+EPH0  = datetime.date(1899,12,31).toordinal() + 0.5
+DAY   = 86400.
 
 # may need this at some point
 #proxy_support = urllib2.ProxyHandler({})
@@ -40,6 +52,9 @@ COL_TEXT_BG  = '#c0c0f0'
 # dark-on-bright style
 COL_TEXT     = '#000050'
 
+# Colour to switch text background for debug messages in loggers
+COL_DEBUG    = '#a0a0ff'
+
 # Colour to switch text background as a warning
 # of problems which won't stop actions proceeding
 # but should be known about. Non-synchronised
@@ -50,8 +65,12 @@ COL_WARN     = '#f0c050'
 # problems that will prevent actions going ahead.
 COL_ERROR    = '#ffa0a0'
 
-# Colour to switch background to to show that 
-# somethin has positively worked.
+# Colour to switch text background as a warning of
+# problems that will prevent actions going ahead.
+COL_CRITICAL    = '#ff0000'
+
+# Colour to switch background to show that 
+# something has positively worked.
 COL_OK      = '#a0ffa0'
 
 # Colours for the important start/stop action buttons.
@@ -68,17 +87,17 @@ def addStyle(root):
 
     # Default font
     default_font = tkFont.nametofont("TkDefaultFont")
-    default_font.configure(size=10)
+    default_font.configure(size=8)
     root.option_add('*Font', default_font)
 
     # Menu font
     menu_font = tkFont.nametofont("TkMenuFont")
-    menu_font.configure(size=10)
+    menu_font.configure(size=8)
     root.option_add('*Menu.Font', menu_font)
 
     # Entry font
     entry_font = tkFont.nametofont("TkTextFont")
-    entry_font.configure(size=10)
+    entry_font.configure(size=8)
     root.option_add('*Entry.Font', menu_font)
 
     # position and size
@@ -90,7 +109,7 @@ def addStyle(root):
     root.option_add('*HighlightBackground', COL_MAIN)
     root.config(background=COL_MAIN)
 
-def loadConfPars(fp):
+def loadCpars(fp):
     """
     Loads a dictionary of configuration parameters given a file object
     pointing to the configuration file. The configuration file consists
@@ -102,49 +121,56 @@ def loadConfPars(fp):
     to appropriate types. e.g. Yes/No values become boolean, etc.
     """
 
-    # read the confpars file
+    # read the configuration parameters file
     parser = ConfigParser.ConfigParser()
     parser.readfp(fp)
 
     # intialise dictionary
-    confpars = {}
+    cpars = {}
 
     # names / types of simple single value items needing no changes.
-    SINGLE_ITEMS = {'RTPLOT_SERVER_ON' : 'boolean', 'ULTRACAM_SERVERS_ON' : 'boolean', 
-                    'EXPERT_LEVEL' : 'integer', 'FILE_LOGGING_ON' : 'boolean', 
-                    'HTTP_CAMERA_SERVER' : 'string', 'HTTP_DATA_SERVER' : 'string',
-                    'APP_DIRECTORY' : 'string', 'TEMPLATE_FROM_SERVER' : 'boolean',
-                    'TEMPLATE_DIRECTORY' : 'string', 'LOG_FILE_DIRECTORY' : 'string',
-                    'CONFIRM_ON_CHANGE' : 'boolean', 'CONFIRM_HV_GAIN_ON' : 'boolean',
-                    'TELESCOPE' : 'string', 'RTPLOT_SERVER_PORT' : 'integer',
-                    'DEBUG' : 'boolean', 'HTTP_PATH_GET' : 'string', 
-                    'HTTP_PATH_EXEC' : 'string', 'HTTP_PATH_CONFIG' : 'string',
-                    'HTTP_SEARCH_ATTR_NAME' : 'string', 'TELESCOPE_APP' : 'string',
-                    'INSTRUMENT_APP' : 'string', 'POWER_ON' : 'string',
-                    'FOCAL_PLANE_SLIDE' : 'string'}
+    SINGLE_ITEMS = {\
+        'RTPLOT_SERVER_ON' : 'boolean', 'ULTRACAM_SERVERS_ON' : 'boolean', 
+        'EXPERT_LEVEL' : 'integer', 'FILE_LOGGING_ON' : 'boolean', 
+        'HTTP_CAMERA_SERVER' : 'string', 'HTTP_DATA_SERVER' : 'string',
+        'APP_DIRECTORY' : 'string', 'TEMPLATE_FROM_SERVER' : 'boolean',
+        'TEMPLATE_DIRECTORY' : 'string', 'LOG_FILE_DIRECTORY' : 'string',
+        'CONFIRM_ON_CHANGE' : 'boolean', 'CONFIRM_HV_GAIN_ON' : 'boolean',
+        'RTPLOT_SERVER_PORT' : 'integer', 'DEBUG' : 'boolean', 
+        'HTTP_PATH_GET' : 'string', 'HTTP_PATH_EXEC' : 'string', 
+        'HTTP_PATH_CONFIG' : 'string', 'HTTP_SEARCH_ATTR_NAME' : 'string', 
+        'INSTRUMENT_APP' : 'string', 'POWER_ON' : 'string', 
+        'FOCAL_PLANE_SLIDE' : 'string', 'TELESCOPE_NAME' : 'string', 
+        'TELESCOPE_LONGITUDE' : 'string', 'TELESCOPE_LATITUDE' : 'string', 
+        'TELESCOPE_ELEVATION' : 'float', 'TELESCOPE_APP' : 'string'}
 
     for key, value in SINGLE_ITEMS.iteritems():
         if value == 'boolean':
-            confpars[key.lower()] = parser.getboolean('All',key)
+            cpars[key.lower()] = parser.getboolean('All',key)
         elif value == 'string':
-            confpars[key.lower()] = parser.get('All',key)
+            cpars[key.lower()] = parser.get('All',key)
         elif value == 'integer':
-            confpars[key.lower()] = parser.getint('All',key)
+            cpars[key.lower()] = parser.getint('All',key)
+        elif value == 'float':
+            cpars[key.lower()] = parser.getfloat('All',key)
 
     # quick check
-    if confpars['expert_level'] < 0 or confpars['expert_level'] > 2:
+    if cpars['expert_level'] < 0 or cpars['expert_level'] > 2:
         print('EXPERT_LEVEL must be one of 0, 1, or 2.')
         print('Please fix the configuration file = ' + fp.name)
         exit(1)
 
     # names with multiple values (all strings)
-    MULTI_ITEMS = ['FILTER_NAMES', 'FILTER_IDS', 'ACTIVE_FILTER_NAMES', 'UAC_DATABASE_HOST']
+    MULTI_ITEMS = [\
+        'FILTER_NAMES', 'FILTER_IDS', 'ACTIVE_FILTER_NAMES', 
+        'UAC_DATABASE_HOST']
 
     for item in MULTI_ITEMS:
-        confpars[item.lower()] = [x.strip() for x in parser.get('All',item).split(';')]
+        cpars[item.lower()] = [x.strip() for x in 
+                                  parser.get('All',item).split(';')]
 
     # Run a check on the filters
-    if not set(confpars['active_filter_names']) <= set(confpars['filter_names']):
+    if not set(cpars['active_filter_names']) <= set(cpars['filter_names']):
         print('One or more of the active filter names was not recognised.')
         print('Please fix the configuration file = ' + fp.name)
         exit(1)
@@ -159,67 +185,119 @@ def loadConfPars(fp):
         print('have the same number of items.')
         print('Please fix the configuration file = ' + fp.name)
         exit(1)
-    confpars['templates'] = dict((arr[0],{'pairs' : arr[1], 'app' : arr[2], 'id' : arr[3]}) \
-                                     for arr in zip(labels,pairs,apps,ids))
+
+    cpars['templates'] = dict( \
+        (arr[0],{'pairs' : arr[1], 'app' : arr[2], 'id' : arr[3]}) \
+            for arr in zip(labels,pairs,apps,ids))
+
     # Next line is so that we know the order defined in the file
-    confpars['template_labels'] = labels
+    cpars['template_labels'] = labels
             
-    return confpars
+    return cpars
 
-class PosInt (tk.Entry):
+class IntegerEntry(tk.Entry):
     """
-    Provide positive or 0 integer input. This traps invalid characters
-    (except for a blank field). Various key bindings define the feel
-    of the entry field:
-
-     mouse entry : sets the focus
-     left-click  : add 1
-     right-click : subtracts 1
-     left-click + shift: adds 10
-     right-click + shift: subtracts 10
-     left-click + ctrl: adds 100
-     right-click + ctrl: subtracts 100
-
-    The entry value can be "traced" with a checking functions that runs
-    every time anything changes.
+    Defines an Entry field which only accepts integer input. 
+    This is the base class for several varieties of integer 
+    input fields.
     """
 
-    def __init__(self, master, ival, checker, **kw):
+    def __init__(self, master, ival, checker, blank, **kw):
         """
-        master  : 
-           the widget this gets placed inside
-
-        ival    : 
-           initial value
-
-        checker : 
-           checker function to provide a global check and update in response
-           to any changes made to the PosInt value. Can be None. Should have 
-           arguments *args because it is derived from setting a trace on an 
-           internal IntVar
+        master  -- enclosing widget
+        ival    -- initial integer value
+        checker -- command that is run on any change to the entry
+        blank   -- controls whether the field is allowed to be
+                   blank. In some cases it makes things easier if
+                   a blank field is allowed, even if it is technically
+                   invalid (the latter case requires some other checking)
+        kw      -- optional keyword arguments that can be used for
+                   an Entry.
         """
-
-        # save the checker routine
+        # important to set the value of _variable before tracing it
+        # to avoid immediate run of _callback.
+        tk.Entry.__init__(self, master, **kw)
+        self._variable = tk.StringVar()
+        self._value = str(int(ival))
+        self._variable.set(self._value)
+        self._variable.trace("w", self._callback)
+        self.config(textvariable=self._variable)
         self.checker = checker
-                                
-        # Define an intvar for tracing content changes
-        self.val = tk.IntVar()
-        self.val.set(ival)
-        if self.checker is not None:
-            self.val.trace('w', self.checker)
+        self.blank   = blank
+        self.set_bind()
 
-        # register an input validation command to restrict range of input
-        vcmd = (master.register(self.validate), '%d', '%i', '%P', '%s', '%S', '%v', '%V', '%W')
-        tk.Entry.__init__(self, master, validate='key', validatecommand=vcmd, \
-                              textvariable=self.val, fg=COL_TEXT, bg=COL_TEXT_BG, \
-                              **kw)
-
-        # Control input behaviour.
-        self._set_bind()
-
-    def _set_bind(self):
+    def validate(self, value):
         """
-        Sets key bindings -- we need this more than once
+        Applies the validation criteria. 
+        Returns value, new value, or None if invalid.
+
+        Overload this in derived classes.
+        """
+        try:
+            # trap blank fields here
+            if not self.blank or value: 
+                int(value)
+            return value
+        except ValueError:
+            return None
+
+    def value(self):
+        """
+        Returns integer value, if possible, None if not.
+        """
+        try:
+            return int(self._value)
+        except:
+            return None
+
+    def set(self, num):
+        """
+        Sets the current value equal to num
+        """
+        self._value = str(int(num))
+        self._variable.set(self._value)
+
+    def add(self, num):
+        """
+        Adds num to the current value
+        """
+        try:
+            val = self.value() + num
+        except:
+            val = num
+        self.set(val)
+
+    def sub(self, num):
+        """
+        Subtracts num from the current value
+        """
+        try:
+            val = self.value() - num
+        except:
+            val = -num
+        self.set(val)
+
+    def ok(self):
+        """
+        Returns True if OK to use, else False
+        """
+        try:
+            int(self._value)
+            return True
+        except:
+            return False
+
+    def enable(self):
+        self.configure(state='normal')
+        self.set_bind()
+
+    def disable(self):
+        self.configure(state='disable')
+        self.set_unbind()
+
+    def set_bind(self):
+        """
+        Sets key bindings.
         """
         self.bind('<Button-1>', lambda e : self.add(1))
         self.bind('<Button-3>', lambda e : self.sub(1))
@@ -236,11 +314,10 @@ class PosInt (tk.Entry):
         self.bind('<Control-Button-1>', lambda e : self.add(100))
         self.bind('<Control-Button-3>', lambda e : self.sub(100))
         self.bind('<Enter>', self._enter)
-        self.bind('<Next>', lambda e : self.val.set(0))
 
-    def _set_unbind(self):
+    def set_unbind(self):
         """
-        Unsets key bindings -- we need this more than once
+        Unsets key bindings.
         """
         self.unbind('<Button-1>')
         self.unbind('<Button-3>')
@@ -257,74 +334,34 @@ class PosInt (tk.Entry):
         self.unbind('<Control-Button-1>')
         self.unbind('<Control-Button-3>')
         self.unbind('<Enter>')
-        self.unbind('<Next>')
 
-    def enable(self):
-        self.configure(state='normal')
-        self._set_bind()
-
-    def disable(self):
-        self.configure(state='disable')
-        self._set_unbind()
-
-    def validate(self, action, index, value_if_allowed,
-                 prior_value, text, validation_type, trigger_type, widget_name):
+    def _callback(self, *dummy):
         """
-        Ensures only 01234567890 can be entered. It checks whether
-        the combination of allowed characters is valid but just flags
-        it through the colour.
+        This gets called on any attempt to change the value
         """
-        if set(text) <= set('0123456789'):
-            try:
-                int(value_if_allowed)
-                self.config(bg=COL_TEXT_BG)
-            except ValueError:
-                self.config(bg=COL_ERROR)
-            return True
+        # retrieve the value from the Entry
+        value = self._variable.get()
+
+        # run the validation. Returns None if no good
+        newvalue = self.validate(value)
+
+        if newvalue is None:
+            # Invalid: restores previously stored value
+            # no checker run.
+            self._variable.set(self._value)
+
+        elif newvalue != value:
+            # If the value is different update appropriately
+            # Store new value.
+            self._value = newvalue
+            self._variable.set(self.newvalue)
+            if self.checker:
+                self.checker(*dummy)
         else:
-            return False
-
-    def get(self):
-        """
-        Returns integer value, if possible, None if not.
-        """
-        try:
-            return self.val.get()
-        except:
-            return None
-
-    def set(self, num):
-        """
-        Sets the current value equal to num
-        """
-        self.val.set(num)
-
-    def add(self, num):
-        """
-        Adds num to the current value
-        """
-        try:
-            val = self.get() + num
-        except:
-            val = num
-        self.set(max(0,val))
-
-    def sub(self, num):
-        """
-        Subtracts num from the current value
-        """
-        try:
-            val = self.get() - num
-        except:
-            val = -num
-        self.set(max(0,val))
-
-    def ok(self):
-        try:
-            self.val.get()
-            return True
-        except:
-            return False
+            # Store new value
+            self._value = value
+            if self.checker:
+                self.checker(*dummy)
 
     # following are callbacks for bindings
     def _dadd(self, event):
@@ -336,134 +373,215 @@ class PosInt (tk.Entry):
         return 'break'
 
     def _enter(self, event):
-#        if self.checker is not None:
-#            self.checker()
         self.focus()
         self.icursor(tk.END)
 
-class RangedPosInt (PosInt):
+class PosInt (IntegerEntry):
     """
-    This is the same as PosInt but adds a check on the range of allowed integers.
+    Provide positive or 0 integer input. Basically
+    an IntegerEntry with one or two extras.
     """
 
-    def __init__(self, master, ival, imin, imax, checker, **kw):
-        # the order here is important because of the 
-        # registration of validate I suspect.
-        self.imin = imin
-        self.imax = imax
-        PosInt.__init__(self, master, ival, checker, **kw)
-        self.unbind('<Next>')
-        self.bind('<Next>', lambda e : self.val.set(self.imin))
-        self.bind('<Prior>', lambda e : self.val.set(self.imax))
-
-    def _set_bind(self):
+    def set_bind(self):
         """
         Sets key bindings -- we need this more than once
         """
-        PosInt._set_bind(self)
+        IntegerEntry.set_bind(self)
+        self.bind('<Next>', lambda e : self.set(0))
+
+    def set_unbind(self):
+        """
+        Unsets key bindings -- we need this more than once
+        """
+        IntegerEntry.set_unbind(self)
         self.unbind('<Next>')
-        self.bind('<Next>', lambda e : self.val.set(self.imin))
-        self.bind('<Prior>', lambda e : self.val.set(self.imax))
 
-    def validate(self, action, index, value_if_allowed,
-                 prior_value, text, validation_type, trigger_type, widget_name):
+    def validate(self, value):
         """
-        Adds range checking. Out of range numbers can be entered (otherwise it can
-        make data entry irritating), but they will be flagged by colour.
-        """
-        if not PosInt.validate(self, action, index, value_if_allowed,
-                               prior_value, text, validation_type, trigger_type, widget_name):
-            return False
+        Applies the validation criteria. 
+        Returns value, new value, or None if invalid.
 
+        Overload this in derived classes.
+        """
         try:
-            v = int(value_if_allowed)
-            if v >= self.imin and v <= self.imax:
-                self.config(bg=COL_TEXT_BG)
-            else:
-                self.config(bg=COL_ERROR)
-        except:
-            pass
-        return True
+            # trap blank fields here
+            if not self.blank or value: 
+                v = int(value)
+                if v < 0:
+                    return None
+            return value
+        except ValueError:
+            return None
 
     def add(self, num):
         """
-        Adds num to the current value, forcing the result to be within
-        range.
+        Adds num to the current value
         """
         try:
-            val = self.get() + num
+            val = self.value() + num
         except:
             val = num
-        val = max(self.imin, min(self.imax, val))
-        self.set(val)
+        self.set(max(0,val))
 
     def sub(self, num):
         """
-        Subtracts num from the current value, forcing the result to be within
-        range.
+        Subtracts num from the current value
         """
         try:
-            val = self.get() - num
+            val = self.value() - num
         except:
             val = -num
-        val = max(self.imin, min(self.imax, val))
-        self.set(val)
+        self.set(max(0,val))
 
     def ok(self):
-        if not PosInt.ok(self):
+        """
+        Returns True if OK to use, else False
+        """
+        try:
+            v = int(self._value)
+            if v < 0:
+                return False
+            else:
+                return True
+        except:
             return False
 
-        v = self.get()
-        return v >= self.imin and v <= self.imax
-
-class RangedPosMInt (RangedPosInt):
+class RangedInt (IntegerEntry):
     """
-    This is the same as RangePosInt but locks to multiplesadds a check on the range of allowed integers.
+    Provides range-checked integer input.
     """
-
-    def __init__(self, master, ival, imin, imax, mfac, checker, **kw):
+    def __init__(self, master, ival, imin, imax, checker, blank, **kw):
         """
-        mfac must be class that support 'get()' to return an integer value.
+        master  -- enclosing widget
+        ival    -- initial integer value
+        imin    -- minimum value
+        imax    -- maximum value
+        checker -- command that is run on any change to the entry
+        blank   -- controls whether the field is allowed to be
+                   blank. In some cases it makes things easier if
+                   a blank field is allowed, even if it is technically
+                   invalid.
+        kw      -- keyword arguments
         """
-        RangedPosInt.__init__(self, master, ival, imin, imax, checker, **kw)
-        self.mfac = mfac
-        self.unbind('<Next>')
-        self.unbind('<Prior>')
-        self.bind('<Next>', lambda e: self.val.set(self._min()))
-        self.bind('<Prior>', lambda e: self.val.set(self._max()))
+        self.imin = imin
+        self.imax = imax
+        IntegerEntry.__init__(self, master, ival, checker, blank, **kw)
+        self.bind('<Next>', lambda e : self.set(self.imin))
+        self.bind('<Prior>', lambda e : self.set(self.imax))
 
-    def _set_bind(self):
+    def set_bind(self):
         """
         Sets key bindings -- we need this more than once
         """
-        RangedPosInt._set_bind(self)
+        IntegerEntry.set_bind(self)
+        self.bind('<Next>', lambda e : self.set(self.imin))
+        self.bind('<Prior>', lambda e : self.set(self.imax))
+
+    def set_unbind(self):
+        """
+        Unsets key bindings -- we need this more than once
+        """
+        IntegerEntry.set_unbind(self)
         self.unbind('<Next>')
         self.unbind('<Prior>')
-        self.bind('<Next>', lambda e: self.val.set(self._min()))
-        self.bind('<Prior>', lambda e: self.val.set(self._max()))
 
-    def _min(self):
-        chunk = self.mfac.get()
-        mval  = chunk*(self.imin // chunk)
-        print(chunk,mval,self.imin,mval+chunk if mval < self.imin else mval)
-        return mval+chunk if mval < self.imin else mval
+    def validate(self, value):
+        """
+        Applies the validation criteria. 
+        Returns value, new value, or None if invalid.
 
-    def _max(self):
-        chunk = self.mfac.get()
-        return chunk*(self.imax // chunk)
+        Overload this in derived classes.
+        """
+        try:
+            # trap blank fields here
+            if not self.blank or value: 
+                v = int(value)
+                if v < self.imin or v > self.imax:
+                    return None
+            return value
+        except ValueError:
+            return None
+
+    def add(self, num):
+        """
+        Adds num to the current value
+        """
+        try:
+            val = self.value() + num
+        except:
+            val = num
+        self.set(min(self.imax,max(self.imin,val)))
+
+    def sub(self, num):
+        """
+        Subtracts num from the current value
+        """
+        try:
+            val = self.value() - num
+        except:
+            val = -num
+        self.set(min(self.imax,max(self.imin,val)))
+
+    def ok(self):
+        """
+        Returns True if OK to use, else False
+        """
+        try:
+            v = int(self._value)
+            if v < self.imin or v > self.imax:
+                return False
+            else:
+                return True
+        except:
+            return False
+
+class RangedMint (RangedInt):
+    """
+    This is the same as RangedInt but locks to multiples
+    """
+
+    def __init__(self, master, ival, imin, imax, mfac, checker, blank, **kw):
+        """
+        mfac must be class that support 'value()' to return an integer value.
+        to allow it to be updated
+        """
+        self.mfac = mfac
+        RangedInt.__init__(self, master, ival, imin, imax, checker, blank, **kw)
+        self.unbind('<Next>')
+        self.unbind('<Prior>')
+        self.bind('<Next>', lambda e: self.set(self._min()))
+        self.bind('<Prior>', lambda e: self.set(self._max()))
+        print(ival,imin,imax,mfac.value())
+
+    def set_bind(self):
+        """
+        Sets key bindings -- we need this more than once
+        """
+        RangedInt.set_bind(self)
+        self.unbind('<Next>')
+        self.unbind('<Prior>')
+        self.bind('<Next>', lambda e: self.set(self._min()))
+        self.bind('<Prior>', lambda e: self.set(self._max()))
+
+    def set_unbind(self):
+        """
+        Sets key bindings -- we need this more than once
+        """
+        RangedInt.set_unbind(self)
+        self.unbind('<Next>')
+        self.unbind('<Prior>')
 
     def add(self, num):
         """
         Adds num to the current value, jumping up the next
         multiple of mfac if the result is not a multiple already
-        range.
-        """ 
+        """
         try:
-            val = self.get() + num
+            val = self.value() + num
         except:
             val = num
 
-        chunk = self.mfac.get()
+        chunk = self.mfac.value()
         if val % chunk > 0: 
             if num > 0:
                 val = chunk*(val // chunk + 1)
@@ -479,11 +597,11 @@ class RangedPosMInt (RangedPosInt):
         range and a multiple of mfac
         """
         try:
-            val = self.get() - num
+            val = self.value() - num
         except:
             val = -num
 
-        chunk = self.mfac.get()
+        chunk = self.mfac.value()
         if val % chunk > 0: 
             if num > 0:
                 val = chunk*(val // chunk)
@@ -493,15 +611,29 @@ class RangedPosMInt (RangedPosInt):
         val = max(self._min(), min(self._max(), val))
         self.set(val)
 
-        val = max(self.imin, min(self.imax, val))
-        self.set(val)
-
     def ok(self):
-        if not PosInt.ok(self):
+        """
+        Returns True if OK to use, else False
+        """
+        try:
+            v = int(self._value)
+            chunk = self.mfac.value()
+            if v < self.imin or v > self.imax or (v % chunk != 0):
+                return False
+            else:
+                return True
+        except:
             return False
 
-        v = self.get()
-        return v >= self.imin and v <= self.imax
+    def _min(self):
+        chunk = self.mfac.value()
+        mval  = chunk*(self.imin // chunk)
+        print(chunk,mval,self.imin,mval+chunk if mval < self.imin else mval)
+        return mval+chunk if mval < self.imin else mval
+
+    def _max(self):
+        chunk = self.mfac.value()
+        return chunk*(self.imax // chunk)
 
 class TextEntry (tk.Entry):
     """
@@ -510,28 +642,29 @@ class TextEntry (tk.Entry):
     blank entries.
     """
 
-    def __init__(self, master, **kw):
+    def __init__(self, master, width, callback=None):
         """
         master  : the widget this gets placed inside
         """
 
-        # Define a StringVar
+        # Define a StringVar, connect it to the callback, if there is one
         self.val = tk.StringVar()
-
+        if callback is not None:
+            self.val.trace('w', callback)
         tk.Entry.__init__(self, master, textvariable=self.val, \
-                              fg=COL_TEXT, bg=COL_TEXT_BG, **kw)
+                              fg=COL_TEXT, bg=COL_TEXT_BG, width=width)
 
         # Control input behaviour.
         self.bind('<Enter>', lambda e : self.focus())
 
-    def get(self):
+    def value(self):
         """
         Returns value.
         """
         return self.val.get()
 
     def ok(self):
-        if self.get() == '' or self.get().isblank():
+        if self.value() == '' or self.value().isspace():
             return False
         else:
             return True
@@ -550,7 +683,7 @@ class Choice(tk.OptionMenu):
         if self.checker is not None:
             self.val.trace('w', self.checker)
 
-    def get(self):
+    def value(self):
         return self.val.get()
 
     def set(self, choice):
@@ -590,7 +723,7 @@ def overlap(xl1,yl1,nx1,ny1,xl2,yl2,nx2,ny2):
     """
     return (xl2 < xl1+nx1 and xl2+nx2 > xl1 and yl2 < yl1+ny1 and yl2+ny2 > yl1)
 
-def saveXML(root, commLog):
+def saveXML(root, clog):
     """
     Saves the current setup to disk. 
 
@@ -600,46 +733,54 @@ def saveXML(root, commLog):
     fname = tkFileDialog.asksaveasfilename(defaultextension='.xml', \
                                                filetypes=[('xml files', '.xml'),])
     if not fname: 
-        commLog.log.warn('Aborted save to disk\n')
-        return
+        clog.log.warn('Aborted save to disk\n')
+        return False
     tree = ET.ElementTree(root)
     tree.write(fname)
-    commLog.log.info('Saved setup to',fname,'\n')
-    
-def postXML(root, confpars, commLog, respLog):
+    clog.log.info('Saved setup to' + fname + '\n')
+    return True
+
+def postXML(root, cpars, clog, rlog):
     """
     Posts the current setup to the camera and data servers.
 
       root : (xml.etree.ElementTree.Element)
          The current setup.
-      confpars : (dict)
+      cpars : (dict)
          Configuration parameters inc. urls of servers
     """
-    commLog.log.debug('Entering postXML\n')
+    clog.log.debug('Entering postXML\n')
 
     # Write setup to an xml string
     sxml = ET.tostring(root)
 
     # Send the xml to the camera server
-    url = confpars['http_camera_server'] + confpars['http_path_config']
-    commLog.log.debug('Camera URL =',url,'\n')
+    url = cpars['http_camera_server'] + cpars['http_path_config']
+    clog.log.debug('Camera URL =',url,'\n')
 
     opener = urllib2.build_opener()
-    commLog.log.debug('content length =',len(sxml),'\n')
+    clog.log.debug('content length =',len(sxml),'\n')
     req = urllib2.Request(url, data=sxml, headers={'Content-type': 'text/xml'})
     response = opener.open(req, timeout=5)
-    rxml = response.read()
-    csr  = ReadServer(rxml)
-
+    csr  = ReadServer(response.read())
+    rlog.log.warn(csr.resp() + '\n')
+    if not csr.ok:
+        clog.log.warn('Camera response was not OK\n')
+        return False
+    
     # Send the xml to the data server
-    url = confpars['http_data_server'] + confpars['http_path_config']
-    commLog.log.debug('Data server URL =',url,'\n')
+    url = cpars['http_data_server'] + cpars['http_path_config']
+    clog.log.debug('Data server URL =',url,'\n')
     req = urllib2.Request(url, data=sxml, headers={'Content-type': 'text/xml'})
     response = opener.open(req, timeout=5) # ?? need to check whether this is needed
-    rxml = response.read()
-    fsr  = ReadServer(rxml)
+    fsr  = ReadServer(response.read())
+    rlog.log.warn(fsr.resp() + '\n')
+    if not csr.ok:
+        clog.log.warn('Fileserver response was not OK\n')
+        return False
 
-    commLog.log.debug('Leaving postXML\n')
+    clog.log.debug('Leaving postXML\n')
+    return True
 
 class ActButton(tk.Button):
     """
@@ -652,11 +793,11 @@ class ActButton(tk.Button):
     default. This can be switches with setExpert, setNonExpert.
     """
 
-    def __init__(self, master, width, other, callback=None, **kwargs):
+    def __init__(self, master, width, share, callback=None, **kwargs):
         """
         master   : containing widget
         width    : width in characters of the button
-        other    : dictionary of other objects that might need to be accessed
+        share    : dictionary of other objects that might need to be accessed
         callback : callback function
         bg       : background colour
         kwargs   : keyword arguments
@@ -667,7 +808,7 @@ class ActButton(tk.Button):
         # _active indicates whether the button should be enabled or disabled 
         # _expert indicates whether the activity state should be overridden so
         #         that the button is enabled in any case (if set True)
-        self.other    = other
+        self.share    = share
         self.callback = callback
         self._active  = True
         self._expert  = False
@@ -723,32 +864,51 @@ class Start(ActButton):
     Class defining the 'Start' button's operation
     """
 
-    def __init__(self, master, width, other):
+    def __init__(self, master, width, share):
         """
         master   : containing widget
         width    : width of button
-        other    : dictionary with configuration parameters and the loggers
+        share    : dictionary with configuration parameters and the loggers
         """
         
-        ActButton.__init__(self, master, width, other, bg=COL_START, text='Start')
+        ActButton.__init__(self, master, width, share, bg=COL_START, text='Start')
 
     def act(self):
         """
         Carries out the action associated with Start button
         """
 
-        o = self.other
+        o = self.share
         cpars, ipars, clog, rlog = \
-            o['confpars'], o['instpars'], o['commLog'], o['respLog']
+            o['cpars'], o['instpars'], o['clog'], o['rlog']
 
         clog.log.debug('Start pressed\n')
 
         if execCommand('GO', cpars, clog, rlog):
             clog.log.info('Run started\n')
+
+            # update buttons
             self.disable()
             o['Stop'].enable()
+            o['Post'].disable()
+            o['Load'].disable()
+            o['Unfreeze'].disable()
+            o['setup'].resetSDSUhard.disable()
+            o['setup'].resetSDSUsoft.disable()
+            o['setup'].resetPCI.disable()
+            o['setup'].setupServers.disable()
+            o['setup'].powerOn.disable()
+            o['setup'].powerOff.disable()
+
+            # freeze instrument parameters
             ipars.freeze()
+
+            # update the run number
+            o['info'].currentrun.addone()
+
+            # start the exposure timer
             o['info'].timer.start()
+
             return True
         else:
             clog.log.warn('Failed to start run\n')
@@ -759,29 +919,40 @@ class Stop(ActButton):
     Class defining the 'Stop' button's operation
     """
 
-    def __init__(self, master, width, other):
+    def __init__(self, master, width, share):
         """
         master   : containing widget
         width    : width of button
-        other    : dictionary with configuration parameters and the loggers
+        share    : dictionary with configuration parameters and the loggers
         """
         
-        ActButton.__init__(self, master, width, other, bg=COL_STOP, text='Stop')
+        ActButton.__init__(self, master, width, share, bg=COL_STOP, text='Stop')
 
     def act(self):
         """
         Carries out the action associated with Stop button
         """
 
-        o = self.other
-        cpars, clog, rlog = o['confpars'], o['commLog'], o['respLog']
+        o = self.share
+        cpars, clog, rlog = o['cpars'], o['clog'], o['rlog']
 
         clog.log.debug('Stop pressed\n')
 
         if execCommand('EX,0', cpars, clog, rlog):
             clog.log.info('Run stopped\n')
+
+            # modify buttons
             self.disable()
-            o['Start'].enable()
+            o['Start'].disable()
+            o['Post'].enable()
+            o['setup'].resetSDSUhard.enable()
+            o['setup'].resetSDSUsoft.enable()
+            o['setup'].resetPCI.disable()
+            o['setup'].setupServers.disable()
+            o['setup'].powerOn.disable()
+            o['setup'].powerOff.enable()
+
+            # stop exposure meter
             o['info'].timer.stop()
             return True
         else:
@@ -796,7 +967,7 @@ class Target(tk.Frame):
     according to the results. If no check has been made, it has
     a default colour.
     """
-    def __init__(self, master, other):
+    def __init__(self, master, share, callback=None):
         tk.Frame.__init__(self, master)
 
         # Entry field, linked to a StringVar which is traced for any modification
@@ -810,9 +981,10 @@ class Target(tk.Frame):
         self.entry.pack(side=tk.LEFT,anchor=tk.W)
         self.verify.pack(side=tk.LEFT,anchor=tk.W,padx=5)
         self.verify.config(state='disable')
-        self.other  = other
+        self.share  = share
+        self.callback = callback
 
-    def get(self):
+    def value(self):
         """
         Returns value.
         """
@@ -835,13 +1007,16 @@ class Target(tk.Frame):
             self.verify.config(bg=COL_MAIN)
             self.verify.config(state='disable')
 
+        if self.callback is not None:
+            self.callback()
+
     def act(self):
         """
         Carries out the action associated with Verify button
         """
 
-        o = self.other
-        clog, rlog = o['commLog'], o['respLog']
+        o = self.share
+        clog, rlog = o['clog'], o['rlog']
         tname = self.val.get()
 
         clog.log.debug('Checking "' + tname + '" with simbad\n')
@@ -927,7 +1102,7 @@ class ReadServer(object):
     def resp(self):
         return ET.tostring(self.root)
 
-def execCommand(command, confpars, commLog, respLog):
+def execCommand(command, cpars, clog, rlog):
     """
     Executes a command by sending it to the camera server
 
@@ -936,42 +1111,50 @@ def execCommand(command, confpars, commLog, respLog):
       command : (string)
            the command (see below)
 
-      confpars : (ConfPars)
+      cpars : (dict)
            configuration parameters
 
-      commLog : 
+      clog : 
            logger of commands
 
-      respLog : 
+      rlog : 
            logger of responses
 
     Possible commands are:
 
       GO   : starts a run
       ST   : stops a run
-      RCO  : resets the timing board
-      RST  : resets the PCI board
       EX,0 : stops a run
+      RCO  : resets the timing board (SDSU hardware reset)
+      RS   : resets the timing board (SDSU software reset)
+      RST  : resets the PCI board (software)
       SRS  :
+      RM,X,0x80: to get version
 
     Returns True/False according to whether the command
     succeeded or not.
     """
+    try:
+        url = cpars['http_camera_server'] + cpars['http_path_exec'] + '?' + command
+        clog.log.info('execCommand, command = "' + command + '"\n')
+        response = urllib2.urlopen(url)
+        rs  = ReadServer(response.read())
+        
+        rlog.log.info('Camera response =\n' + rs.resp() + '\n')        
+        if rs.ok:
+            clog.log.info('Response from camera server was OK\n')
+            return True
+        else:
+            clog.log.warn('Response from camera server was not OK\n')
+            clog.log.warn('Reason: ' + rs.err + '\n')
+            return False
+    except urllib2.URLError, err:
+        clog.log.warn('execCommand failed\n')
+        clog.log.warn(str(err) + '\n')
 
-    url = confpars['http_camera_server'] + confpars['http_path_exec'] + '?' + command
-    response = urllib2.urlopen(url)
-    commLog.log.info('execCommand, command = "' + command + '"\n')
-    rs  = ReadServer(response.read())
-    respLog.log.debug(rs.ok,rs.camera,rs.state,rs.err,'\n')
-    if not rs.ok:
-        commLog.warn.info('Response from camera server was not OK\n')
-        commLog.warn.info('Reason: ' + rs.err + '\n')
-        return False
+    return False
 
-    respLog.log.info('Camera response =\n' + rs.resp() + '\n')        
-    return True
-
-def execServer(name, app, confpars, commLog, respLog):
+def execServer(name, app, cpars, clog, rlog):
     """
     Sends application to a server
 
@@ -983,38 +1166,38 @@ def execServer(name, app, confpars, commLog, respLog):
       app : (string)
            the appication name
 
-      confpars : (ConfPars)
+      cpars : (dict)
            configuration parameters
 
-      commLog :
+      clog :
           command log
 
-      respLog :
+      rlog :
           response log
           
     Returns True/False according to success or otherwise
     """
-    print(confpars['http_camera_server'], confpars['http_path_config'], '?', app)
+    print(cpars['http_camera_server'], cpars['http_path_config'], '?', app)
     if name == 'camera':
-        url = confpars['http_camera_server'] + confpars['http_path_config'] + '?' + app
+        url = cpars['http_camera_server'] + cpars['http_path_config'] + '?' + app
     elif name == 'data':
-        url = confpars['http_data_server'] + confpars['http_path_config'] + '?' + app
+        url = cpars['http_data_server'] + cpars['http_path_config'] + '?' + app
     else:
         raise Exception('Server name = ' + name + ' not recognised.')
     
-    commLog.log.debug('execServer, url = ' + url + '\n')
+    clog.log.debug('execServer, url = ' + url + '\n')
 
     response = urllib2.urlopen(url)
     rs  = ReadServer(response.read())
     if not rs.ok:
-        commLog.log.warn('Response from ' + name + ' server not OK\n')
-        commLog.log.warn('Reason: ' + rs.err + '\n')
+        clog.log.warn('Response from ' + name + ' server not OK\n')
+        clog.log.warn('Reason: ' + rs.err + '\n')
         return False
 
-    commLog.log.debug('execServer command was successful\n')
+    clog.log.debug('execServer command was successful\n')
     return True
 
-def execRemoteApp(app, confpars, commLog, respLog):
+def execRemoteApp(app, cpars, clog, rlog):
     """
     Executes a remote application by sending it first to the
     camera and then to the data server.
@@ -1024,57 +1207,59 @@ def execRemoteApp(app, confpars, commLog, respLog):
       app : (string)
            the application command (see below)
 
-      confpars : (ConfPars)
+      cpars : (dict)
            configuration parameters
 
-      commLog :
+      clog :
           command log
 
-      respLog :
+      rlog :
           response log
 
     Returns True/False according to whether the command
     succeeded or not.
     """
 
-    return execServer('camera', app, confpars, commLog, respLog) and \
-        execServer('data', app, confpars, commLog, respLog)
+    return execServer('camera', app, cpars, clog, rlog) and \
+        execServer('data', app, cpars, clog, rlog)
 
 class ResetSDSUhard(ActButton):
     """
     Class defining the 'Reset SDSU hardware' button
     """
 
-    def __init__(self, master, width, other):
+    def __init__(self, master, width, share):
         """
         master   : containing widget
         width    : width of button
-        other    : dictionary of other objects
+        share    : dictionary of other objects
         """
         
-        ActButton.__init__(self, master, width, other, text='Reset SDSU hardware')
+        ActButton.__init__(self, master, width, share, text='Reset SDSU hardware')
 
     def act(self):
         """
         Carries out the action associated with the Reset SDSU hardware button
         """
 
-        o = self.other
-        cpars, clog, rlog = o['confpars'], o['commLog'], o['respLog']
+        o = self.share
+        cpars, clog, rlog = o['cpars'], o['clog'], o['rlog']
 
         clog.log.debug('Reset SDSU hardware pressed\n')
 
         if execCommand('RCO', cpars, clog, rlog):
             clog.log.info('Reset SDSU hardware succeeded\n')
-            self.disable()
 
-            # adjust other buttons
-            o['Reset PCI'].enable()
-            o['Setup servers'].disable()
-            o['Power on'].disable()
+            # adjust buttons
+            self.disable()
             o['observe'].start.disable()
             o['observe'].stop.disable()
             o['observe'].post.disable()
+            o['Reset SDSU software'].disable()
+            o['Reset PCI'].enable()
+            o['Setup servers'].disable()
+            o['Power on'].disable()
+            o['Power off'].disable()
             return True
         else:
             clog.log.warn('Reset SDSU hardware failed\n')
@@ -1085,30 +1270,38 @@ class ResetSDSUsoft(ActButton):
     Class defining the 'Reset SDSU software' button
     """
 
-    def __init__(self, master, width, other):
+    def __init__(self, master, width, share):
         """
         master   : containing widget
         width    : width of button
-        other    : dictionary of other objects
+        share    : dictionary of other objects
         """
         
-        ActButton.__init__(self, master, width, other, text='Reset SDSU software')
+        ActButton.__init__(self, master, width, share, text='Reset SDSU software')
 
     def act(self):
         """
         Carries out the action associated with the Reset SDSU software button
         """
 
-        o = self.other
-        cpars, clog, rlog = o['confpars'], o['commLog'], o['respLog']
+        o = self.share
+        cpars, clog, rlog = o['cpars'], o['clog'], o['rlog']
 
         clog.log.debug('Reset SDSU software pressed\n')
 
         if execCommand('RS', cpars, clog, rlog):
             clog.log.info('Reset SDSU software succeeded\n')
-            self.disable()
-            # alter other buttons ??
 
+            # alter buttons
+            self.disable()
+            o['observe'].start.disable()
+            o['observe'].stop.disable()
+            o['observe'].post.disable()
+            o['Reset SDSU hardware'].disable()
+            o['Reset PCI'].enable()
+            o['Setup servers'].disable()
+            o['Power on'].disable()
+            o['Power off'].disable()
             return True
         else:
             clog.log.warn('Reset SDSU software failed\n')
@@ -1119,29 +1312,29 @@ class ResetPCI(ActButton):
     Class defining the 'Reset PCI' button
     """
 
-    def __init__(self, master, width, other):
+    def __init__(self, master, width, share):
         """
         master   : containing widget
         width    : width of button
-        other    : dictionary with confpars, observe, commLog, respLog
+        share    : dictionary with cpars, observe, clog, rlog
         """
         
-        ActButton.__init__(self, master, width, other, text='Reset PCI')
+        ActButton.__init__(self, master, width, share, text='Reset PCI')
 
     def act(self):
         """
         Carries out the action associated with the Reset PCI button
         """
-        o = self.other
-        cpars, clog, rlog = o['confpars'], o['commLog'], o['respLog']
+        o = self.share
+        cpars, clog, rlog = o['cpars'], o['clog'], o['rlog']
 
         clog.log.debug('Reset PCI pressed\n')
 
         if execCommand('RST', cpars, clog, rlog):
             clog.log.info('Reset PCI succeeded\n')
-            self.disable()
 
-            # alter other buttons
+            # alter buttons
+            self.disable()
             o['observe'].start.disable()
             o['observe'].stop.disable()
             o['observe'].post.enable()
@@ -1149,6 +1342,7 @@ class ResetPCI(ActButton):
             o['Reset SDSU software'].enable()
             o['Setup server'].enable()
             o['Power on'].disable()
+            o['Power off'].disable()
             return True
         else:
             clog.log.warn('Reset PCI failed\n')
@@ -1159,28 +1353,37 @@ class SystemReset(ActButton):
     Class defining the 'System Reset' button
     """
 
-    def __init__(self, master, width, other):
+    def __init__(self, master, width, share):
         """
         master   : containing widget
         width    : width of button
-        other    : dictionary with confpars, observe, commLog, respLog
+        share    : dictionary with cpars, observe, clog, rlog
         """
         
-        ActButton.__init__(self, master, width, other, text='System Reset')
+        ActButton.__init__(self, master, width, share, text='System Reset')
 
     def act(self):
         """
         Carries out the action associated with the System Reset
         """
-        o = self.other
-        cpars, clog, rlog = o['confpars'], o['commLog'], o['respLog']
+        o = self.share
+        cpars, clog, rlog = o['cpars'], o['clog'], o['rlog']
 
         clog.log.debug('System Reset pressed\n')
 
         if execCommand('SRS', cpars, clog, rlog):
             clog.log.info('System Reset succeeded\n')
-            self.disable()
-            # alter buttons here ??
+
+            # alter buttons here 
+            o['observe'].start.disable()
+            o['observe'].stop.disable()
+            o['observe'].post.disable()
+            o['Reset SDSU hardware'].disable()
+            o['Reset SDSU software'].disable()
+            o['Reset PCI'].enable()
+            o['Setup server'].disable()
+            o['Power off'].disable()
+            o['Power on'].disable()
             return True
         else:
             clog.log.warn('System Reset failed\n')
@@ -1191,21 +1394,21 @@ class SetupServers(ActButton):
     Class defining the 'Setup servers' button
     """
 
-    def __init__(self, master, width, other):
+    def __init__(self, master, width, share):
         """
         master   : containing widget
         width    : width of button
-        other    : dictionary with confpars, observe, commLog, respLog
+        share    : dictionary with cpars, observe, clog, rlog
         """
         
-        ActButton.__init__(self, master, width, other, text='Setup servers')
+        ActButton.__init__(self, master, width, share, text='Setup servers')
 
     def act(self):
         """
         Carries out the action associated with the 'Setup servers' button
         """
-        o = self.other
-        cpars, clog, rlog = o['confpars'], o['commLog'], o['respLog']
+        o = self.share
+        cpars, clog, rlog = o['cpars'], o['clog'], o['rlog']
 
         clog.log.debug('Setup servers pressed\n')
 
@@ -1214,15 +1417,17 @@ class SetupServers(ActButton):
                 execServer('data', cpars['telescope_app'], cpars, clog, rlog) and \
                 execServer('data', cpars['instrument_app'], cpars, cLog, rLog):
             clog.log.info('Setup servers succeeded\n')
-            self.disable()
 
-            # alter other buttons 
+            # alter buttons 
+            self.disable()
             o['observe'].start.disable()
             o['observe'].stop.disable()
             o['observe'].post.disable()
             o['Reset SDSU hardware'].enable()
+            o['Reset SDSU software'].enable()
             o['Reset PCI'].disable()
             o['Power on'].enable()
+            o['Power off'].disable()
 
             return True
         else:
@@ -1234,22 +1439,22 @@ class PowerOn(ActButton):
     Class defining the 'Power on' button's operation
     """
 
-    def __init__(self, master, width, other):
+    def __init__(self, master, width, share):
         """
         master  : containing widget
         width   : width of button
-        other   : other objects
+        share   : other objects
         """
         
-        ActButton.__init__(self, master, width, other, text='Power on')
+        ActButton.__init__(self, master, width, share, text='Power on')
 
     def act(self):
         """
         Power on action
         """
         # shortening
-        o = self.other
-        cpars, clog, rlog = o['confpars'], o['commLog'], o['respLog']
+        o = self.share
+        cpars, clog, rlog = o['cpars'], o['clog'], o['rlog']
 
         clog.log.debug('Power on pressed\n')
             
@@ -1266,6 +1471,16 @@ class PowerOn(ActButton):
             o['Setup server'].disable()
             o['Power off'].enable()
             self.disable()
+
+            # now check the run number -- lifted from Java code; the wait 
+            # for the power on application to finish may not be needed
+            n = 0
+            while isRunActive() and n < 5:
+                n += 1
+            if isRunActive():
+                clog.log.warn('Timed out waiting for power on run to de-activate; cannot initialise run number. Tell trm if this happens')
+            else:
+                o['info'].currentrun.set(getRunNumber())
             return True
         else:
             clog.log.warn('Power on failed\n')
@@ -1276,14 +1491,14 @@ class PowerOff(ActButton):
     Class defining the 'Power off' button's operation
     """
 
-    def __init__(self, master, width, other):
+    def __init__(self, master, width, share):
         """
         master  : containing widget
         width   : width of button
-        other   : other objects
+        share   : other objects
         """
         
-        ActButton.__init__(self, master, width, other, text='Power off')
+        ActButton.__init__(self, master, width, share, text='Power off')
         self.disable()
 
     def act(self):
@@ -1291,20 +1506,26 @@ class PowerOff(ActButton):
         Power on action
         """
         # shortening
-        o = self.other
-        cpars, clog, rlog = o['confpars'], o['commLog'], o['respLog']
+        o = self.share
+        cpars, clog, rlog = o['cpars'], o['clog'], o['rlog']
 
         clog.log.debug('Power off pressed\n')
         clog.log.debug('This is a placeholder as there is no Power off application so it will fail\n')
             
         if execRemoteApp(cpars['power_off'], cpars, clog, rlog) and execCommand('GO', cpars, clog, rlog):
-            clog.log.info('Power off successful\n')
+            clog.log.info('Powered off SDSU\n')
             self.disable()
 
-            # alter other buttons ??
-            o['observe'].post.disable()
+            # alter other buttons
             o['observe'].start.disable()
             o['observe'].stop.disable()
+            o['observe'].post.disable()
+            o['Reset SDSU hardware'].enable()
+            o['Reset SDSU software'].enable()
+            o['Reset PCI'].disable()
+            o['Setup servers'].disable()
+            o['Power on'].enable()
+
             return True
         else:
             clog.log.warn('Power off failed\n')
@@ -1316,22 +1537,22 @@ class Initialise(ActButton):
     Class defining the 'Initialise' button's operation
     """
 
-    def __init__(self, master, width, other):
+    def __init__(self, master, width, share):
         """
         master  : containing widget
         width   : width of button
-        other   : other objects
+        share   : other objects
         """
         
-        ActButton.__init__(self, master, width, other, text='Initialise')
+        ActButton.__init__(self, master, width, share, text='Initialise')
 
     def act(self):
         """
         Initialise action
         """
         # shortening
-        o = self.other
-        cpars, clog, rlog = o['confpars'], o['commLog'], o['respLog']
+        o = self.share
+        cpars, clog, rlog = o['cpars'], o['clog'], o['rlog']
         
         clog.log.debug('Initialise pressed\n')
 
@@ -1355,40 +1576,40 @@ class InstSetup(tk.LabelFrame):
     Instrument configuration frame.
     """
     
-    def __init__(self, master, other):
+    def __init__(self, master, share):
         """
         master -- containing widget
-        other  -- dictionary of other objects that this needs to access
+        share  -- dictionary of other objects that this needs to access
         """
         tk.LabelFrame.__init__(self, master, text='Instrument setup', padx=10, pady=10)
 
         # Define all buttons
         width = 15
-        self.resetSDSUhard = ResetSDSUhard(self, width, other)
-        self.resetSDSUsoft = ResetSDSUsoft(self, width, other)
-        self.resetPCI      = ResetPCI(self, width, other)
-        self.systemReset   = SystemReset(self, width, other)
-        self.setupServers  = SetupServers(self, width, other)
-        self.powerOn       = PowerOn(self, width, other)
-        self.initialise    = Initialise(self, width, other)
+        self.resetSDSUhard = ResetSDSUhard(self, width, share)
+        self.resetSDSUsoft = ResetSDSUsoft(self, width, share)
+        self.resetPCI      = ResetPCI(self, width, share)
+        self.systemReset   = SystemReset(self, width, share)
+        self.setupServers  = SetupServers(self, width, share)
+        self.powerOn       = PowerOn(self, width, share)
+        self.initialise    = Initialise(self, width, share)
         width = 8
-        self.powerOff      = PowerOff(self, width, other)
+        self.powerOff      = PowerOff(self, width, share)
 
         # share all the buttons
-        other['Reset SDSU hardware'] = self.resetSDSUhard
-        other['Reset SDSU software'] = self.resetSDSUsoft
-        other['Reset PCI']           = self.resetPCI
-        other['System reset']        = self.systemReset
-        other['Setup servers']       = self.setupServers
-        other['Initialise']          = self.initialise
-        other['Power on']            = self.powerOn
-        other['Power off']           = self.powerOff
+        share['Reset SDSU hardware'] = self.resetSDSUhard
+        share['Reset SDSU software'] = self.resetSDSUsoft
+        share['Reset PCI']           = self.resetPCI
+        share['System reset']        = self.systemReset
+        share['Setup servers']       = self.setupServers
+        share['Initialise']          = self.initialise
+        share['Power on']            = self.powerOn
+        share['Power off']           = self.powerOff
 
         # save
-        self.other = other
+        self.share = share
 
         # set which buttons are presented and where they go
-        self.setExpertLevel(other['confpars']['expert_level'])
+        self.setExpertLevel(share['cpars']['expert_level'])
         
     def setExpertLevel(self, level):
         """
@@ -1473,6 +1694,11 @@ class LoggingToGUI(logging.Handler):
         """
         logging.Handler.__init__(self)
         self.console = console 
+        self.console.tag_config('debug', background=COL_DEBUG)
+        self.console.tag_config('warn', background=COL_WARN)
+        self.console.tag_config('error', background=COL_ERROR)
+        self.console.tag_config('critical', background=COL_CRITICAL)
+        self.console.tag_config('debug', background=COL_DEBUG)
 
     def emit(self, message): 
         """
@@ -1482,9 +1708,20 @@ class LoggingToGUI(logging.Handler):
         """
         formattedMessage = self.format(message)
 
-        # Write n=message to console
+        # Write message to console
         self.console.configure(state=tk.NORMAL)
-        self.console.insert(tk.END, formattedMessage) 
+        if message.levelname == 'DEBUG':
+            self.console.insert(tk.END, formattedMessage, ('debug'))
+        elif message.levelname == 'INFO':
+            self.console.insert(tk.END, formattedMessage)
+        elif message.levelname == 'WARNING':
+            self.console.insert(tk.END, formattedMessage, ('warn'))
+        elif message.levelname == 'ERROR':
+            self.console.insert(tk.END, formattedMessage, ('error'))
+        elif message.levelname == 'CRITICAL':
+            self.console.insert(tk.END, formattedMessage, ('critical'))
+        else:
+            print('Do not recognise level = ' + message.levelname)
         
         # Prevent further input
         self.console.configure(state=tk.DISABLED)
@@ -1511,7 +1748,7 @@ class LogDisplay(tk.LabelFrame):
 
         # define the formatting
         logging.Formatter.converter = time.gmtime
-        formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s','%H:%M:%S')
+        formatter = logging.Formatter('%(asctime)s - %(message)s','%H:%M:%S')
         ltgh.setFormatter(formatter)
 
         # make a logger and set the handler
@@ -1524,7 +1761,11 @@ class Switch(tk.Frame):
     Frame sub-class to switch between setup, focal plane slide and observing frames. 
     Provides radio buttons and hides / shows respective frames
     """
-    def __init__(self, master, setup, fpslide, observe):
+    def __init__(self, master, share):
+        """
+        master : containing widget
+        share  : pass the widgets to select between
+        """
         tk.Frame.__init__(self, master)
 
         self.val = tk.StringVar()
@@ -1538,9 +1779,9 @@ class Switch(tk.Frame):
         tk.Radiobutton(self, text='Observe', variable=self.val, 
                        value='Observe').grid(row=0, column=2, sticky=tk.W)
         
-        self.observe = observe
-        self.fpslide  = fpslide
-        self.setup   = setup
+        self.observe = share['observe']
+        self.fpslide = share['fpslide']
+        self.setup   = share['setup']
 
     def _changed(self, *args):
         if self.val.get() == 'Setup':
@@ -1567,28 +1808,28 @@ class ExpertMenu(tk.Menu):
     control GUI. This setting might be used to hide buttons for instance according to
     ste status of others, etc.
     """
-    def __init__(self, master, confpars, *args):
+    def __init__(self, master, cpars, *args):
         """
         master   -- the containing widget, e.g. toolbar menu
-        confpars -- configuration parameters containing expert_level which is
+        cpars -- configuration parameters containing expert_level which is
                     is used to store initial value and to pass changed value
         args     -- other objects that have a 'setExpertLevel(elevel)' method.
         """
         tk.Menu.__init__(self, master, tearoff=0)
         
         self.val = tk.IntVar()
-        self.val.set(confpars['expert_level'])
+        self.val.set(cpars['expert_level'])
         self.val.trace('w', self._change)
         self.add_radiobutton(label='Level 0', value=0, variable=self.val)
         self.add_radiobutton(label='Level 1', value=1, variable=self.val)
         self.add_radiobutton(label='Level 2', value=2, variable=self.val)
 
-        self.confpars = confpars
-        self.args = args
+        self.cpars = cpars
+        self.args  = args
 
     def _change(self, *args):
         elevel = self.val.get()
-        self.confpars['expert_level'] = elevel
+        self.cpars['expert_level'] = elevel
         for arg in self.args:
             arg.setExpertLevel(elevel)
 
@@ -1631,7 +1872,7 @@ class Timer(tk.Label):
     Timer class. Updates every second.
     """
     def __init__(self, master):
-        tk.Label.__init__(self, master, text='    0')
+        tk.Label.__init__(self, master, text='{0:<d} s'.format(0))
         self.id = None
 
     def start(self):
@@ -1639,17 +1880,16 @@ class Timer(tk.Label):
         Starts the timer from zero
         """
         self.startTime = time.time()
-        self.configure(text='%5d' % (0,))
-        self.tick()
+        self.configure(text='{0:<d} s'.format(0))
+        self.update()
 
-    def tick(self):
+    def update(self):
         """
-        Implements the ticks. Updates the integer number of seconds
-        10 times/second.
+        Updates @ 10Hz to give smooth running clock.
         """
         delta = int(round(time.time()-self.startTime))
-        self.configure(text='%5d' % (delta,))
-        self.id = self.after(100, self.tick)
+        self.configure(text='{0:<d} s'.format(delta))
+        self.id = self.after(100, self.update)
 
     def stop(self):
         if self.id is not None:
@@ -1660,17 +1900,29 @@ class CurrentRun(tk.Label):
     """
     Run indicator checks every second with the server
     """
-    def __init__(self, master, other):
+    def __init__(self, master, share):
         tk.Label.__init__(self, master, text='000')
-        self.other = other
-        self.run()
+        self.share = share
+#        self.run()
+
+    def set(self, rnum):
+        """
+        Sets the run number to rnum
+        """
+        self.configure(text='%03d' % (rnum,))
+
+    def addone(self, rnum):
+        """
+        Adds one to the run number
+        """
+        self.set(int(self.get())+1)
 
     def run(self):
         """
         Runs the run number cheker, once per second.
         """
-        o = self.other
-        cpars = o['confpars']
+        o = self.share
+        cpars = o['cpars']
         run = getRunNumber(cpars)
         self.configure(text='%03d' % (run,))
         self.after(1000, self.run)
@@ -1680,16 +1932,20 @@ class FocalPlaneSlide(tk.LabelFrame):
     Self-contained widget to deal with the focal plane slide
     """
 
-    def __init__(self, master, other):
+    def __init__(self, master, share):
         """
         master  : containing widget
         """
         tk.LabelFrame.__init__(self, master, text='Focal plane slide',padx=10,pady=10)
         width = 8
-        self.park  = tk.Button(self, fg='black', text='Park',  width=width, command=lambda: self.wrap('park'))
-        self.block = tk.Button(self, fg='black', text='Block', width=width, command=lambda: self.wrap('block'))
-        self.home  = tk.Button(self, fg='black', text='Home',  width=width, command=lambda: self.wrap('home'))
-        self.reset = tk.Button(self, fg='black', text='Reset', width=width, command=lambda: self.wrap('reset'))
+        self.park  = tk.Button(self, fg='black', text='Park',  width=width, 
+                               command=lambda: self.wrap('park'))
+        self.block = tk.Button(self, fg='black', text='Block', width=width, 
+                               command=lambda: self.wrap('block'))
+        self.home  = tk.Button(self, fg='black', text='Home',  width=width, 
+                               command=lambda: self.wrap('home'))
+        self.reset = tk.Button(self, fg='black', text='Reset', width=width, 
+                               command=lambda: self.wrap('reset'))
         
         self.park.grid(row=0,column=0)
         self.block.grid(row=1,column=0)
@@ -1697,7 +1953,7 @@ class FocalPlaneSlide(tk.LabelFrame):
         self.reset.grid(row=1,column=1)
         self.where   = 'UNDEF'
         self.running = False
-        self.other   = other
+        self.share   = share
 
     def wrap(self, comm):
         """
@@ -1705,8 +1961,8 @@ class FocalPlaneSlide(tk.LabelFrame):
         we don't have to sit around waiting for completion.
         """
         if not self.running:
-            o = self.other
-            cpars, clog = o['confpars'], o['commLog']
+            o = self.share
+            cpars, clog = o['cpars'], o['clog']
             if comm == 'block':
                 comm = 'pos=-100px'
             command = [cpars['focal_plane_slide'],comm]
@@ -1724,8 +1980,8 @@ class FocalPlaneSlide(tk.LabelFrame):
         """
         Send a command to the focal plane slide
         """
-        o       = self.other
-        cpars   = o['confpars']
+        o       = self.share
+        cpars   = o['cpars']
         command = [cpars['focal_plane_slide'],comm] 
 
         # place command here
@@ -1745,26 +2001,203 @@ class FocalPlaneSlide(tk.LabelFrame):
             # check once per second
             self.after(1000, self.check)
         else:
-            o       = self.other
-            clog    = o['commLog']
+            o       = self.share
+            clog    = o['clog']
             clog.log.info('Focal plane slide operation finished\n')
 
 class InfoFrame(tk.LabelFrame):
     """
     Information frame: run number, exposure time, etc.
     """
-    def __init__(self, master, other):
-        tk.LabelFrame.__init__(self, master, text='Current status')
-        tlabel = tk.Label(self,text='Exposure time:')
-        timer  = Timer(self)
+    def __init__(self, master, share):
+        tk.LabelFrame.__init__(self, master, text='Run status')
+
         clabel = tk.Label(self,text='Current run:')
-        currentRun = CurrentRun(self, other)
-        
-        tlabel.grid(row=0,column=0,padx=5,sticky=tk.W)
-        timer.grid(row=0,column=1,padx=5,sticky=tk.W)
-        tk.Label(self,text='secs').grid(row=0,column=2,padx=5,sticky=tk.W)
-        clabel.grid(row=1,column=0,padx=5,sticky=tk.W)
-        currentRun.grid(row=1,column=1,padx=5,sticky=tk.W)
+        self.currentRun = CurrentRun(self, share)
+
+        tlabel = tk.Label(self,text='Exposure time:')
+        timer = Timer(self)
+
+        clabel.grid(row=0,column=0,padx=5,sticky=tk.W)
+        self.currentRun.grid(row=0,column=1,padx=5,sticky=tk.W)
+
+        tlabel.grid(row=1,column=0,padx=5,pady=5,sticky=tk.W)
+        timer.grid(row=1,column=1,padx=5,pady=5,sticky=tk.W)
+
+
+class AstroFrame(tk.LabelFrame):
+    """
+    Astronomical information frame
+    """
+    def __init__(self, master, share):
+        tk.LabelFrame.__init__(self, master, pady=2, text='Time & Sky')
+
+        # times
+        self.mjd       = tk.Label(self)
+        self.utc       = tk.Label(self,width=9,anchor=tk.W)
+        self.lst       = tk.Label(self)
+
+        # sun info
+        self.sunalt    = tk.Label(self,width=11,anchor=tk.W)
+        self.riset     = tk.Label(self)
+        self.lriset    = tk.Label(self)
+        self.astro     = tk.Label(self)
+
+        # moon info
+        self.moonra    = tk.Label(self)
+        self.moondec   = tk.Label(self)
+        self.moonalt   = tk.Label(self)
+        self.moonphase = tk.Label(self)
+
+        # observatory info
+        cpars = share['cpars']
+        self.obs      = ephem.Observer()
+        self.obs.lat  = cpars['telescope_latitude']
+        self.obs.lon  = cpars['telescope_longitude']
+        self.obs.elevation = cpars['telescope_elevation']
+
+        # generate Sun and Moon
+        self.sun = ephem.Sun()
+        self.moon = ephem.Moon()
+
+        # arrange time info
+        tk.Label(self,text='MJD:').grid(row=0,column=0,padx=5,pady=3,sticky=tk.W)
+        self.mjd.grid(row=0,column=1,columnspan=2,padx=5,pady=3,sticky=tk.W)
+        tk.Label(self,text='UTC:').grid(row=0,column=3,padx=5,pady=3,sticky=tk.W)
+        self.utc.grid(row=0,column=4,padx=5,pady=3,sticky=tk.W)
+        tk.Label(self,text='LST:').grid(row=0,column=5,padx=5,pady=3,sticky=tk.W)
+        self.lst.grid(row=0,column=6,padx=5,pady=3,sticky=tk.W)
+
+        # arrange solar info
+        tk.Label(self,text='Sun:').grid(row=1,column=0,padx=5,pady=3,sticky=tk.W)
+        tk.Label(self,text='Alt:').grid(row=1,column=1,padx=5,pady=3,sticky=tk.W)
+        self.sunalt.grid(row=1,column=2,padx=5,pady=3,sticky=tk.W)
+        self.lriset.grid(row=1,column=3,padx=5,pady=3,sticky=tk.W)
+        self.riset.grid(row=1,column=4,padx=5,pady=3,sticky=tk.W)
+        tk.Label(self,text='Twi:').grid(row=1,column=5,padx=5,pady=3,sticky=tk.W)
+        self.astro.grid(row=1,column=6,padx=5,pady=3,sticky=tk.W)
+
+        # arrange moon info
+        tk.Label(self,text='Moon:').grid(row=2,column=0,padx=5,pady=3,sticky=tk.W)
+        tk.Label(self,text='RA:').grid(row=2,column=1,padx=5,pady=3,sticky=tk.W)
+        self.moonra.grid(row=2,column=2,padx=5,pady=3,sticky=tk.W)
+        tk.Label(self,text='Dec:').grid(row=3,column=1,padx=5,sticky=tk.W)
+        self.moondec.grid(row=3,column=2,padx=5,sticky=tk.W)
+        tk.Label(self,text='Alt:').grid(row=2,column=3,padx=5,pady=3,sticky=tk.W)
+        self.moonalt.grid(row=2,column=4,padx=5,pady=3,sticky=tk.W)
+        tk.Label(self,text='Phase:').grid(row=3,column=3,padx=5,sticky=tk.W)
+        self.moonphase.grid(row=3,column=4,padx=5,sticky=tk.W)
+
+        # report back to the user
+        clog = share['clog']
+        clog.log.info('Telescope  = ' + cpars['telescope_name'] + '\n')
+        clog.log.info('Longitude = ' + cpars['telescope_longitude'] + ' E\n')
+        clog.log.info('Latitude   = ' + cpars['telescope_latitude'] + ' N\n')
+        clog.log.info('Elevation  = ' + str(cpars['telescope_elevation']) + ' m\n')
+
+        # parameters used to reduce re-calculation of sun rise etc.
+        self.lastRiset = 0
+        self.lastAstro = 0
+        self.counter   = 0
+
+        # start
+        self.update()
+
+    def update(self):
+        """
+        Updates @ 10Hz to give smooth running clock.
+        """
+        # current time in seconds since start of UNIX
+        utc = time.time()
+        self.obs.date = ephem.Date(UNIX0-EPH0+utc/DAY)
+
+        # configure times
+        self.utc.configure(text=time.strftime('%H:%M:%S',time.gmtime(utc)))
+        self.mjd.configure(text='{0:11.5f}'.format(UNIX0-MJD0+utc/DAY)) 
+        lst = DAY*(self.obs.sidereal_time()/math.pi/2.)
+        self.lst.configure(text=time.strftime('%H:%M:%S',time.gmtime(lst)))
+
+        if self.counter % 100 == 0:
+            # only re-compute Sun & Moon info once every 100 calls
+
+            # re-compute sun
+            self.obs.pressure = 1010.
+            self.sun.compute(self.obs)
+
+            self.sunalt.configure(\
+                text='{0:+03d} deg'.format(int(round(math.degrees(self.sun.alt)))))
+
+            if self.obs.date > self.lastRiset and  self.obs.date > self.lastAstro:
+                # Only re-compute rise and setting times when necessary, and only
+                # re-compute when both rise/set and astro twilight times have gone by
+
+                # turn off refraction for both sunrise & set and astro 
+                # twilight calculation.
+                self.obs.pressure = 0.
+
+                # For sunrise and set we set the horizon down to match 
+                # a standard amount of refraction at the horizon
+                self.obs.horizon  = '-0:34'
+                sunset  = self.obs.next_setting(self.sun)
+                sunrise = self.obs.next_rising(self.sun)
+
+                # Astro twilight: geometric centre at -18 deg
+                self.obs.horizon = '-18'
+                astroset  = self.obs.next_setting(self.sun, use_center=True)
+                astrorise = self.obs.next_rising(self.sun, use_center=True)
+
+                if sunrise > sunset: 
+                    # In the day time we report the upcoming sunset and 
+                    # end of evening twilight
+                    self.lriset.configure(text='Sets:')
+                    self.lastRiset = sunset
+                    self.lastAstro = astroset
+
+                elif astrorise > astroset and astrorise < sunrise:
+                    # During evening twilight, we report the sunset just 
+                    # passed and end of evening twilight
+                    self.lriset.configure(text='Sets:')
+                    self.obs.horizon  = '-0:34'
+                    self.lastRiset = self.obs.previous_setting(self.sun)
+                    self.lastAstro = astroset
+
+                elif astrorise > astroset and astrorise < sunrise:
+                    # During night, report upcoming start of morning 
+                    # twilight and sunrise 
+                    self.lriset.configure(text='Rises:')
+                    self.obs.horizon  = '-0:34'
+                    self.lastRiset = sunrise
+                    self.lastAstro = astrorise
+
+                else:
+                    # During morning twilight report start of twilight 
+                    # just passed and upcoming sunrise
+                    self.lriset.configure(text='Rises:')
+                    self.obs.horizon  = '-18'
+                    self.lastRiset = sunrise
+                    self.lastAstro = self.obs.previous_rising(self.sun, use_center=True)
+
+                # Configure the corresponding text fields
+                ntime = DAY*(self.lastRiset + EPH0 - UNIX0)
+                self.riset.configure(text=time.strftime('%H:%M:%S',time.gmtime(ntime)))
+                ntime = DAY*(self.lastAstro + EPH0 - UNIX0)
+                self.astro.configure(text=time.strftime('%H:%M:%S',time.gmtime(ntime)))
+
+                # re-compute moon
+                self.obs.pressure = 1010.
+                self.moon.compute(self.obs)
+                self.moonra.configure(text='{0}'.format(self.moon.ra))
+                self.moondec.configure(text='{0}'.format(self.moon.dec))
+                self.moonalt.configure(\
+                    text='{0:+03d} deg'.format(int(round(math.degrees(self.moon.alt)))))
+                self.moonphase.configure(\
+                    text='{0:02d} %'.format(int(round(100.*self.moon.moon_phase))))
+
+        # update counter
+        self.counter += 1
+
+        # run again after 100 milli-seconds
+        self.after(100, self.update)
 
 # various helper routines
 
@@ -1772,10 +2205,10 @@ def isRunActive():
     """
     Polls the data server to see if a run is active
     """
-    url = confpars['http_data_server'] + 'status'
+    url = cpars['http_data_server'] + 'status'
     response = urllib2.urlopen(url)
     rs  = ReadServer(response.read())
-    respLog.log.debug('Data server response =\n' + rs.resp() + '\n')        
+    rlog.log.debug('Data server response =\n' + rs.resp() + '\n')        
     if not rs.ok:
         raise DriverError('Active run check error: ' + str(rs.err))
 
@@ -1786,14 +2219,14 @@ def isRunActive():
     else:
         raise DriverError('Active run check error, state = ' + rs.state)
 
-def getRunNumber(confpars):
+def getRunNumber(cpars):
     """
     Polls the data server to find the current run number. This
     gets called often, so is designed to run silently. It therefore
     traps all errors and returns 0 if there are any problems.
     """
     try:
-        url = confpars['http_data_server'] + 'fstatus'
+        url = cpars['http_data_server'] + 'fstatus'
         response = urllib2.urlopen(url)
         rs  = ReadServer(response.read())
         return rs.run if rs.ok else 0
