@@ -20,7 +20,7 @@ class Window (object):
     and dimensions.
     """
 
-    def __init__(self, master, row, column, xstart, ystart, nx, ny, xb, yb, checker):
+    def __init__(self, master, row, column, xstart, ystart, nx, ny, xbin, ybin, checker):
         """
         Sets up a window pair as a row of values, initialised to
         the arguments supplied. The row is created within a sub-frame
@@ -31,7 +31,7 @@ class Window (object):
           master :
             master widget within which the Frame containing the values
             will be placed. A grid layout will be adopted to allow
-            other WindowPairs to abutted nicely, hence the row and
+            other Windows to abutted nicely, hence the row and
             column of the leftmost entry field must be specified
 
           row :
@@ -52,11 +52,11 @@ class Window (object):
           ny :
             Y dimension of windows, unbinned pixels
 
-          xb : 
-            xbinning factor; must have a 'get' method. Used to step nx.
+          xbin : 
+            xbinning factor; must have a 'value' method. Used to step and check nx
 
-          yb : 
-            ybinning factor; must have a 'get' method. Used to step ny.
+          ybin : 
+            ybinning factor; must have a 'value' method. Used to step and check ny 
 
           checker : 
             checker function to provide a global check and update in response
@@ -70,29 +70,30 @@ class Window (object):
         #  nx     -- X dimension, unbinned pixels
         #  ny     -- Y dimension, unbinned pixels
 
-        self.xstart = drvs.RangedPosInt(master, xstart, 1, 1056, checker, width=4)
+        self.xstart = drvs.RangedInt(master, xstart, 1, 1056, checker, True, width=4)
         self.xstart.grid(row=row,column=column)
 
-        self.ystart = drvs.RangedPosInt(master, ystart, 1, 1072, checker, width=4)
+        self.ystart = drvs.RangedInt(master, ystart, 1, 1072, checker, True, width=4)
         self.ystart.grid(row=row,column=column+1)
 
-        self.nx = drvs.RangedPosMInt(master, nx, 1, 1056, xb, checker, width=4)
+        self.nx = drvs.RangedMint(master, nx, 1, 1056, xbin, checker, True, width=4)
         self.nx.grid(row=row,column=column+2)
 
-        self.ny = drvs.RangedPosMInt(master, ny, 1, 1072, yb, checker, width=4)
+        self.ny = drvs.RangedMint(master, ny, 1, 1072, ybin, checker, True, width=4)
         self.ny.grid(row=row,column=column+3)
 
-    def get(self):
-        "Returns current xstart, ystart, nx, ny values"
-        return (self.xstart.get(),self.ystart.get(),self.nx.get(),self.ny.get())
+        self.xbin = xbin
+        self.ybin = ybin
+        
 
-    def check(self, xbin, ybin):
+    def value(self):
+        "Returns current xstart, ystart, nx, ny values"
+        return (self.xstart.value(),self.ystart.value(),self.nx.value(),self.ny.value())
+
+    def check(self):
         """
         Checks the values of a Window. If any problems are found, it 
         flags them by changing the background colour.
-
-        xbin -- X binning factor
-        ybin -- Y binning factor
 
         Returns (status, synced)
 
@@ -101,8 +102,16 @@ class Window (object):
 
         """
 
+        # set all OK to start with
+        self.xstart.config(bg=drvs.COL_TEXT_BG)
+        self.ystart.config(bg=drvs.COL_TEXT_BG)
+        self.nx.config(bg=drvs.COL_TEXT_BG)
+        self.ny.config(bg=drvs.COL_TEXT_BG)    
+
         # Get values
-        xstart, ystart, nx, ny = self.get()
+        xstart, ystart, nx, ny = self.value()
+        xbin = self.xbin.value()
+        ybin = self.ybin.value()
 
         # Are they all OK individually?
         status = self.xstart.ok() and self.ystart.ok() and self.nx.ok() and self.ny.ok()
@@ -136,13 +145,6 @@ class Window (object):
             self.ystart.config(bg=drvs.COL_ERROR)
             status = False
 
-        if status:
-            # set all OK if everything checks
-            self.xstart.config(bg=drvs.COL_TEXT_BG)
-            self.ystart.config(bg=drvs.COL_TEXT_BG)
-            self.nx.config(bg=drvs.COL_TEXT_BG)
-            self.ny.config(bg=drvs.COL_TEXT_BG)
-            
         return (status, synced)
     
     def enable(self):
@@ -162,10 +164,10 @@ class UspecWins(tk.Frame):
     Defines a block with window info
     """
 
-    def __init__(self, master, confpars, xbin, ybin, checker):
+    def __init__(self, master, cpars, xbin, ybin, checker):
         """
         master  : enclosing widget
-        confpars : configuration parameters
+        cpars : configuration parameters
         xbin    : xbinning factor (with a get method)
         ybin    : ybinning factor (with a get method)
         checker : callback that runs checks on the setup parameters. It is passed down 
@@ -202,16 +204,14 @@ class UspecWins(tk.Frame):
             self.wlabs[-1].grid(row=i+2,column=column, sticky=tk.W)
             self.wins.append(Window(self, i+2, column+2, 1+100*i, 1+100*i, 100, 100, xbin, ybin, checker))
 
-        # Save confpars parameters
-        self.confpars = confpars
+        # Save cpars parameters
+        self.cpars = cpars
 
-    def check(self, nwin, xbin, ybin):
+    def check(self, nwin):
         """
         Checks the validity of the window parameters. 
 
           nwin : numbers of windows to check
-          xbin : X-binning factor
-          ybin : Y-binning factor
 
         Returns (status, synced), flags which indicate whether the window 
         parameters are viable and synced.
@@ -222,21 +222,19 @@ class UspecWins(tk.Frame):
         
         # Pick up global status and need to synchronise
         for win in self.wins[:nwin]:
-            stat, syncd = win.check(xbin, ybin)
+            stat, syncd = win.check()
             if not stat: status = False
             if not syncd: synced = False
 
         # Check that no two windows overlap
         for i,win1 in enumerate(self.wins[:nwin]):
-            xl1,yl1,nx1,ny1 = win1.get()
+            xl1,yl1,nx1,ny1 = win1.value()
             for j, win2 in enumerate(self.wins[i+1:nwin]):
-                xl2,yl2,nx2,ny2 = win2.get()
+                xl2,yl2,nx2,ny2 = win2.value()
                 if drvs.overlap(xl1,yl1,nx1,ny1,xl2,yl2,nx2,ny2):
                     win2.xstart.config(bg=drvs.COL_ERROR)
                     win2.ystart.config(bg=drvs.COL_ERROR)
                     status = False
-                    if self.config.debug:
-                        print('DEBUG: windows',i+1,'and',i+j+2,'overlap.')
 
         return (status, synced)
 
@@ -262,16 +260,14 @@ class Sync(drvs.ActButton):
         """
         Carries out the action associated with the Sync button
         """
-        xbin = self.xbin.get()
-        ybin = self.ybin.get()
-        nwin = self.nwin.get()
-        print('nwin=',nwin)
+        xbin = self.xbin.value()
+        ybin = self.ybin.value()
+        nwin = self.nwin.value()
         for win in self.wframe.wins[:nwin]:
-            print('here i am')
-            xstart = win.xstart.get()
+            xstart = win.xstart.value()
             xstart = xbin*((xstart-1)//xbin)+1
             win.xstart.set(xstart)
-            ystart = win.ystart.get()
+            ystart = win.ystart.value()
             ystart = ybin*((ystart-1)//xbin)+1
             win.ystart.set(ystart)
         self.config(bg=drvs.COL_MAIN)
@@ -283,13 +279,14 @@ class InstPars(tk.LabelFrame):
     Ultraspec instrument parameters block.
     """
         
-    def __init__(self, master, other):
+    def __init__(self, master, share):
         """
         master : enclosing widget
-
-        other : dictionary of other objects needed by this widget
+        share  : dictionary of other objects needed by this widget. 
+                 These are 'observe' and 'cpars'
         """
-        tk.LabelFrame.__init__(self, master, text='Instrument parameters', padx=10, pady=10)
+        tk.LabelFrame.__init__(self, master, text='Instrument parameters', 
+                               padx=10, pady=10)
 
         # First column: the labels
         row     = 0
@@ -342,7 +339,7 @@ class InstPars(tk.LabelFrame):
 
         # Avalanche gain
         row += 1
-        self.avgain = drvs.RangedPosInt(self, 0, 0, 7, None, width=2)
+        self.avgain = drvs.RangedInt(self, 0, 0, 7, None, False, width=2)
         self.avgain.grid(row=row,column=column,sticky=tk.W)
 
         # Readout speed
@@ -352,17 +349,17 @@ class InstPars(tk.LabelFrame):
 
         # LED setting
         row += 1
-        self.led = drvs.RangedPosInt(self, 0, 0, 4095, None, width=6)
+        self.led = drvs.RangedInt(self, 0, 0, 4095, None, False, width=6)
         self.led.grid(row=row,column=column,sticky=tk.W)
 
         # Exposure delay
         row += 1
-        self.expose = drvs.PosInt(self, 0, None, width=6)
+        self.expose = drvs.PosInt(self, 0, None, False, width=6)
         self.expose.grid(row=row,column=column,sticky=tk.W)
 
         # Number of exposures
         row += 1
-        self.number = drvs.PosInt(self, 1, None, width=6)
+        self.number = drvs.PosInt(self, 1, None, False, width=6)
         self.number.grid(row=row,column=column,sticky=tk.W)
 
         # Spacer column between third and fifth columns
@@ -375,20 +372,20 @@ class InstPars(tk.LabelFrame):
 
         # First row: binning factors
         row = 0
-        tk.Label(self, text='Binning factors (X x Y)').grid(row=row,column=column, sticky=tk.W)
-
+        tk.Label(self, text='Binning factors (X x Y)').grid(row=row,
+                                                            column=column, sticky=tk.W)
         # Spacer
         column += 1
         tk.Label(self, text=' ').grid(row=row,column=column)
 
         column += 1
         xyframe = tk.Frame(self)
-        self.xbin = drvs.RangedPosInt(xyframe, 1, 1, 8, self.check, width=2)
+        self.xbin = drvs.RangedInt(xyframe, 1, 1, 8, self.check, False, width=2)
         self.xbin.pack(side=tk.LEFT)
 
         tk.Label(xyframe, text=' x ').pack(side=tk.LEFT)
 
-        self.ybin = drvs.RangedPosInt(xyframe, 1, 1, 8, self.check, width=2)
+        self.ybin = drvs.RangedInt(xyframe, 1, 1, 8, self.check, False, width=2)
         self.ybin.pack(side=tk.LEFT)
 
         xyframe.grid(row=row,column=column,columnspan=4,sticky=tk.W)
@@ -399,12 +396,12 @@ class InstPars(tk.LabelFrame):
         tk.Label(self, text='Number of windows').grid(row=row,column=column, sticky=tk.W)
 
         column += 2
-        self.nwin = drvs.RangedPosInt(self, 1, 1, MAXWIN, self.check, width=2)
+        self.nwin = drvs.RangedInt(self, 1, 1, MAXWIN, self.check, False, width=2)
         self.nwin.grid(row=row,column=column,sticky=tk.W,columnspan=4,pady=10)
         
         # Third row: the windows
         row += 1
-        self.wframe = UspecWins(self, other['confpars'], self.xbin, self.ybin, self.check)
+        self.wframe = UspecWins(self, share['cpars'], self.xbin, self.ybin, self.check)
         self.wframe.grid(row=row,column=colstart,rowspan=6,columnspan=3,sticky=tk.W+tk.N)
 
         # Final row: buttons to synchronise windows.
@@ -412,14 +409,9 @@ class InstPars(tk.LabelFrame):
         self.sync = Sync(self, 5, self.xbin, self.ybin, self.nwin, self.wframe, self.check)
         self.sync.grid(row=7,column=colstart,sticky=tk.W)
 
-        # Store configuration parameters
-        self.other = other
-
-        # flag showing freeze state
+        # Store configuration parameters and freeze state
+        self.share  = share
         self.frozen = False
-
-        # Run an initial check
-        self.check()
 
     def check(self, *args):
         """
@@ -434,12 +426,11 @@ class InstPars(tk.LabelFrame):
 
         Returns True/False according to whether the settings are judged to be 
         OK. True means they are thought to be in a fit state to be sent to the
-        camera.
-        """
-        confpars = self.other['confpars']
+        camera. 
 
-        if confpars['debug']:
-            print('Running uspec.InstPars.check')
+        This can only be run once the 'observe' and 'cpars' are defined.
+        """
+        cpars = self.share['cpars']
 
         # Adjust number of windows according to the application
         if self.appLab.val.get() == 'Windows':
@@ -447,11 +438,11 @@ class InstPars(tk.LabelFrame):
             if not self.frozen: self.nwin.enable()
         elif self.appLab.val.get() == 'Drift':
             self.nwin.imax == 1
-            self.nwin.val.set(1)
+            self.nwin.set(1)
             self.nwin.disable()
 
         # enable / disable windows
-        nwin = self.nwin.get()
+        nwin = self.nwin.value()
         for win in self.wframe.wins[nwin:]:
             win.disable()
         for wlab in self.wframe.wlabs[nwin:]:
@@ -467,15 +458,13 @@ class InstPars(tk.LabelFrame):
         if self.avalanche():
             if not self.frozen: self.avgain.enable()
             self.avgainLabel.configure(state='normal')
-            self.avgain.val.set(0)
+            self.avgain.set(0)
         else:
             self.avgain.disable()
             self.avgainLabel.configure(state='disable')
  
-       # finally check the window settings
-        status, synced = self.wframe.check(self.nwin.get(),self.xbin.get(),self.ybin.get())
-        if confpars['debug']:
-            print('status =',status,'synced =',synced)
+        # finally check the window settings
+        status, synced = self.wframe.check(self.nwin.value())
 
         if status and not synced:
             if not self.frozen: 
@@ -485,15 +474,11 @@ class InstPars(tk.LabelFrame):
             self.sync.config(bg=drvs.COL_MAIN)
             self.sync.configure(state='disable')
 
-        observe = self.other['observe']
-        if observe:
-            # If the observe widget is set, then we can enable or
-            # disable the 'Post' buttong according to the results of 
-            # the check.
-            if status:
-                observe.post.enable()
-            else:
-                observe.post.disable()
+        observe = self.share['observe']
+        if status:
+            observe.post.enable()
+        else:
+            observe.post.disable()
 
         return status
 
@@ -517,7 +502,7 @@ class InstPars(tk.LabelFrame):
         self.sync.configure(state='disable')
         self.frozen = True
 
-    def melt(self):
+    def unfreeze(self):
         """
         Reverse of freeze
         """
@@ -545,16 +530,17 @@ class InstPars(tk.LabelFrame):
         called outside of the main thread.
         """
         try:
-            xbin = self.xbin.val.get()
-            ybin = self.ybin.val.get()
-            nwin = self.nwin.val.get()
+            xbin = self.xbin.value()
+            ybin = self.ybin.value()
+            nwin = self.nwin.value()
             ret  = str(xbin) + ' ' + str(ybin) + ' ' + str(nwin) + '\r\n'
             for win in self.wframe.wins[:nwin]:
-                xstart = win.xstart.val.get()
-                ystart = win.xstart.val.get()
-                nx     = win.nx.val.get()
-                ny     = win.ny.val.get()
-                ret   += str(xstart) + ' ' + str(ystart) + ' ' + str(nx) + ' ' + str(ny) + '\r\n'
+                xstart = win.xstart.value()
+                ystart = win.xstart.value()
+                nx     = win.nx.value()
+                ny     = win.ny.value()
+                ret   += str(xstart) + ' ' + str(ystart) + ' ' + \
+                    str(nx) + ' ' + str(ny) + '\r\n'
             return ret
         except:
             return ''
@@ -563,8 +549,9 @@ class RunPars(tk.LabelFrame):
     """
     Run parameters
     """
+    DTYPES = ('acquisition','science','bias','flat','dark','technical')
         
-    def __init__(self, master, other):
+    def __init__(self, master, share):
         tk.LabelFrame.__init__(self, master, text='Run parameters', padx=10, pady=10)
 
         row     = 0
@@ -585,7 +572,6 @@ class RunPars(tk.LabelFrame):
 
         row += 1
         tk.Label(self, text='Data type').grid(row=row,column=column, sticky=tk.W+tk.N)
-
             
         # spacer
         column += 1
@@ -594,39 +580,37 @@ class RunPars(tk.LabelFrame):
         # target
         row     = 0
         column += 1
-        self.target = drvs.Target(self,other)
+        self.target = drvs.Target(self,share,self.check)
         self.target.grid(row=row, column=column, sticky=tk.W)
 
         # programme ID
         row += 1
-        self.progid = drvs.TextEntry(self, width=20)
+        self.progid = drvs.TextEntry(self, 20, self.check)
         self.progid.grid(row=row, column=column, sticky=tk.W)
 
         # principal investigator
         row += 1
-        self.pi = drvs.TextEntry(self, width=20)
+        self.pi = drvs.TextEntry(self, 20, self.check)
         self.pi.grid(row=row, column=column, sticky=tk.W)
 
         # observers
         row += 1
-        self.observers = drvs.TextEntry(self, width=20)
+        self.observers = drvs.TextEntry(self, 20, self.check)
         self.observers.grid(row=row, column=column, sticky=tk.W)
 
         # comment
         row += 1
-        self.comment = drvs.TextEntry(self, width=40)
+        self.comment = drvs.TextEntry(self, 38)
         self.comment.grid(row=row, column=column, sticky=tk.W)
 
         # data types
         row += 1
-        DTYPES = ('acquisition','science','bias','flat','dark','technical')
-    
         self.dtype = tk.StringVar()
         self.dtype.set('undef') 
     
         dtframe = tk.Frame(self)
         r, c = 0, 0
-        for dtype in DTYPES:
+        for dtype in RunPars.DTYPES:
             b = tk.Radiobutton(dtframe, text=dtype, variable=self.dtype, value=dtype)
             b.grid(row=r, column=c, sticky=tk.W)
             r += 1
@@ -635,31 +619,61 @@ class RunPars(tk.LabelFrame):
                 c += 1
         dtframe.grid(row=row,column=column,sticky=tk.W)
 
+        self.share = share
 
-    def check(self):
+    def check(self, *args):
         """
-        Checks the validity of the parameters. The arguments come because
-        this is passed down to trace set on the integer fields
+        Checks the validity of the run parameters. Returns
+        flag (True = OK), and a messge which indicates the
+        nature of the problem if the flag is False.
         """
 
-        if not self.target.ok():
-            return False
+        o = self.share
+        clog, rlog = o['clog'], o['rlog']
 
-        if not self.progid.ok():
-            return False
+        ok  = True
+        msg = ''
+        dtype = self.dtype.get()
+        if dtype not in RunPars.DTYPES:
+            ok = False
+            msg += 'No data type has been defined\n'
 
-        if not self.prinapp.ok():
-            return False
+        if self.target.ok():
+            self.target.entry.config(bg=drvs.COL_TEXT_BG)
+        else:
+            self.target.entry.config(bg=drvs.COL_ERROR)
+            ok = False
+            msg += 'Target name field cannot be blank\n'
 
-        if not self.observers.ok():
-            return False
+        if dtype == 'acquisition' or dtype == 'science' or dtype == 'technical':
 
-        return True
+            if self.progid.ok():
+                self.progid.config(bg=drvs.COL_TEXT_BG)
+            else:
+                self.progid.config(bg=drvs.COL_ERROR)
+                ok   = False
+                msg += 'Programme ID field cannot be blank\n'
+
+            if self.pi.ok():
+                self.pi.config(bg=drvs.COL_TEXT_BG)
+            else:
+                self.pi.config(bg=drvs.COL_ERROR)
+                ok   = False
+                msg += 'Principal Investigator field cannot be blank\n'
+
+        if self.observers.ok():
+            self.observers.config(bg=drvs.COL_TEXT_BG)
+        else:
+            self.observers.config(bg=drvs.COL_ERROR)
+            ok   = False
+            msg += 'Observers field cannot be blank'
+
+        return (ok,msg)
 
 # Observing section. First a helper routine needed
 # by the 'Save' and 'Post' buttons
 
-def createXML(confpars, instpars, runpars):
+def createXML(post, cpars, instpars, runpars, clog, rlog):
     """
     This creates the XML representing the current setup. It does
     this by loading a template xml file using directives in the
@@ -667,33 +681,38 @@ def createXML(confpars, instpars, runpars):
 
     Arguments:
 
-      confpars   : configuration parameters
+      post      : True if posting an application. This is a safty feature to avoid
+                  querying the camera server during a run.
+      cpars     : configuration parameters
       instpars  : windows etc
-      runpars : target, PI nam,e etc.
+      runpars   : target, PI name etc.
+      clog      : command logger
+      rlog      : response logger
 
     Returns a xml.etree.ElementTree.Element
     """
 
     # identify the template
     appLab = instpars.appLab.get()
-    if confpars['debug']:
+    if cpars['debug']:
         print('DEBUG: createXML: application = ' + appLab)
-        print('DEBUG: createXML: application vals = ' + str(confpars['templates'][appLab]))
+        print('DEBUG: createXML: application vals = ' + str(cpars['templates'][appLab]))
 
-    if confpars['template_from_server']:
+    if cpars['template_from_server']:
         # get template from server
-        url = confpars['http_camera_server'] + confpars['http_path_get'] + '?' + \
-            confpars['http_search_attr_name'] + '='  + confpars['templates'][appLab]
-        if confpars['debug']:
+        url = cpars['http_camera_server'] + cpars['http_path_get'] + '?' + \
+            cpars['http_search_attr_name'] + '='  + cpars['templates'][appLab]
+        if cpars['debug']:
             print ('DEBUG: url = ' + url)
         sxml = urllib2.urlopen(url).read()
         root = ET.fromstring(sxml)
     else:
         # get template from local file
-        if confpars['debug']:
-            print ('DEBUG: directory = ' + confpars['template_directory'])
-        lfile = os.path.join(confpars['template_directory'], confpars['templates'][appLab]['app'])
-        if confpars['debug']:
+        if cpars['debug']:
+            print ('DEBUG: directory = ' + cpars['template_directory'])
+        lfile = os.path.join(cpars['template_directory'], 
+                             cpars['templates'][appLab]['app'])
+        if cpars['debug']:
             print ('DEBUG: local file = ' + lfile)
         tree = ET.parse(lfile)
         root = tree.getroot()
@@ -708,44 +727,44 @@ def createXML(confpars, instpars, runpars):
     # parameters will cause exceptions to be raised.
 
     # X-binning factor
-    pdict['X_BIN']['value'] = str(instpars.xbin.get())
+    pdict['X_BIN']['value'] = str(instpars.xbin.value())
 
     # Y-binning factor
-    pdict['Y_BIN']['value'] = str(instpars.ybin.get())
+    pdict['Y_BIN']['value'] = str(instpars.ybin.value())
 
     # Number of exposures
-    pdict['NUM_EXPS']['value'] = '-1' if instpars.number.get() == 0 \
-        else str(instpars.number.get())
+    pdict['NUM_EXPS']['value'] = '-1' if instpars.number.value() == 0 \
+        else str(instpars.number.value())
 
     # LED level
-    pdict['LED_FLSH']['value'] = str(instpars.led.get())
+    pdict['LED_FLSH']['value'] = str(instpars.led.value())
 
     # Avalanche or normal
     pdict['OUTPUT']['value'] = str(instpars.avalanche())
 
     # Avalanche gain
-    pdict['HV_GAIN']['value'] = str(instpars.avgain.get())
+    pdict['HV_GAIN']['value'] = str(instpars.avgain.value())
 
     # Clear or not
     pdict['EN_CLR']['value'] = str(instpars.clear())
 
     # Dwell
-    pdict['DWELL']['value'] = str(instpars.expose.get())
+    pdict['DWELL']['value'] = str(instpars.expose.value())
 
     # Readout speed
     pdict['SPEED']['value'] = '0' if instpars.readout == 'Slow' else '1' \
         if instpars.readout == 'Medium' else '2'
 
     # Number of windows -- needed to set output parameters correctly
-    nwin  = int(instpars.nwin.get())
+    nwin  = int(instpars.nwin.value())
 
     # Load up enabled windows, null disabled windows
     for nw, win in enumerate(instpars.wframe.wins):
         if nw < nwin:
-            pdict['X' + str(nw+1) + '_START']['value'] = str(win.xstart.get())
-            pdict['Y' + str(nw+1) + '_START']['value'] = str(win.ystart.get())
-            pdict['X' + str(nw+1) + '_SIZE']['value']  = str(win.nx.get())
-            pdict['Y' + str(nw+1) + '_SIZE']['value']  = str(win.ny.get())
+            pdict['X' + str(nw+1) + '_START']['value'] = str(win.xstart.value())
+            pdict['Y' + str(nw+1) + '_START']['value'] = str(win.ystart.value())
+            pdict['X' + str(nw+1) + '_SIZE']['value']  = str(win.nx.value())
+            pdict['Y' + str(nw+1) + '_SIZE']['value']  = str(win.ny.value())
         else:
             pdict['X' + str(nw+1) + '_START']['value'] = '1'
             pdict['Y' + str(nw+1) + '_START']['value'] = '1'
@@ -753,15 +772,49 @@ def createXML(confpars, instpars, runpars):
             pdict['Y' + str(nw+1) + '_SIZE']['value']  = '0'
 
     # Load the user parameters
-    uconfig = root.find('user')
+    uconfig    = root.find('user')
+    targ       = ET.SubElement(uconfig, 'target')
+    targ.text  = runpars.target.value()
+    id         = ET.SubElement(uconfig, 'ID')
+    id.text    = runpars.progid.value()
+    pi         = ET.SubElement(uconfig, 'PI')
+    pi.text    = runpars.pi.value()
+    obs        = ET.SubElement(uconfig, 'Observers')
+    obs.text   = runpars.observers.value()
+    comm       = ET.SubElement(uconfig, 'comment')
+    comm.text  = runpars.comment.value()
+    dtype      = ET.SubElement(uconfig, 'dtype')
+    dtype.text = runpars.dtype.get()
+    
+    if post:
+        if not hasattr(createXML, 'revision'):
+            # test for the revision number, only the first time we post
+            # to avoid sending a command to the camera while it is going.
+            # need to do a pre-post before reading otherwise memory won't 
+            # have been set
+            try:
+                url = cpars['http_camera_server'] + cpars['http_path_exec'] + '?RM,X,0x2E'
+                clog.log.info('execCommand, command = "' + command + '"\n')
+                response = urllib2.urlopen(url)
+                rs  = ReadServer(response.read())
+                rlog.log.info('Camera response =\n' + rs.resp() + '\n')        
+                if rs.ok:
+                    clog.log.info('Response from camera server was OK\n')
+                    csfind = rs.root.find('command_status')
+                    createXML.revision = int(csfind.attrib['readback'],16)
+                else:
+                    clog.log.warn('Response from camera server was not OK\n')
+                    clog.log.warn('Reason: ' + rs.err + '\n')
+                    raise Exception()
 
-    uconfig.set('target', runpars.target.get())
-    uconfig.set('comment', runpars.comment.get())
-    uconfig.set('dtype', runpars.dtype.get())
-    uconfig.set('ID', runpars.progid.get())
-    uconfig.set('PI', runpars.pi.get())
-    uconfig.set('Observers', runpars.observers.get())
- 
+            except urllib2.URLError, err:
+                clog.log.warn('Failed to get version from camera server\n')
+                clog.log.warn(str(err) + '\n')
+                raise Exception()
+
+            revision      = ET.SubElement(uconfig, 'revision')
+            revision.text = str(createXML.revision)
+
     return root
 
 class Post(drvs.ActButton):
@@ -769,39 +822,66 @@ class Post(drvs.ActButton):
     Class defining the 'Post' button's operation
     """
 
-    def __init__(self, master, width, other):
+    def __init__(self, master, width, share):
         """
         master   : containing widget
         width    : width of button
-        other    : other objects 'confpars', 'instpars', 'runpars', 'commLog', 'respLog'
+        share    : other objects 'cpars', 'instpars', 'runpars', 'clog', 'rlog'
         """        
-        drvs.ActButton.__init__(self, master, width, other, text='Post')
+        drvs.ActButton.__init__(self, master, width, share, text='Post')
 
     def act(self):
         """
         Carries out the action associated with Post button
         """
 
-        o = self.other
+        o = self.share
         cpars, ipars, rpars, clog, rlog = \
-            o['confpars'], o['instpars'], o['runpars'], o['commLog'], o['respLog']
+            o['cpars'], o['instpars'], o['runpars'], o['clog'], o['rlog']
+
+        clog.log.info('\nPosting application to servers\n')
         
+        # check instrument parameters
         if not ipars.check():
-            # I hope the next message is never shown, but I leave it here for safety
-            tkMessageBox.showwarning('Post failure','The current settings are invalid;\nplease fix them before posting.')
+            clog.log.warn('Invalid instrument parameters; post failed.\n')
+            tkMessageBox.showwarning('Post failure','Instrument parameters are invalid.')
             return False
 
-        # Get XML from template
-        root = createXML(cpars, ipars, rpars)
+        # check run parameters
+        rok, msg = rpars.check()
+        if not rok:
+            clog.log.warn('Invalid run parameters; post failed.\n')
+            clog.log.warn(msg + '\n')
+            tkMessageBox.showwarning('Post failure','Run parameters are invalid\n' + msg)
+            return False
 
-        # Post to server
-        drvs.postXML(root, cpars, clog, rlog)
+        try:
+            # Get XML from template (specific to instrument)
+            root = createXML(True, cpars, ipars, rpars, clog, rlog)
 
-        # Update other buttons ?? need a test of whether
-        # a run is in progress
-        o['Start'].enable()
+            # Post to server
+            if drvs.postXML(root, cpars, clog, rlog):
+                clog.log.info('Posted application to servers\n')
 
-        return True
+                # Modify buttons
+                self.enable()
+                o['Start'].enable()
+                o['Stop'].disable()
+                o['Post'].enable()
+                o['setup'].resetSDSUhard.disable()
+                o['setup'].resetSDSUsoft.disable()
+                o['setup'].resetPCI.disable()
+                o['setup'].setupServers.disable()
+                o['setup'].powerOn.disable()
+                o['setup'].powerOff.disable()
+                return True
+            else:
+                clog.log.warn('Failed to post application to servers\n')
+                return False
+
+        except Exception, err:
+            clog.log.warn('Failed to post application to servers\n')
+            return False
 
 class Load(drvs.ActButton):
     """
@@ -809,15 +889,15 @@ class Load(drvs.ActButton):
     saved configuration from disk.
     """
 
-    def __init__(self, master, width, other):
+    def __init__(self, master, width, share):
         """
         master  : containing widget
         width   : width of button
-        other   : dictionary of other objects. Must have 'instpars' the instrument
+        share   : dictionary of other objects. Must have 'instpars' the instrument
                   setup parameters (windows etc), and 'runpars' the run parameters 
                   (target name etc)
         """
-        drvs.ActButton.__init__(self, master, width, other, text='Load')
+        drvs.ActButton.__init__(self, master, width, share, text='Load')
 
     def act(self):
         """
@@ -826,7 +906,7 @@ class Load(drvs.ActButton):
 
         fname = tkFileDialog.askopenfilename(defaultextension='.xml', filetypes=[('xml files', '.xml'),])
         if not fname: 
-            other['commLog'].warn('Aborted load from disk')
+            share['clog'].warn('Aborted load from disk')
             return False
 
         # load XML
@@ -840,7 +920,7 @@ class Load(drvs.ActButton):
             pdict[param.attrib['ref']] = param.attrib['value']
 
         # Set them. 
-        instpars = self.other['instpars']
+        instpars = self.share['instpars']
 
         # X-binning factor
         instpars.xbin.set(pdict['X_BIN'])
@@ -892,7 +972,7 @@ class Load(drvs.ActButton):
                 win.disable()
 
         # Set the number of windows
-        nwin  = instpars.nwin.get()
+        nwin  = instpars.nwin.value()
 
         # User parameters ...
 
@@ -904,53 +984,75 @@ class Save(drvs.ActButton):
     current configuration to disk.
     """
 
-    def __init__(self, master, width, other):
+    def __init__(self, master, width, share):
         """
         master  : containing widget
         width   : width of button
-        other   : dictionary of other objects. Must have 'confpars' the configuration
+        share   : dictionary of other objects. Must have 'cpars' the configuration
                   parameters, 'instpars' the instrument setup parameters (windows etc), 
-                  and 'runpars' the run parameters (target name etc), 'commLog'
+                  and 'runpars' the run parameters (target name etc), 'clog' and 'rlog'
         """
-        drvs.ActButton.__init__(self, master, width, other, text='Save')        
+        drvs.ActButton.__init__(self, master, width, share, text='Save')        
 
     def act(self):
         """
         Carries out the action associated with the Save button
         """
 
-        o = self.other
+        o = self.share
         cpars, ipars, rpars, clog, rlog = \
-            o['confpars'], o['instpars'], o['runpars'], o['commLog'], o['respLog']
+            o['cpars'], o['instpars'], o['runpars'], o['clog'], o['rlog']
+
+        clog.log.info('\nSaving current application to disk\n')
+
+        # check instrument parameters
+        if not ipars.check():
+            clog.log.warn('Invalid instrument parameters; save failed.\n')
+            return False
+
+        # check run parameters
+        rok, msg = rpars.check()
+        if not rok:
+            clog.log.warn('Invalid run parameters; save failed.\n')
+            clog.log.warn(msg + '\n')
+            return False
 
         # Get XML from template
-        root = createXML(cpars, ipars, rpars)
+        root = createXML(False, cpars, ipars, rpars, clog, rlog)
 
         # Save to disk
-        drvs.saveXML(root, clog)
+        if drvs.saveXML(root, clog):
+            # modify buttons
+            o['Load'].enable()
+            o['Unfreeze'].disable()
 
-        ipars.melt()
-        return True
+            # unfreeze the instrument params
+            ipars.unfreeze()
+            return True
+        else:
+            return False
 
 class Unfreeze(drvs.ActButton):
     """
     Class defining the 'Unfreeze' button's operation. 
     """
 
-    def __init__(self, master, width, other):
+    def __init__(self, master, width, share):
         """
         master  : containing widget
         width   : width of button
-        other   : dictionary of other objects needed. Needs 'instpars', the current instrument 
-                  parameters to be loaded up once the template is loaded
+        share   : dictionary of other objects needed. Needs 'instpars', 
+                  the current instrument  parameters to be loaded up once 
+                  the template is loaded
         """
-        drvs.ActButton.__init__(self, master, width, other, text='Unfreeze')
+        drvs.ActButton.__init__(self, master, width, share, text='Unfreeze')
 
     def act(self):
         """
         Carries out the action associated with the Unfreeze button
         """
-        self.other['instpars'].melt()
+        self.share['instpars'].unfreeze()
+        self.share['Load'].enable()
         self.disable()
 
 class Observe(tk.LabelFrame):
@@ -961,28 +1063,34 @@ class Observe(tk.LabelFrame):
     callback routines which are hidden within this class.
     """
     
-    def __init__(self, master, other):
-    
+    def __init__(self, master, share):
+        """
+        master : container widget
+        share   : dictionary of other objects. Must have 'cpars' the configuration
+                  parameters, 'instpars' the instrument setup parameters (windows etc), 
+                  and 'runpars' the run parameters (target name etc), 'clog' and 'rlog'
+        """
+
         tk.LabelFrame.__init__(self, master, text='Observing commands', padx=10, pady=10)
 
         # create buttons
         width = 10
-        self.load     = Load(self, width, other)
-        self.save     = Save(self, width, other)
-        self.unfreeze = Unfreeze(self, width, other)
-        self.post     = Post(self, width, other)
-        self.start    = drvs.Start(self, width, other)
-        self.stop     = drvs.Stop(self, width, other)
+        self.load     = Load(self, width, share)
+        self.save     = Save(self, width, share)
+        self.unfreeze = Unfreeze(self, width, share)
+        self.post     = Post(self, width, share)
+        self.start    = drvs.Start(self, width, share)
+        self.stop     = drvs.Stop(self, width, share)
 
         # pass all buttons to each other
-        other['Load']     = self.load
-        other['Save']     = self.save
-        other['Unfreeze'] = self.unfreeze
-        other['Post']     = self.post
-        other['Start']    = self.start
-        other['Stop']     = self.stop
+        share['Load']     = self.load
+        share['Save']     = self.save
+        share['Unfreeze'] = self.unfreeze
+        share['Post']     = self.post
+        share['Start']    = self.start
+        share['Stop']     = self.stop
 
-        self.other = other
+        self.share = share
 
         # Lay them out
         self.load.grid(row=0,column=0)
@@ -998,7 +1106,7 @@ class Observe(tk.LabelFrame):
         self.stop.disable()
 
         # Implement expert level
-        self.setExpertLevel(other['confpars']['expert_level'])
+        self.setExpertLevel(share['cpars']['expert_level'])
 
     def setExpertLevel(self, level):
         """
