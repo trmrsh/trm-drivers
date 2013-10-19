@@ -62,7 +62,7 @@ class GUI(tk.Tk):
         # Grid vertically
         instpars.grid(row=0,column=1,sticky=tk.W+tk.N,padx=10,pady=10)
         runpars.grid(row=1,column=1,rowspan=2,sticky=tk.W+tk.N,padx=10,pady=10)
-        rlog.grid(row=3,column=1,sticky=tk.W,padx=10,pady=10)
+        rlog.grid(row=4,column=1,sticky=tk.W,padx=10,pady=10)
 
         # The left-hand side: 3 frames at top, 1 log
         # at the bottom. First frame simply provides switches 
@@ -94,6 +94,10 @@ class GUI(tk.Tk):
         setup = drvs.InstSetup(topLhsFrame, share)
         share.update({'setup' : setup})
 
+        # Count rate frame
+        count = drvs.CountsFrame(self, share)
+        share.update({'cframe' : count)
+
         # Astronomical information frame
         astro = drvs.AstroFrame(self, share)
 
@@ -109,22 +113,36 @@ class GUI(tk.Tk):
         # and clog arranged in a vertical grid.
         topLhsFrame.grid(row=0,column=0,sticky=tk.W+tk.N,padx=10,pady=10)
         info.grid(row=1,column=0,sticky=tk.W+tk.N,padx=10,pady=10)
-        astro.grid(row=2,column=0,sticky=tk.W+tk.N,padx=10,pady=10)
-        clog.grid(row=3,column=0,sticky=tk.W,padx=10,pady=10)
+        count.grid(row=2,column=0,sticky=tk.W+tk.N,padx=10,pady=10)
+        astro.grid(row=3,column=0,sticky=tk.W+tk.N,padx=10,pady=10)
+        clog.grid(row=4,column=0,sticky=tk.W,padx=10,pady=10)
 
         # Create top menubar
         menubar = tk.Menu(self)
         menubar.add_command(label="Quit", command=self.quit)
 
-        # Settings
+        # Settings menu
         settingsMenu = tk.Menu(menubar, tearoff=0)
-        expertMenu = drvs.ExpertMenu(settingsMenu, cpars, observe, setup)
+        
+        # level of expertise
+        expertMenu   = drvs.ExpertMenu(settingsMenu, cpars, observe, setup)
         settingsMenu.add_cascade(label='Expert', menu=expertMenu)
+
+        # Some boolean switches
+        settingsMenu.add_checkbutton(label='Force run params', 
+                                     var=drvs.Boolean('require_run_params',cpars))
+
+        settingsMenu.add_checkbutton(label='Confirm HV gain', 
+                                     var=drvs.Boolean('confirm_hv_gain_on',cpars))
+
+        settingsMenu.add_checkbutton(label='Confirm target', 
+                                     var=drvs.Boolean('confirm_on_change',cpars))
+
+        # Add to menubar
         menubar.add_cascade(label='Settings', menu=settingsMenu)
 
         # Stick the menubar in place
         self.config(menu=menubar)
-
 
         # Everything now defined, so we can run checks
         instpars.check()
