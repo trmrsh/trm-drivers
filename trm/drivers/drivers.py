@@ -39,46 +39,47 @@ DAY   = 86400.
 #opener = urllib2.build_opener(proxy_support)
 #urllib2.install_opener(opener)
 
-# Some standard colours
+# Colours
+COL = {\
+    'main' : '#d0d0ff',     # Colour for the surrounds
+    'text_bg' : '#c0c0f0',  # Text background
+    'text' : '#000050',     # Text colour
+    'debug' : '#a0a0ff',    # Text background for debug messages 
+    'warn' : '#f0c050',     # Text background for warnings
+    'error' : '#ffa0a0',    # Text background for errors
+    'critical' : '#ff0000', # Text background for disasters
+    'start' : '#aaffaa',    # Start button colour
+    'stop' : '#ffaaaa',     # Stop button colour
+    'log' : '#e0d4ff',      # Logger windows
+    }
 
-# The main overall colour for the surrounds
-COL_MAIN     = '#d0d0ff'
+# Telescope / instrument info. Most of this is do with estimating count rates
+TINS = {\
+    'TNO-USPEC' : {\
+        'latitude'   : '18 34',   # latitude DMS, North positive
+        'longitude'  : '98 28',   # longitude DMS, East positive
+        'elevation'  : 2457.,     # Elevation above sea level, metres
+        'app'        : 'tno.xml', # Application for the telescope
+        'platescale' : 0.4,       # Arcsecs/unbinned pixel
+        'zerop'      : {\
+            'u' : 20., # Zeropoints: mags for 1 ADU/sec
+            'g' : 20.,
+            'r' : 20.,
+            'i' : 20.,
+            'z' : 20.
+            }
+        },
+    }
 
-# Background colour for the text input boxes 
-# -- slightly darker version on COL_MAIN
-COL_TEXT_BG  = '#c0c0f0'
+# Sky brightness, mags/sq-arsec
+SKY = {\
+    'd' : {'u' : 22, 'g' : 22, 'r' : 22, 'i' : 22, 'z' : 22},
+    'g' : {'u' : 22, 'g' : 22, 'r' : 22, 'i' : 22, 'z' : 22},
+    'b' : {'u' : 22, 'g' : 22, 'r' : 22, 'i' : 22, 'z' : 22},
+    }
 
-# Colour for text input. Darker than COL_TEXT_BG for 
-# dark-on-bright style
-COL_TEXT     = '#000050'
-
-# Colour to switch text background for debug messages in loggers
-COL_DEBUG    = '#a0a0ff'
-
-# Colour to switch text background as a warning
-# of problems which won't stop actions proceeding
-# but should be known about. Non-synchronised
-# windows are the main example of this.
-COL_WARN     = '#f0c050'
-
-# Colour to switch text background as a warning of
-# problems that will prevent actions going ahead.
-COL_ERROR    = '#ffa0a0'
-
-# Colour to switch text background as a warning of
-# problems that will prevent actions going ahead.
-COL_CRITICAL    = '#ff0000'
-
-# Colour to switch background to show that 
-# something has positively worked.
-COL_OK      = '#a0ffa0'
-
-# Colours for the important start/stop action buttons.
-COL_START    = '#aaffaa'
-COL_STOP     = '#ffaaaa'
-
-# colour for logger windows
-COL_LOG      = '#e0d4ff'
+# Extinction per unit airmass
+EXTINCTION = {'u' : 0.5, 'g' : 0.2, 'r' : 0.1, 'i' : 0.1, 'z' : 0.1}
 
 def addStyle(root):
     """
@@ -105,9 +106,9 @@ def addStyle(root):
 
     # Default colours. Note there is a difference between
     # specifying 'background' with a capital B or lowercase b
-    root.option_add('*background', COL_MAIN)
-    root.option_add('*HighlightBackground', COL_MAIN)
-    root.config(background=COL_MAIN)
+    root.option_add('*background', COL['main'])
+    root.option_add('*HighlightBackground', COL['main'])
+    root.config(background=COL['main'])
 
 def loadCpars(fp):
     """
@@ -140,9 +141,8 @@ def loadCpars(fp):
         'HTTP_PATH_GET' : 'string', 'HTTP_PATH_EXEC' : 'string', 
         'HTTP_PATH_CONFIG' : 'string', 'HTTP_SEARCH_ATTR_NAME' : 'string', 
         'INSTRUMENT_APP' : 'string', 'POWER_ON' : 'string', 
-        'FOCAL_PLANE_SLIDE' : 'string', 'TELESCOPE_NAME' : 'string', 
-        'TELESCOPE_LONGITUDE' : 'string', 'TELESCOPE_LATITUDE' : 'string', 
-        'TELESCOPE_ELEVATION' : 'float', 'TELESCOPE_APP' : 'string'}
+        'FOCAL_PLANE_SLIDE' : 'string', 'TELINS_NAME' : 'string',
+        'REQUIRE_RUN_PARAMS' : 'boolean'}
 
     for key, value in SINGLE_ITEMS.iteritems():
         if value == 'boolean':
@@ -169,9 +169,16 @@ def loadCpars(fp):
         cpars[item.lower()] = [x.strip() for x in 
                                   parser.get('All',item).split(';')]
 
-    # Run a check on the filters
+    # Check the filters
     if not set(cpars['active_filter_names']) <= set(cpars['filter_names']):
         print('One or more of the active filter names was not recognised.')
+        print('Please fix the configuration file = ' + fp.name)
+        exit(1)
+
+    # Check the telescope/instrument combo
+    if cpars['telins_name'] not in TINS:
+        print('Telescope/instrument combination = ' + cpars['telins_name'] + ' not recognised.')
+        print('Current possibilities are : ' + str(TINS.keys().sort()))
         print('Please fix the configuration file = ' + fp.name)
         exit(1)
 
@@ -194,6 +201,25 @@ def loadCpars(fp):
     cpars['template_labels'] = labels
             
     return cpars
+
+class Boolean(tk.IntVar):
+    """
+    Defines an object representing one of the boolean
+    configuration parameters to allow it to be interfaced with
+    the menubar easily. 
+    """
+    def __init__(self, flag, cpars):
+        tk.IntVar.__init__(self)
+        self.set(cpars[flag])
+        self.trace('w', self._update)
+        self.flag = flag
+        self.cpars = cpars
+
+    def _update(self, *args):
+        if self.get():
+            self.cpars[self.flag] = True
+        else:
+            self.cpars[self.flag] = False
 
 class IntegerEntry(tk.Entry):
     """
@@ -635,6 +661,185 @@ class RangedMint (RangedInt):
         chunk = self.mfac.value()
         return chunk*(self.imax // chunk)
 
+class FloatEntry(tk.Entry):
+    """
+    Defines an Entry field which only accepts floating point input. 
+    """
+
+    def __init__(self, master, fval, checker, blank, **kw):
+        """
+        master  -- enclosing widget
+        ival    -- initial integer value
+        checker -- command that is run on any change to the entry
+        blank   -- controls whether the field is allowed to be
+                   blank. In some cases it makes things easier if
+                   a blank field is allowed, even if it is technically
+                   invalid (the latter case requires some other checking)
+        kw      -- optional keyword arguments that can be used for
+                   an Entry.
+        """
+        # important to set the value of _variable before tracing it
+        # to avoid immediate run of _callback.
+        tk.Entry.__init__(self, master, **kw)
+        self._variable = tk.StringVar()
+        self._value = str(float(fval))
+        self._variable.set(self._value)
+        self._variable.trace("w", self._callback)
+        self.config(textvariable=self._variable)
+        self.checker = checker
+        self.blank   = blank
+        self.set_bind()
+
+    def validate(self, value):
+        """
+        Applies the validation criteria. 
+        Returns value, new value, or None if invalid.
+
+        Overload this in derived classes.
+        """
+        try:
+            # trap blank fields here
+            if not self.blank or value: 
+                float(value)
+            return value
+        except ValueError:
+            return None
+
+    def value(self):
+        """
+        Returns integer value, if possible, None if not.
+        """
+        try:
+            return float(self._value)
+        except:
+            return None
+
+    def set(self, num):
+        """
+        Sets the current value equal to num
+        """
+        self._value = str(float(num))
+        self._variable.set(self._value)
+
+    def add(self, num):
+        """
+        Adds num to the current value
+        """
+        try:
+            val = self.value() + num
+        except:
+            val = num
+        self.set(val)
+
+    def sub(self, num):
+        """
+        Subtracts num from the current value
+        """
+        try:
+            val = self.value() - num
+        except:
+            val = -num
+        self.set(val)
+
+    def ok(self):
+        """
+        Returns True if OK to use, else False
+        """
+        try:
+            float(self._value)
+            return True
+        except:
+            return False
+
+    def enable(self):
+        self.configure(state='normal')
+        self.set_bind()
+
+    def disable(self):
+        self.configure(state='disable')
+        self.set_unbind()
+
+    def set_bind(self):
+        """
+        Sets key bindings.
+        """
+        self.bind('<Button-1>', lambda e : self.add(0.1))
+        self.bind('<Button-3>', lambda e : self.sub(0.1))
+        self.bind('<Up>', lambda e : self.add(0.1))
+        self.bind('<Down>', lambda e : self.sub(0.1))
+        self.bind('<Shift-Up>', lambda e : self.add(1))
+        self.bind('<Shift-Down>', lambda e : self.sub(1))
+        self.bind('<Control-Up>', lambda e : self.add(10))
+        self.bind('<Control-Down>', lambda e : self.sub(10))
+        self.bind('<Double-Button-1>', self._dadd)
+        self.bind('<Double-Button-3>', self._dsub)
+        self.bind('<Shift-Button-1>', lambda e : self.add(1))
+        self.bind('<Shift-Button-3>', lambda e : self.sub(1))
+        self.bind('<Control-Button-1>', lambda e : self.add(10))
+        self.bind('<Control-Button-3>', lambda e : self.sub(10))
+        self.bind('<Enter>', self._enter)
+
+    def set_unbind(self):
+        """
+        Unsets key bindings.
+        """
+        self.unbind('<Button-1>')
+        self.unbind('<Button-3>')
+        self.unbind('<Up>')
+        self.unbind('<Down>')
+        self.unbind('<Shift-Up>')
+        self.unbind('<Shift-Down>')
+        self.unbind('<Control-Up>')
+        self.unbind('<Control-Down>')
+        self.unbind('<Double-Button-1>')
+        self.unbind('<Double-Button-3>')
+        self.unbind('<Shift-Button-1>')
+        self.unbind('<Shift-Button-3>')
+        self.unbind('<Control-Button-1>')
+        self.unbind('<Control-Button-3>')
+        self.unbind('<Enter>')
+
+    def _callback(self, *dummy):
+        """
+        This gets called on any attempt to change the value
+        """
+        # retrieve the value from the Entry
+        value = self._variable.get()
+
+        # run the validation. Returns None if no good
+        newvalue = self.validate(value)
+
+        if newvalue is None:
+            # Invalid: restores previously stored value
+            # no checker run.
+            self._variable.set(self._value)
+
+        elif newvalue != value:
+            # If the value is different update appropriately
+            # Store new value.
+            self._value = newvalue
+            self._variable.set(self.newvalue)
+            if self.checker:
+                self.checker(*dummy)
+        else:
+            # Store new value
+            self._value = value
+            if self.checker:
+                self.checker(*dummy)
+
+    # following are callbacks for bindings
+    def _dadd(self, event):
+        self.add(0.1)
+        return 'break'
+
+    def _dsub(self, event):
+        self.sub(0.1)
+        return 'break'
+
+    def _enter(self, event):
+        self.focus()
+        self.icursor(tk.END)
+
 class TextEntry (tk.Entry):
     """
     Sub-class of Entry for basic text input. Not a lot to
@@ -652,7 +857,7 @@ class TextEntry (tk.Entry):
         if callback is not None:
             self.val.trace('w', callback)
         tk.Entry.__init__(self, master, textvariable=self.val, \
-                              fg=COL_TEXT, bg=COL_TEXT_BG, width=width)
+                              fg=COL['text'], bg=COL['text_bg'], width=width)
 
         # Control input behaviour.
         self.bind('<Enter>', lambda e : self.focus())
@@ -679,6 +884,37 @@ class Choice(tk.OptionMenu):
         tk.OptionMenu.__init__(self, master, self.val, *options)
         width = reduce(max, [len(s) for s in options])
         self.config(width=width)
+        self.checker = checker
+        if self.checker is not None:
+            self.val.trace('w', self.checker)
+
+    def value(self):
+        return self.val.get()
+
+    def set(self, choice):
+        return self.val.set(choice)
+
+    def disable(self):
+        self.configure(state='disable')
+
+    def enable(self):
+        self.configure(state='normal')
+
+class Radio(tk.Frame):
+    """
+    Left-to-right radio button class
+    """
+    def __init__(self, master, options, checker=None):
+        tk.Frame.__init__(self, master)
+        self.val = tk.StringVar()
+        self.val.set(options[0])
+
+        col = 0
+        for option in options:
+            tk.Radiobutton(self, text=option, variable=self.val, 
+                           value=option).grid(row=0, column=col, sticky=tk.W)
+            col += 1
+
         self.checker = checker
         if self.checker is not None:
             self.val.trace('w', self.checker)
@@ -871,7 +1107,7 @@ class Start(ActButton):
         share    : dictionary with configuration parameters and the loggers
         """
         
-        ActButton.__init__(self, master, width, share, bg=COL_START, text='Start')
+        ActButton.__init__(self, master, width, share, bg=COL['start'], text='Start')
 
     def act(self):
         """
@@ -926,7 +1162,7 @@ class Stop(ActButton):
         share    : dictionary with configuration parameters and the loggers
         """
         
-        ActButton.__init__(self, master, width, share, bg=COL_STOP, text='Stop')
+        ActButton.__init__(self, master, width, share, bg=COL['stop'], text='Stop')
 
     def act(self):
         """
@@ -973,11 +1209,11 @@ class Target(tk.Frame):
         # Entry field, linked to a StringVar which is traced for any modification
         self.val    = tk.StringVar()
         self.val.trace('w', self.modver)
-        self.entry  = tk.Entry(self, textvariable=self.val, fg=COL_TEXT, bg=COL_TEXT_BG, width=25)
+        self.entry  = tk.Entry(self, textvariable=self.val, fg=COL['text'], bg=COL['text_bg'], width=25)
         self.entry.bind('<Enter>', lambda e : self.entry.focus())
 
         # Verification button which accesses simbad to see if the target is recognised.
-        self.verify = tk.Button(self, fg='black', width=8, text='Verify', bg=COL_MAIN, command=self.act)
+        self.verify = tk.Button(self, fg='black', width=8, text='Verify', bg=COL['main'], command=self.act)
         self.entry.pack(side=tk.LEFT,anchor=tk.W)
         self.verify.pack(side=tk.LEFT,anchor=tk.W,padx=5)
         self.verify.config(state='disable')
@@ -1001,10 +1237,10 @@ class Target(tk.Frame):
         Switches colour of verify button
         """
         if self.ok():
-            self.verify.config(bg=COL_MAIN)
+            self.verify.config(bg=COL['main'])
             self.verify.config(state='normal')
         else:
-            self.verify.config(bg=COL_MAIN)
+            self.verify.config(bg=COL['main'])
             self.verify.config(state='disable')
 
         if self.callback is not None:
@@ -1022,10 +1258,10 @@ class Target(tk.Frame):
         clog.log.debug('Checking "' + tname + '" with simbad\n')
         ret = checkSimbad(tname)
         if len(ret) == 0:
-            self.verify.config(bg=COL_ERROR)
+            self.verify.config(bg=COL['error'])
             clog.log.warn('No matches to "' + tname + '" found\n')
         else:
-            self.verify.config(bg=COL_MAIN)
+            self.verify.config(bg=COL['main'])
             self.verify.config(state='disable')
             rlog.log.info('Target verified OK\n')
             rlog.log.info('Found ' + str(len(ret)) + ' matches to "' + tname + '"\n')
@@ -1411,10 +1647,11 @@ class SetupServers(ActButton):
         cpars, clog, rlog = o['cpars'], o['clog'], o['rlog']
 
         clog.log.debug('Setup servers pressed\n')
+        tapp = TINS[cpars['telins_name']]['app']
 
-        if execServer('camera', cpars['telescope_app'], cpars, clog, rlog) and \
+        if execServer('camera', tapp, cpars, clog, rlog) and \
                 execServer('camera', cpars['instrument_app'], cpars, clog, rlog) and \
-                execServer('data', cpars['telescope_app'], cpars, clog, rlog) and \
+                execServer('data', tapp, cpars, clog, rlog) and \
                 execServer('data', cpars['instrument_app'], cpars, cLog, rLog):
             clog.log.info('Setup servers succeeded\n')
 
@@ -1694,11 +1931,11 @@ class LoggingToGUI(logging.Handler):
         """
         logging.Handler.__init__(self)
         self.console = console 
-        self.console.tag_config('debug', background=COL_DEBUG)
-        self.console.tag_config('warn', background=COL_WARN)
-        self.console.tag_config('error', background=COL_ERROR)
-        self.console.tag_config('critical', background=COL_CRITICAL)
-        self.console.tag_config('debug', background=COL_DEBUG)
+        self.console.tag_config('debug', background=COL['debug'])
+        self.console.tag_config('warn', background=COL['warn'])
+        self.console.tag_config('error', background=COL['error'])
+        self.console.tag_config('critical', background=COL['critical'])
+        self.console.tag_config('debug', background=COL['debug'])
 
     def emit(self, message): 
         """
@@ -1738,7 +1975,7 @@ class LogDisplay(tk.LabelFrame):
         
         scrollbar = tk.Scrollbar(self)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        self.console = tk.Text(self, height=height, width=width, bg=COL_LOG, yscrollcommand=scrollbar.set)
+        self.console = tk.Text(self, height=height, width=width, bg=COL['log'], yscrollcommand=scrollbar.set)
         self.console.configure(state=tk.DISABLED)
         self.console.pack(side=tk.LEFT)
         scrollbar.config(command=self.console.yview)
@@ -2030,7 +2267,7 @@ class AstroFrame(tk.LabelFrame):
     Astronomical information frame
     """
     def __init__(self, master, share):
-        tk.LabelFrame.__init__(self, master, pady=2, text='Time & Sky')
+        tk.LabelFrame.__init__(self, master, padx=2, pady=2, text='Time & Sky')
 
         # times
         self.mjd       = tk.Label(self)
@@ -2052,48 +2289,51 @@ class AstroFrame(tk.LabelFrame):
         # observatory info
         cpars = share['cpars']
         self.obs      = ephem.Observer()
-        self.obs.lat  = cpars['telescope_latitude']
-        self.obs.lon  = cpars['telescope_longitude']
-        self.obs.elevation = cpars['telescope_elevation']
+
+        tins = TINS[cpars['telins_name']]
+        self.obs.lat       = tins['latitude']
+        self.obs.lon       = tins['longitude']
+        self.obs.elevation = tins['elevation']
 
         # generate Sun and Moon
         self.sun = ephem.Sun()
         self.moon = ephem.Moon()
 
         # arrange time info
-        tk.Label(self,text='MJD:').grid(row=0,column=0,padx=5,pady=3,sticky=tk.W)
-        self.mjd.grid(row=0,column=1,columnspan=2,padx=5,pady=3,sticky=tk.W)
-        tk.Label(self,text='UTC:').grid(row=0,column=3,padx=5,pady=3,sticky=tk.W)
-        self.utc.grid(row=0,column=4,padx=5,pady=3,sticky=tk.W)
-        tk.Label(self,text='LST:').grid(row=0,column=5,padx=5,pady=3,sticky=tk.W)
-        self.lst.grid(row=0,column=6,padx=5,pady=3,sticky=tk.W)
+        tk.Label(self,text='MJD:').grid(row=0,column=0,padx=2,pady=3,sticky=tk.W)
+        self.mjd.grid(row=0,column=1,columnspan=2,padx=2,pady=3,sticky=tk.W)
+        tk.Label(self,text='UTC:').grid(row=0,column=3,padx=2,pady=3,sticky=tk.W)
+        self.utc.grid(row=0,column=4,padx=2,pady=3,sticky=tk.W)
+        tk.Label(self,text='LST:').grid(row=0,column=5,padx=2,pady=3,sticky=tk.W)
+        self.lst.grid(row=0,column=6,padx=2,pady=3,sticky=tk.W)
 
         # arrange solar info
-        tk.Label(self,text='Sun:').grid(row=1,column=0,padx=5,pady=3,sticky=tk.W)
-        tk.Label(self,text='Alt:').grid(row=1,column=1,padx=5,pady=3,sticky=tk.W)
-        self.sunalt.grid(row=1,column=2,padx=5,pady=3,sticky=tk.W)
-        self.lriset.grid(row=1,column=3,padx=5,pady=3,sticky=tk.W)
-        self.riset.grid(row=1,column=4,padx=5,pady=3,sticky=tk.W)
-        tk.Label(self,text='Twi:').grid(row=1,column=5,padx=5,pady=3,sticky=tk.W)
-        self.astro.grid(row=1,column=6,padx=5,pady=3,sticky=tk.W)
+        tk.Label(self,text='Sun:').grid(row=1,column=0,padx=2,pady=3,sticky=tk.W)
+        tk.Label(self,text='Alt:').grid(row=1,column=1,padx=2,pady=3,sticky=tk.W)
+        self.sunalt.grid(row=1,column=2,padx=2,pady=3,sticky=tk.W)
+        self.lriset.grid(row=1,column=3,padx=2,pady=3,sticky=tk.W)
+        self.riset.grid(row=1,column=4,padx=2,pady=3,sticky=tk.W)
+        tk.Label(self,text='At -18:').grid(row=1,column=5,padx=2,pady=3,sticky=tk.W)
+        self.astro.grid(row=1,column=6,padx=2,pady=3,sticky=tk.W)
 
         # arrange moon info
-        tk.Label(self,text='Moon:').grid(row=2,column=0,padx=5,pady=3,sticky=tk.W)
-        tk.Label(self,text='RA:').grid(row=2,column=1,padx=5,pady=3,sticky=tk.W)
-        self.moonra.grid(row=2,column=2,padx=5,pady=3,sticky=tk.W)
-        tk.Label(self,text='Dec:').grid(row=3,column=1,padx=5,sticky=tk.W)
-        self.moondec.grid(row=3,column=2,padx=5,sticky=tk.W)
-        tk.Label(self,text='Alt:').grid(row=2,column=3,padx=5,pady=3,sticky=tk.W)
-        self.moonalt.grid(row=2,column=4,padx=5,pady=3,sticky=tk.W)
-        tk.Label(self,text='Phase:').grid(row=3,column=3,padx=5,sticky=tk.W)
-        self.moonphase.grid(row=3,column=4,padx=5,sticky=tk.W)
+        tk.Label(self,text='Moon:').grid(row=2,column=0,padx=2,pady=3,sticky=tk.W)
+        tk.Label(self,text='RA:').grid(row=2,column=1,padx=2,pady=3,sticky=tk.W)
+        self.moonra.grid(row=2,column=2,padx=2,pady=3,sticky=tk.W)
+        tk.Label(self,text='Dec:').grid(row=3,column=1,padx=2,sticky=tk.W)
+        self.moondec.grid(row=3,column=2,padx=2,sticky=tk.W)
+        tk.Label(self,text='Alt:').grid(row=2,column=3,padx=2,pady=3,sticky=tk.W)
+        self.moonalt.grid(row=2,column=4,padx=2,pady=3,sticky=tk.W)
+        tk.Label(self,text='Phase:').grid(row=3,column=3,padx=2,sticky=tk.W)
+        self.moonphase.grid(row=3,column=4,padx=2,sticky=tk.W)
 
         # report back to the user
         clog = share['clog']
-        clog.log.info('Telescope  = ' + cpars['telescope_name'] + '\n')
-        clog.log.info('Longitude = ' + cpars['telescope_longitude'] + ' E\n')
-        clog.log.info('Latitude   = ' + cpars['telescope_latitude'] + ' N\n')
-        clog.log.info('Elevation  = ' + str(cpars['telescope_elevation']) + ' m\n')
+        tins = TINS[cpars['telins_name']]
+        clog.log.info('Tel/ins  = ' + cpars['telins_name'] + '\n')
+        clog.log.info('Longitude = ' + tins['longitude'] + ' E\n')
+        clog.log.info('Latitude   = ' + tins['latitude'] + ' N\n')
+        clog.log.info('Elevation  = ' + str(tins['elevation']) + ' m\n')
 
         # parameters used to reduce re-calculation of sun rise etc.
         self.lastRiset = 0
@@ -2198,6 +2438,62 @@ class AstroFrame(tk.LabelFrame):
 
         # run again after 100 milli-seconds
         self.after(100, self.update)
+
+
+class CountsFrame(tk.LabelFrame):
+    """
+    Frame for count rate estimates
+    """
+    def __init__(self, master, share):
+        """
+        master : enclosing widget
+        share  : other objects. 'instpars' for timing & binning info.
+        """
+        tk.LabelFrame.__init__(self, master, pady=2, text='Count rate estimator')
+
+        # entries
+        self.filter    = Choice(self, ('u', 'g', 'r', 'i', 'z'))
+#        self.filter    = Radio(self, ('u', 'g', 'r', 'i', 'z'))
+        # need to place some restrictions on values
+        self.mag       = FloatEntry(self, 18., self.update, True, width=5)
+        self.seeing    = FloatEntry(self, 1.0, self.update, True, width=5)
+        self.airmass   = FloatEntry(self, 1.5, self.update, True, width=5)
+#        self.moon      = Choice(self, ('dark', 'grey', 'bright'))
+        self.moon      = Radio(self, ('d', 'g', 'b'))
+
+        # results
+        self.peak      = tk.Label(self)
+        self.total     = tk.Label(self)
+        self.sky       = tk.Label(self)
+        self.ston      = tk.Label(self)
+
+        # arrange
+        tk.Label(self,text='Filter:').grid(row=0,column=0,padx=5,pady=3,sticky=tk.W)
+        self.filter.grid(row=0,column=1,padx=5,pady=3,sticky=tk.W)
+        tk.Label(self,text='Mag:').grid(row=1,column=0,padx=5,pady=3,sticky=tk.W)
+        self.mag.grid(row=1,column=1,padx=5,pady=3,sticky=tk.W)
+        tk.Label(self,text='Seeing:').grid(row=2,column=0,padx=5,pady=3,sticky=tk.W)
+        self.seeing.grid(row=2,column=1,padx=5,pady=3,sticky=tk.W)
+        tk.Label(self,text='Airmass:').grid(row=2,column=0,padx=5,pady=3,sticky=tk.W)
+        self.airmass.grid(row=2,column=1,padx=5,pady=3,sticky=tk.W)
+        tk.Label(self,text='Moon:').grid(row=3,column=0,padx=5,pady=3,sticky=tk.W)
+        self.moon.grid(row=3,column=1,padx=5,pady=3,sticky=tk.W)
+
+        tk.Label(self,text='Peak:').grid(row=0,column=2,padx=5,pady=3,sticky=tk.W)
+        self.peak.grid(row=0,column=3,padx=5,pady=3,sticky=tk.W)
+        tk.Label(self,text='Total:').grid(row=1,column=2,padx=5,pady=3,sticky=tk.W)
+        self.total.grid(row=1,column=3,padx=5,pady=3,sticky=tk.W)
+        tk.Label(self,text='Sky:').grid(row=2,column=2,padx=5,pady=3,sticky=tk.W)
+        self.sky.grid(row=2,column=3,padx=5,pady=3,sticky=tk.W)
+        tk.Label(self,text='S-to-N:').grid(row=3,column=2,padx=5,pady=3,sticky=tk.W)
+        self.ston.grid(row=3,column=3,padx=5,pady=3,sticky=tk.W)
+
+
+    def update(self):
+        """
+        Updates values
+        """
+        pass
 
 # various helper routines
 
