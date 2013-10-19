@@ -14,6 +14,51 @@ import drivers as drvs
 # maximum number of windows on any application
 MAXWIN = 4
 
+# Timing, gain, noise parameters lifted from java usdriver
+VCLOCK           =  14.4e-6  # vertical clocking time 
+HCLOCK_NORM      =  0.48e-6  # normal mode horizontal clock
+HCLOCK_AV        =  0.96e-6  # avalanche mode horizontal clock
+VIDEO_NORM_SLOW  = 11.20e-6  
+VIDEO_NORM_MED   =  6.24e-6
+VIDEO_NORM_FAST  =  3.20e-6
+VIDEO_AV_SLOW    = 11.20e-6
+VIDEO_AV_MED     =  6.24e-6
+VIDEO_AV_FAST    =  3.20e-6
+FFX              = 1072
+FFY              = 1072
+IFY              = 1072
+IFX              = 1072
+AVALANCHE_PIXELS = 1072
+
+AVALANCHE_GAIN_9   = 1200.0  # dimensionless gain, hvgain=9
+AVALANCHE_SATURATE = 80000   # electrons
+
+# avalanche gains assume HVGain = 9. We can adapt this later when we decide how
+# gain should be set at TNO. Might be better to make gain a function if we allow 
+# 0 < HVgain < 9 (SL)
+
+GAIN_NORM_FAST = 0.8    # electrons per count
+GAIN_NORM_MED  = 0.7    # electrons per count
+GAIN_NORM_SLOW = 0.8    # electrons per count
+GAIN_AV_FAST   = 0.0034 # electrons per count
+GAIN_AV_MED    = 0.0013 # electrons per count
+GAIN_AV_SLOW   = 0.0016 # electrons per count
+
+# Note - avalanche RNO assume HVGain = 9. We can adapt this later when we decide how
+# gain should be set at TNO. Might be better to make RNO a function if we allow 0 < HVgain < 9 (SL)
+   
+RNO_NORM_FAST  =  4.8 # electrons per pixel
+RNO_NORM_MED   =  2.8 # electrons per pixel
+RNO_NORM_SLOW  =  2.2 # electrons per pixel
+RNO_AV_FAST    = 16.5 # electrons per pixel
+RNO_AV_MED     =  7.8 # electrons per pixel
+RNO_AV_SLOW    =  5.6 # electrons per pixel
+
+# other noise sources
+DARK_E         =  0.001 # electrons/pix/sec
+CIC            =  0.010 # Clock induced charge, electrons/pix
+
+
 class Window (object):
     """
     Class to define a plain Window with an x,y left-lower pixel
@@ -103,10 +148,10 @@ class Window (object):
         """
 
         # set all OK to start with
-        self.xstart.config(bg=drvs.COL_TEXT_BG)
-        self.ystart.config(bg=drvs.COL_TEXT_BG)
-        self.nx.config(bg=drvs.COL_TEXT_BG)
-        self.ny.config(bg=drvs.COL_TEXT_BG)    
+        self.xstart.config(bg=drvs.COL['text_bg'])
+        self.ystart.config(bg=drvs.COL['text_bg'])
+        self.nx.config(bg=drvs.COL['text_bg'])
+        self.ny.config(bg=drvs.COL['text_bg'])    
 
         # Get values
         xstart, ystart, nx, ny = self.value()
@@ -118,11 +163,11 @@ class Window (object):
 
         # Are unbinned dimensions consistent with binning factors?
         if nx is None or nx % xbin != 0:
-            self.nx.config(bg=drvs.COL_ERROR)
+            self.nx.config(bg=drvs.COL['error'])
             status = False
 
         if ny is None or ny % ybin != 0:
-            self.ny.config(bg=drvs.COL_ERROR)
+            self.ny.config(bg=drvs.COL['error'])
             status = False
 
         # Are the windows synchronised? This means that they would be consistent with
@@ -137,12 +182,12 @@ class Window (object):
 
         # Is rightmost pixel of lefthand window within range?
         if xstart is None or xstart + nx - 1 > 1056:
-            self.xstart.config(bg=drvs.COL_ERROR)
+            self.xstart.config(bg=drvs.COL['error'])
             status = False
 
         # Is top pixel within range?
         if ystart is None or ystart + ny - 1 > 1072:
-            self.ystart.config(bg=drvs.COL_ERROR)
+            self.ystart.config(bg=drvs.COL['error'])
             status = False
 
         return (status, synced)
@@ -232,8 +277,8 @@ class UspecWins(tk.Frame):
             for j, win2 in enumerate(self.wins[i+1:nwin]):
                 xl2,yl2,nx2,ny2 = win2.value()
                 if drvs.overlap(xl1,yl1,nx1,ny1,xl2,yl2,nx2,ny2):
-                    win2.xstart.config(bg=drvs.COL_ERROR)
-                    win2.ystart.config(bg=drvs.COL_ERROR)
+                    win2.xstart.config(bg=drvs.COL['error'])
+                    win2.ystart.config(bg=drvs.COL['error'])
                     status = False
 
         return (status, synced)
@@ -270,7 +315,7 @@ class Sync(drvs.ActButton):
             ystart = win.ystart.value()
             ystart = ybin*((ystart-1)//xbin)+1
             win.ystart.set(ystart)
-        self.config(bg=drvs.COL_MAIN)
+        self.config(bg=drvs.COL['main'])
         self.disable()
         self.callback()
     
@@ -344,8 +389,8 @@ class InstPars(tk.LabelFrame):
 
         # Readout speed
         row += 1
-        self.readout = drvs.Choice(self, ('Slow', 'Medium', 'Fast'))
-        self.readout.grid(row=row,column=column,sticky=tk.W)
+        self.readSpeed = drvs.Choice(self, ('Slow', 'Medium', 'Fast'))
+        self.readSpeed.grid(row=row,column=column,sticky=tk.W)
 
         # LED setting
         row += 1
@@ -433,10 +478,10 @@ class InstPars(tk.LabelFrame):
         cpars = self.share['cpars']
 
         # Adjust number of windows according to the application
-        if self.appLab.val.get() == 'Windows':
+        if self.appLab.value() == 'Windows':
             self.nwin.imax == MAXWIN
             if not self.frozen: self.nwin.enable()
-        elif self.appLab.val.get() == 'Drift':
+        elif self.appLab.value() == 'Drift':
             self.nwin.imax == 1
             self.nwin.set(1)
             self.nwin.disable()
@@ -469,9 +514,9 @@ class InstPars(tk.LabelFrame):
         if status and not synced:
             if not self.frozen: 
                 self.sync.configure(state='normal')
-            self.sync.config(bg=drvs.COL_WARN)
+            self.sync.config(bg=drvs.COL['warn'])
         else:
-            self.sync.config(bg=drvs.COL_MAIN)
+            self.sync.config(bg=drvs.COL['main'])
             self.sync.configure(state='disable')
 
         observe = self.share['observe']
@@ -490,7 +535,7 @@ class InstPars(tk.LabelFrame):
         self.clear.disable()
         self.avalanche.disable()
         self.avgain.disable()
-        self.readout.disable()
+        self.readSpeed.disable()
         self.led.disable()
         self.expose.disable()
         self.number.disable()
@@ -509,7 +554,7 @@ class InstPars(tk.LabelFrame):
         self.appLab.enable()
         self.clear.enable()
         self.avalanche.enable()
-        self.readout.enable()
+        self.readSpeed.enable()
         self.led.enable()
         self.expose.enable()
         self.number.enable()
@@ -544,6 +589,259 @@ class InstPars(tk.LabelFrame):
             return ret
         except:
             return ''
+
+    def timing(self):
+        """
+        Estimates timing information for the current setup. 
+        """
+
+        # code directly translated from Java equivalent. Its long.
+        if not self.check():
+            raise drvs.DriverError('uspec.InstPars.timing: invalid parameters')
+ 
+        # avalanche mode y/n?
+        lnormal = not self.avalanche()
+        HCLOCK  = HCLOCK_NORM if lnormal else HCLOCK_AV;
+		
+        # drift mode y/n?
+        isDriftMode = self.applab.value() == 'Drift'
+
+        # Set the readout speed
+        readSpeed = self.readSpeed.value()
+
+        if readSpeed == 'Fast':
+            video = VIDEO_NORM_FAST if lnormal else VIDEO_AV_FAST
+        elif readSpeed == 'Medium':
+            video = VIDEO_NORM_MED if lnormal else VIDEO_AV_MED
+        elif readSpeed == 'Slow':
+            video = VIDEO_NORM_SLOW if lnormal else VIDEO_AV_SLOW
+        else:
+            raise drvs.DriverError('Readout speed = ' + readSpeed + 
+                                   ' not recognised.')
+
+        # clear chip on/off?
+        lclear = isDriftMode and self.clear 
+
+        # get exposure delay (in units of 0.1 ms ?? check) and binning factors
+        expose = self.expose.value()
+        xbin   = self.xbin.value()	
+        ybin   = self.ybin.value()	
+
+        # window parameters
+        xstart, ystart, nx, ny = [], [], [], []
+        nwin = self.nwin.value()
+        for win in self.wframe.wins[:nwin]:
+            xstart.append(win.xstart.value())
+            ystart.append(win.ystart.value())
+            nx.append(win.nx.value())
+            ny.append(win.ny.value())
+            
+        # alternatives for drift mode
+        dxleft  = win.xstart.value()
+        dxright = win.xstart.value()
+        dystart = win.ystart.value()
+        dnx     = win.nx.value()
+        dny     = win.ny.value()
+
+        if lnormal:
+            # normal mode convert xstart by ignoring 16 overscan pixels
+            for nw in xrange(nwin):
+                xstart[nw] += 16
+            dxleft  += 16
+            dxright += 16
+        else:
+            # in avalanche mode, need to swap windows around
+            for nw in xrange(nwin):
+                xstart[nw] = FFX - (xstart[nw]-1) - (nx[nw]-1)
+
+            dxright = FFX - (dxright-1) - (dnx-1)
+            dxleft  = FFX - (dxleft-1) - (dnx-1)
+
+            # in drift mode, also need to swap the windows around
+            dxright, dxleft = dxleft, dxright
+		    
+        # convert timing parameters to seconds
+        expose_delay = 1.0e-4*expose
+
+        # clear chip by VCLOCK-ing the image and storage areas
+        if lclear:
+            # accomodate changes to clearing made by DA to fix dark current
+            # when clearing charge along normal output
+            clear_time = 2.0*(FFY*VCLOCK+39.e-6) + FFX*HCLOCK_NORM + 2162.0*HCLOCK_AV
+        else:
+            clear_time = 0.0
+
+        # for drift mode, we need the number of windows in the pipeline and the pipeshift
+        pnwin  = int(((1037. / dny) + 1.)/2.)
+        pshift = 1037.- (2.*pnwin-1.)*dny
+
+        # If not drift mode, move entire image into storage area
+        # the -35 component is because Derek only shifts 1037 pixels
+        # (composed of 1024 active rows, 5 dark reference rows, 2 
+        # transition rows and 6 extra overscan rows for good measure) 
+        # If drift mode, just move the window into the storage area
+        
+        frame_transfer = (FFY-35)*VCLOCK + 49.0e-6
+        if isDriftMode:
+            frame_transfer = (dny+dystart-1.)*VCLOCK + 49.0e-6
+
+        # calculate the yshift, which places windows adjacent to the serial register
+        yshift = nwin*[0.]
+        if isDriftMode: 
+            yshift[0]=(dystart-1.0)*VCLOCK
+        else:
+            yshift[0]=(ystart[0]-1.0)*VCLOCK
+            for nw in xrange(1,nwin):
+                yshift[nw] = (ystart[nw]-ystart[nw-1]-ny[np-1])*VCLOCK
+		
+        # After placing the window adjacent to the serial register, the register must 
+        # be cleared by clocking out the entire register, taking FFX hclocks (we no 
+        # longer open the dump gates, which took only 8 hclock cycles to complete, but 
+        # gave ramps and bright rows in the bias). We think dave does 2*FFX hclocks 
+        # in avalanche mode, but need to check this with him.
+
+        line_clear = nwin*[0.]
+        hclockFactor = 1.0 if lnormal else 2.0
+        if isDriftMode:
+            if yshift[0] != 0: 
+                line_clear[0] = hclockFactor*FFX*HCLOCK
+            else:
+                for nw in xrange(nwin):
+                    if yshift[nw] != 0: 
+                        line_clear[nw] = hclockFactor*FFX*HCLOCK
+
+        # calculate how long it takes to shift one row into the serial register
+        # shift along serial register and then read out the data. The charge in a row
+        # after a window used to be dumped, taking 8 HCLOCK cycles. This created ramps 
+        # and bright rows/columns in the images, so was removed.
+        numhclocks = nwin*[0]
+        if isDriftMode:
+            numhclocks[0] = FFX
+            if not lnormal: 
+                numhclocks[0] += AVALANCHE_PIXELS
+        else:
+            for nw in xrange(nwin):
+                numhclocks[nw] = FFX;
+                if not lnormal:
+                    numhclocks[nw] += AVALANCHE_PIXELS
+
+        line_read = nwin*[0.]
+        if isDriftMode:
+            line_read[0] = VCLOCK*ybin + numhclocks[0]*HCLOCK + video*2.0*dnx/xbin
+        else:
+            for nw in xrange(nwin):
+                line_read[nw] = VCLOCK*ybin + numhclocks[nw]*HCLOCK + video*nx[nw]/xbin
+
+        # multiply time to shift one row into serial register by 
+        # number of rows for total readout time
+        readout = nwin*[0.]
+        if isDriftMode:
+            readout[0] = (dny/ybin) * line_read[0]
+        else:
+            for nw in xrange(nwin):
+                readout[nw] = (ny[nw]/ybin) * line_read[nw]
+
+        # now get the total time to read out one exposure.
+        cycleTime = expose_delay + clear_time + frame_transfer
+        if isDriftMode:
+            cycleTime += pshift*VCLOCK+yshift[0]+line_clear[0]+readout[0]
+        else:
+            for nw in xrange(nwin):
+                cycleTime += yshift[nw] + line_clear[nw] + readout[nw]
+
+        frameRate = 1.0/cycleTime
+        expTime   = expose_delay if lclear else cycleTime - frame_transfer
+        deadTime  = cycleTime - expTime
+        dutyCycle = 100.0*expTime/cycleTime
+
+        # calculate SN info. 
+        AP_SCALE = 1.5 # aperture radius relative to seeing
+        zero, sky, skyTot, gain, read, darkTot = 0., 0., 0., 0., 0., 0.
+        total, peak, correct, signal, readTot, seeing = 0., 0., 0., 0., 0., 0.
+        noise,  skyPerPixel, narcsec, npix, signalToNoise = 1., 0., 0., 0., 0.
+
+        # Get the parameters for magnitudes
+        o = self.share
+        cpars, cframe = o['cpars'], o['cframe']
+
+        tinfo   = drvs.TINS[cpars['TELINS_NAME']]
+        filtnam = cframe.filter.value()
+
+        zero    = tinfo['zerop'][filtnam]
+        mag     = cframe.mag.value()
+        seeing  = cframe.seeing.value()
+        sky     = drvs.SKY[cframe.moon.value][filtnam]
+        airmass = cframe.airmass.value()
+
+        # GAIN, RNO
+        if readSpeed == 'Fast':
+            gain = GAIN_NORM_FAST if lnormal else GAIN_AV_FAST
+            read = RNO_NORM_FAST if lnormal else RNO_AV_FAST
+
+        elif readSpeed == 'Medium':
+            gain = GAIN_NORM_MED if lnormal else GAIN_AV_MED
+            read = RNO_NORM_MED if lnormal else RNO_AV_MED
+                    
+        elif readSpeed == 'Slow':
+            gain = GAIN_NORM_SLOW if lnormal else GAIN_AV_SLOW
+            read = RNO_NORM_SLOW if lnormal else RNO_AV_SLOW
+                    
+        plateScale = tinfo['plateScale']
+
+        # calculate expected electrons 
+        total   = 10.**((zero-mag-airmass*EXTINCTION[filter])/2.5)*expTime
+        peak    = total*xbin*ybin*(plateScale/(seeing/2.3548))**2/(2.*m.pi)
+
+        # Work out fraction of flux in aperture with radius AP_SCALE*seeing
+        correct = 1. - m.exp(-(2.3548*AP_SCALE)**2/2.)
+		    
+        # expected sky e- per arcsec
+        skyPerArcsec = 10.**((zero-sky)/2.5)*expTime
+        skyPerPixel  = skyPerArcsec*plateScale**2*xbin*ybin
+        narcsec      = m.pi*(AP_SCALE*seeing)**2
+        skyTot       = skyPerArcsec*narcsec
+        npix         = m.pi*(AP_SCALE*seeing/plateScale)**2/xbin/ybin
+                
+        signal       = correct*total # in electrons
+        darkTot      = npix*DARK_E*expTime  # in electrons
+        readTot      = npix*read**2 # in electrons
+        cic          = CIC if lnormal else 0.
+
+        if lnormal:
+            noise = m.sqrt(readTot + darkTot + skyTot + signal + cic) # in electrons
+        else:
+            # assume high gain observations in proportional mode
+            noise = m.sqrt(readTot/AVALANCHE_GAIN_9**2 + 
+                           2.0*(darkTot + skyTot + signal) + cic) # in electrons
+		    
+        # Now compute signal-to-noise in 3 hour seconds run
+        signalToNoise = signal/noise*m.sqrt(3*3600./cycleTime);
+
+        # if using the avalanche mode, check that the signal level 
+        # is safe. A single electron entering the avalanche register 
+        # results in a distribution of electrons at the output with 
+        # mean value given by the parameter avalanche_gain. The 
+        # distribution is close to exponential, hence the probability
+        # of obtaining an amplification n times higher than the mean is 
+        # given by e**-n. A value of 3/5 for n is adopted here for 
+        # warning/safety, which will occur once in every ~20/100 amplifications
+
+        # convert from electrons to counts
+        total /= gain
+        peak  /= gain
+        
+        warn = 25000
+        sat  = 60000
+
+        if lnormal:
+            sat = AVALANCHE_SATURATE/AVALANCHE_GAIN_9/5/gain
+            warn = AVALANCHE_SATURATE/AVALANCHE_GAIN_9/3/gain
+
+        peakSat  = peak > sat
+        peakWarn = peak > warn
+
+        return (frameRate, cycleTime, dutyCycle, expTime, total, 
+                peak, peakSat, peakWarn, signalToNoise)
 
 class RunPars(tk.LabelFrame):
     """
@@ -639,32 +937,32 @@ class RunPars(tk.LabelFrame):
             msg += 'No data type has been defined\n'
 
         if self.target.ok():
-            self.target.entry.config(bg=drvs.COL_TEXT_BG)
+            self.target.entry.config(bg=drvs.COL['text_bg'])
         else:
-            self.target.entry.config(bg=drvs.COL_ERROR)
+            self.target.entry.config(bg=drvs.COL['error'])
             ok = False
             msg += 'Target name field cannot be blank\n'
 
         if dtype == 'acquisition' or dtype == 'science' or dtype == 'technical':
 
             if self.progid.ok():
-                self.progid.config(bg=drvs.COL_TEXT_BG)
+                self.progid.config(bg=drvs.COL['text_bg'])
             else:
-                self.progid.config(bg=drvs.COL_ERROR)
+                self.progid.config(bg=drvs.COL['error'])
                 ok   = False
                 msg += 'Programme ID field cannot be blank\n'
 
             if self.pi.ok():
-                self.pi.config(bg=drvs.COL_TEXT_BG)
+                self.pi.config(bg=drvs.COL['text_bg'])
             else:
-                self.pi.config(bg=drvs.COL_ERROR)
+                self.pi.config(bg=drvs.COL['error'])
                 ok   = False
                 msg += 'Principal Investigator field cannot be blank\n'
 
         if self.observers.ok():
-            self.observers.config(bg=drvs.COL_TEXT_BG)
+            self.observers.config(bg=drvs.COL['text_bg'])
         else:
-            self.observers.config(bg=drvs.COL_ERROR)
+            self.observers.config(bg=drvs.COL['error'])
             ok   = False
             msg += 'Observers field cannot be blank'
 
@@ -693,7 +991,7 @@ def createXML(post, cpars, instpars, runpars, clog, rlog):
     """
 
     # identify the template
-    appLab = instpars.appLab.get()
+    appLab = instpars.appLab.value()
     if cpars['debug']:
         print('DEBUG: createXML: application = ' + appLab)
         print('DEBUG: createXML: application vals = ' + str(cpars['templates'][appLab]))
