@@ -60,26 +60,26 @@ TINS = {\
         'longitude'  : '98 28',   # longitude DMS, East positive
         'elevation'  : 2457.,     # Elevation above sea level, metres
         'app'        : 'tno.xml', # Application for the telescope
-        'platescale' : 0.4,       # Arcsecs/unbinned pixel
+        'plateScale' : 0.45,      # Arcsecs/unbinned pixel
         'zerop'      : {\
-            'u' : 20., # Zeropoints: mags for 1 ADU/sec
-            'g' : 20.,
-            'r' : 20.,
-            'i' : 20.,
-            'z' : 20.
+            'u' : 22.66, # Zeropoints: mags for 1 e-/sec ??
+            'g' : 25.20,
+            'r' : 24.96,
+            'i' : 24.64,
+            'z' : 23.76
             }
         },
     }
 
 # Sky brightness, mags/sq-arsec
 SKY = {\
-    'd' : {'u' : 22, 'g' : 22, 'r' : 22, 'i' : 22, 'z' : 22},
-    'g' : {'u' : 22, 'g' : 22, 'r' : 22, 'i' : 22, 'z' : 22},
-    'b' : {'u' : 22, 'g' : 22, 'r' : 22, 'i' : 22, 'z' : 22},
+    'd' : {'u' : 22.4, 'g' : 22.2, 'r' : 21.4, 'i' : 20.7, 'z' : 20.3},
+    'g' : {'u' : 21.4, 'g' : 21.2, 'r' : 20.4, 'i' : 20.1, 'z' : 19.9},
+    'b' : {'u' : 18.4, 'g' : 18.2, 'r' : 17.4, 'i' : 17.9, 'z' : 18.3},
     }
 
 # Extinction per unit airmass
-EXTINCTION = {'u' : 0.5, 'g' : 0.2, 'r' : 0.1, 'i' : 0.1, 'z' : 0.1}
+EXTINCTION = {'u' : 0.5, 'g' : 0.19, 'r' : 0.09, 'i' : 0.05, 'z' : 0.04}
 
 def addStyle(root):
     """
@@ -840,6 +840,96 @@ class FloatEntry(tk.Entry):
         self.focus()
         self.icursor(tk.END)
 
+class RangedFloat (FloatEntry):
+    """
+    Provides range-checked float input.
+    """
+    def __init__(self, master, fval, fmin, fmax, checker, blank, **kw):
+        """
+        master  -- enclosing widget
+        fval    -- initial float value
+        fmin    -- minimum value
+        fmax    -- maximum value
+        checker -- command that is run on any change to the entry
+        blank   -- controls whether the field is allowed to be
+                   blank. In some cases it makes things easier if
+                   a blank field is allowed, even if it is technically
+                   invalid.
+        kw      -- keyword arguments
+        """
+        self.fmin = fmin
+        self.fmax = fmax
+        FloatEntry.__init__(self, master, fval, checker, blank, **kw)
+        self.bind('<Next>', lambda e : self.set(self.fmin))
+        self.bind('<Prior>', lambda e : self.set(self.fmax))
+
+    def set_bind(self):
+        """
+        Sets key bindings -- we need this more than once
+        """
+        FloatEntry.set_bind(self)
+        self.bind('<Next>', lambda e : self.set(self.fmin))
+        self.bind('<Prior>', lambda e : self.set(self.fmax))
+
+    def set_unbind(self):
+        """
+        Unsets key bindings -- we need this more than once
+        """
+        FloatEntry.set_unbind(self)
+        self.unbind('<Next>')
+        self.unbind('<Prior>')
+
+    def validate(self, value):
+        """
+        Applies the validation criteria. 
+        Returns value, new value, or None if invalid.
+
+        Overload this in derived classes.
+        """
+        try:
+            # trap blank fields here
+            if not self.blank or value: 
+                v = float(value)
+                if v < self.fmin or v > self.fmax:
+                    return None
+            return value
+        except ValueError:
+            return None
+
+    def add(self, num):
+        """
+        Adds num to the current value
+        """
+        try:
+            val = self.value() + num
+        except:
+            val = num
+        self.set(min(self.fmax,max(self.fmin,val)))
+
+    def sub(self, num):
+        """
+        Subtracts num from the current value
+        """
+        try:
+            val = self.value() - num
+        except:
+            val = -num
+        self.set(min(self.fmax,max(self.fmin,val)))
+
+    def ok(self):
+        """
+        Returns True if OK to use, else False
+        """
+        try:
+            v = float(self._value)
+            if v < self.fmin or v > self.imax:
+                return False
+            else:
+                return True
+        except:
+            return False
+
+
 class TextEntry (tk.Entry):
     """
     Sub-class of Entry for basic text input. Not a lot to
@@ -902,18 +992,43 @@ class Choice(tk.OptionMenu):
 
 class Radio(tk.Frame):
     """
-    Left-to-right radio button class
+    Left-to-right radio button class. Layes out buttons in a grid
+    from left-to-right. Has a max number of columns after which it 
+    will jump to left of next row and start over.
     """
-    def __init__(self, master, options, checker=None):
+    def __init__(self, master, options, ncmax, checker=None, values=None):
+        """
+        master  : containing widget
+        options : array of option strings, in order. These are the choices 
+                  presented to the user.
+        ncmax   : max number of columns (flows onto next row if need be)
+        checker : callback to be run after any change
+        values  : array of string values used by the code internally. If 'None', 
+                  the value from 'options' will be used. 
+        """
         tk.Frame.__init__(self, master)
-        self.val = tk.StringVar()
-        self.val.set(options[0])
+        if values is not None and len(values) != len(options):
+            raise DriverError('drvs.Radio.__init__: values and options must have same length')
 
+        self.val = tk.StringVar()
+        if values is None:
+            self.val.set(options[0])
+        else:
+            self.val.set(values[0])
+
+        row = 0
         col = 0
-        for option in options:
-            tk.Radiobutton(self, text=option, variable=self.val, 
-                           value=option).grid(row=0, column=col, sticky=tk.W)
+        for nopt, option in enumerate(options):
+            if values is None:
+                tk.Radiobutton(self, text=option, variable=self.val, 
+                               value=option).grid(row=row, column=col, sticky=tk.W)
+            else:
+                tk.Radiobutton(self, text=option, variable=self.val, 
+                               value=values[nopt]).grid(row=row, column=col, sticky=tk.W)
             col += 1
+            if col == ncmax:
+                row += 1
+                col  = 0
 
         self.checker = checker
         if self.checker is not None:
@@ -2138,7 +2253,7 @@ class CurrentRun(tk.Label):
     Run indicator checks every second with the server
     """
     def __init__(self, master, share):
-        tk.Label.__init__(self, master, text='000')
+        tk.Label.__init__(self, master, text='UNDEF')
         self.share = share
 #        self.run()
 
@@ -2247,20 +2362,46 @@ class InfoFrame(tk.LabelFrame):
     Information frame: run number, exposure time, etc.
     """
     def __init__(self, master, share):
-        tk.LabelFrame.__init__(self, master, text='Run status')
+        tk.LabelFrame.__init__(self, master, text='Run status', padx=3, pady=3)
 
-        clabel = tk.Label(self,text='Current run:')
-        self.currentRun = CurrentRun(self, share)
+        crun   = CurrentRun(self, share)
+        fnum   = tk.Label(self,text='UNDEF') 
+        timer  = Timer(self)
+        filter = tk.Label(self,text='UNDEF ') 
+        ra     = tk.Label(self,text='UNDEF ') 
+        dec    = tk.Label(self,text='UNDEF  ') 
+        alt    = tk.Label(self,text='UNDEF ') 
+        az     = tk.Label(self,text='UNDEF ') 
+        mdist  = tk.Label(self,text='UNDEF ') 
 
-        tlabel = tk.Label(self,text='Exposure time:')
-        timer = Timer(self)
+        # left-hand side
+        tk.Label(self,text='Current run:').grid(row=0,column=0,padx=5,sticky=tk.W)
+        crun.grid(row=0,column=1,padx=5,sticky=tk.W)
 
-        clabel.grid(row=0,column=0,padx=5,sticky=tk.W)
-        self.currentRun.grid(row=0,column=1,padx=5,sticky=tk.W)
+        tk.Label(self,text='Frame number:').grid(row=1,column=0,padx=5,sticky=tk.W)
+        fnum.grid(row=1,column=1,padx=5,sticky=tk.W)
 
-        tlabel.grid(row=1,column=0,padx=5,pady=5,sticky=tk.W)
-        timer.grid(row=1,column=1,padx=5,pady=5,sticky=tk.W)
+        tk.Label(self,text='Exposure time:').grid(row=2,column=0,padx=5,sticky=tk.W)
+        timer.grid(row=2,column=1,padx=5,sticky=tk.W)
 
+        tk.Label(self,text='Filter:').grid(row=3,column=0,padx=5,sticky=tk.W)
+        filter.grid(row=3,column=1,padx=5,sticky=tk.W)
+
+        # right-hand side
+        tk.Label(self,text='RA:').grid(row=0,column=2,padx=5,sticky=tk.W)
+        ra.grid(row=0,column=3,padx=5,sticky=tk.W)
+
+        tk.Label(self,text='Dec:').grid(row=1,column=2,padx=5,sticky=tk.W)
+        dec.grid(row=1,column=3,padx=5,sticky=tk.W)
+
+        tk.Label(self,text='Alt:').grid(row=2,column=2,padx=5,sticky=tk.W)
+        alt.grid(row=2,column=3,padx=5,sticky=tk.W)
+
+        tk.Label(self,text='Az:').grid(row=3,column=2,padx=5,sticky=tk.W)
+        az.grid(row=3,column=3,padx=5,sticky=tk.W)
+
+        tk.Label(self,text='Mdist:').grid(row=4,column=2,padx=5,sticky=tk.W)
+        mdist.grid(row=4,column=3,padx=5,sticky=tk.W)
 
 class AstroFrame(tk.LabelFrame):
     """
@@ -2439,61 +2580,6 @@ class AstroFrame(tk.LabelFrame):
         # run again after 100 milli-seconds
         self.after(100, self.update)
 
-
-class CountsFrame(tk.LabelFrame):
-    """
-    Frame for count rate estimates
-    """
-    def __init__(self, master, share):
-        """
-        master : enclosing widget
-        share  : other objects. 'instpars' for timing & binning info.
-        """
-        tk.LabelFrame.__init__(self, master, pady=2, text='Count rate estimator')
-
-        # entries
-        self.filter    = Choice(self, ('u', 'g', 'r', 'i', 'z'))
-#        self.filter    = Radio(self, ('u', 'g', 'r', 'i', 'z'))
-        # need to place some restrictions on values
-        self.mag       = FloatEntry(self, 18., self.update, True, width=5)
-        self.seeing    = FloatEntry(self, 1.0, self.update, True, width=5)
-        self.airmass   = FloatEntry(self, 1.5, self.update, True, width=5)
-#        self.moon      = Choice(self, ('dark', 'grey', 'bright'))
-        self.moon      = Radio(self, ('d', 'g', 'b'))
-
-        # results
-        self.peak      = tk.Label(self)
-        self.total     = tk.Label(self)
-        self.sky       = tk.Label(self)
-        self.ston      = tk.Label(self)
-
-        # arrange
-        tk.Label(self,text='Filter:').grid(row=0,column=0,padx=5,pady=3,sticky=tk.W)
-        self.filter.grid(row=0,column=1,padx=5,pady=3,sticky=tk.W)
-        tk.Label(self,text='Mag:').grid(row=1,column=0,padx=5,pady=3,sticky=tk.W)
-        self.mag.grid(row=1,column=1,padx=5,pady=3,sticky=tk.W)
-        tk.Label(self,text='Seeing:').grid(row=2,column=0,padx=5,pady=3,sticky=tk.W)
-        self.seeing.grid(row=2,column=1,padx=5,pady=3,sticky=tk.W)
-        tk.Label(self,text='Airmass:').grid(row=2,column=0,padx=5,pady=3,sticky=tk.W)
-        self.airmass.grid(row=2,column=1,padx=5,pady=3,sticky=tk.W)
-        tk.Label(self,text='Moon:').grid(row=3,column=0,padx=5,pady=3,sticky=tk.W)
-        self.moon.grid(row=3,column=1,padx=5,pady=3,sticky=tk.W)
-
-        tk.Label(self,text='Peak:').grid(row=0,column=2,padx=5,pady=3,sticky=tk.W)
-        self.peak.grid(row=0,column=3,padx=5,pady=3,sticky=tk.W)
-        tk.Label(self,text='Total:').grid(row=1,column=2,padx=5,pady=3,sticky=tk.W)
-        self.total.grid(row=1,column=3,padx=5,pady=3,sticky=tk.W)
-        tk.Label(self,text='Sky:').grid(row=2,column=2,padx=5,pady=3,sticky=tk.W)
-        self.sky.grid(row=2,column=3,padx=5,pady=3,sticky=tk.W)
-        tk.Label(self,text='S-to-N:').grid(row=3,column=2,padx=5,pady=3,sticky=tk.W)
-        self.ston.grid(row=3,column=3,padx=5,pady=3,sticky=tk.W)
-
-
-    def update(self):
-        """
-        Updates values
-        """
-        pass
 
 # various helper routines
 
