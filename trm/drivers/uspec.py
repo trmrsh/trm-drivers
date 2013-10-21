@@ -10,6 +10,7 @@ import tkFont, tkMessageBox, tkFileDialog
 import xml.etree.ElementTree as ET
 import os
 import drivers as drvs
+import math as m
 
 # maximum number of windows on any application
 MAXWIN = 4
@@ -336,7 +337,7 @@ class InstPars(tk.LabelFrame):
         # First column: the labels
         row     = 0
         column  = 0
-        tk.Label(self, text='Application').grid(row=row,column=column,sticky=tk.W)
+        tk.Label(self, text='Mode').grid(row=row,column=column,sticky=tk.W)
 
         row += 1
         tk.Label(self, text='Clear').grid(row=row,column=column, sticky=tk.W)
@@ -369,7 +370,7 @@ class InstPars(tk.LabelFrame):
         column += 1
 
         # Application
-        self.appLab = drvs.Choice(self, ('Windows','Drift'), self.check)
+        self.appLab = drvs.Radio(self, ('Wins', 'Drift'), 2, self.check, ('Windows', 'Drift'))
         self.appLab.grid(row=row,column=column,sticky=tk.W)
 
         # Clear enabled
@@ -389,7 +390,7 @@ class InstPars(tk.LabelFrame):
 
         # Readout speed
         row += 1
-        self.readSpeed = drvs.Choice(self, ('Slow', 'Medium', 'Fast'))
+        self.readSpeed = drvs.Radio(self, ('S', 'M', 'F'), 3, self.check, ('Slow', 'Medium', 'Fast'))
         self.readSpeed.grid(row=row,column=column,sticky=tk.W)
 
         # LED setting
@@ -475,7 +476,8 @@ class InstPars(tk.LabelFrame):
 
         This can only be run once the 'observe' and 'cpars' are defined.
         """
-        cpars = self.share['cpars']
+        o = self.share
+        cpars, observe, cframe = o['cpars'], o['observe'], o['cframe']
 
         # Adjust number of windows according to the application
         if self.appLab.value() == 'Windows':
@@ -519,9 +521,11 @@ class InstPars(tk.LabelFrame):
             self.sync.config(bg=drvs.COL['main'])
             self.sync.configure(state='disable')
 
-        observe = self.share['observe']
+        # allow posting according to whether the parameters are ok
+        # update count and S/N estimates as well
         if status:
             observe.post.enable()
+            cframe.update()
         else:
             observe.post.disable()
 
@@ -592,19 +596,24 @@ class InstPars(tk.LabelFrame):
 
     def timing(self):
         """
-        Estimates timing information for the current setup. 
+        Estimates timing information for the current setup. You should
+        run a check on the instrument parameters before calling this.
+
+        Returns: (expTime, deadTime, cycleTime, dutyCycle) 
+
+        expTime   : exposure time per frame (seconds)
+        deadTime  : dead time per frame (seconds)
+        cycleTime : sampling time (cadence), (seconds)
+        dutyCycle : percentage time exposing.
+        frameRate : number of frames per second
         """
 
-        # code directly translated from Java equivalent. Its long.
-        if not self.check():
-            raise drvs.DriverError('uspec.InstPars.timing: invalid parameters')
- 
         # avalanche mode y/n?
         lnormal = not self.avalanche()
         HCLOCK  = HCLOCK_NORM if lnormal else HCLOCK_AV;
 		
         # drift mode y/n?
-        isDriftMode = self.applab.value() == 'Drift'
+        isDriftMode = self.appLab.value() == 'Drift'
 
         # Set the readout speed
         readSpeed = self.readSpeed.value()
@@ -616,8 +625,8 @@ class InstPars(tk.LabelFrame):
         elif readSpeed == 'Slow':
             video = VIDEO_NORM_SLOW if lnormal else VIDEO_AV_SLOW
         else:
-            raise drvs.DriverError('Readout speed = ' + readSpeed + 
-                                   ' not recognised.')
+            raise drvs.DriverError('uspec.InstPars.timing: readout speed = ' \
+                                       + readSpeed + ' not recognised.')
 
         # clear chip on/off?
         lclear = isDriftMode and self.clear 
@@ -667,11 +676,13 @@ class InstPars(tk.LabelFrame):
         if lclear:
             # accomodate changes to clearing made by DA to fix dark current
             # when clearing charge along normal output
-            clear_time = 2.0*(FFY*VCLOCK+39.e-6) + FFX*HCLOCK_NORM + 2162.0*HCLOCK_AV
+            clear_time = 2.0*(FFY*VCLOCK+39.e-6) + FFX*HCLOCK_NORM + \
+                2162.0*HCLOCK_AV
         else:
             clear_time = 0.0
 
-        # for drift mode, we need the number of windows in the pipeline and the pipeshift
+        # for drift mode, we need the number of windows in the pipeline and 
+        # the pipeshift
         pnwin  = int(((1037. / dny) + 1.)/2.)
         pshift = 1037.- (2.*pnwin-1.)*dny
 
@@ -685,19 +696,21 @@ class InstPars(tk.LabelFrame):
         if isDriftMode:
             frame_transfer = (dny+dystart-1.)*VCLOCK + 49.0e-6
 
-        # calculate the yshift, which places windows adjacent to the serial register
+        # calculate the yshift, which places windows adjacent to the 
+        # serial register
         yshift = nwin*[0.]
         if isDriftMode: 
             yshift[0]=(dystart-1.0)*VCLOCK
         else:
             yshift[0]=(ystart[0]-1.0)*VCLOCK
             for nw in xrange(1,nwin):
-                yshift[nw] = (ystart[nw]-ystart[nw-1]-ny[np-1])*VCLOCK
+                yshift[nw] = (ystart[nw]-ystart[nw-1]-ny[nw-1])*VCLOCK
 		
-        # After placing the window adjacent to the serial register, the register must 
-        # be cleared by clocking out the entire register, taking FFX hclocks (we no 
-        # longer open the dump gates, which took only 8 hclock cycles to complete, but 
-        # gave ramps and bright rows in the bias). We think dave does 2*FFX hclocks 
+        # After placing the window adjacent to the serial register, the 
+        # register must be cleared by clocking out the entire register, 
+        # taking FFX hclocks (we no longer open the dump gates, which 
+        # took only 8 hclock cycles to complete, but gave ramps and 
+        # bright rows in the bias). We think dave does 2*FFX hclocks 
         # in avalanche mode, but need to check this with him.
 
         line_clear = nwin*[0.]
@@ -711,9 +724,10 @@ class InstPars(tk.LabelFrame):
                         line_clear[nw] = hclockFactor*FFX*HCLOCK
 
         # calculate how long it takes to shift one row into the serial register
-        # shift along serial register and then read out the data. The charge in a row
-        # after a window used to be dumped, taking 8 HCLOCK cycles. This created ramps 
-        # and bright rows/columns in the images, so was removed.
+        # shift along serial register and then read out the data. The charge 
+        # in a row after a window used to be dumped, taking 8 HCLOCK cycles. 
+        # This created ramps and bright rows/columns in the images, so was 
+        # removed.
         numhclocks = nwin*[0]
         if isDriftMode:
             numhclocks[0] = FFX
@@ -727,10 +741,12 @@ class InstPars(tk.LabelFrame):
 
         line_read = nwin*[0.]
         if isDriftMode:
-            line_read[0] = VCLOCK*ybin + numhclocks[0]*HCLOCK + video*2.0*dnx/xbin
+            line_read[0] = VCLOCK*ybin + numhclocks[0]*HCLOCK + \
+                video*2.0*dnx/xbin
         else:
             for nw in xrange(nwin):
-                line_read[nw] = VCLOCK*ybin + numhclocks[nw]*HCLOCK + video*nx[nw]/xbin
+                line_read[nw] = VCLOCK*ybin + numhclocks[nw]*HCLOCK + \
+                    video*nx[nw]/xbin
 
         # multiply time to shift one row into serial register by 
         # number of rows for total readout time
@@ -754,94 +770,7 @@ class InstPars(tk.LabelFrame):
         deadTime  = cycleTime - expTime
         dutyCycle = 100.0*expTime/cycleTime
 
-        # calculate SN info. 
-        AP_SCALE = 1.5 # aperture radius relative to seeing
-        zero, sky, skyTot, gain, read, darkTot = 0., 0., 0., 0., 0., 0.
-        total, peak, correct, signal, readTot, seeing = 0., 0., 0., 0., 0., 0.
-        noise,  skyPerPixel, narcsec, npix, signalToNoise = 1., 0., 0., 0., 0.
-
-        # Get the parameters for magnitudes
-        o = self.share
-        cpars, cframe = o['cpars'], o['cframe']
-
-        tinfo   = drvs.TINS[cpars['TELINS_NAME']]
-        filtnam = cframe.filter.value()
-
-        zero    = tinfo['zerop'][filtnam]
-        mag     = cframe.mag.value()
-        seeing  = cframe.seeing.value()
-        sky     = drvs.SKY[cframe.moon.value][filtnam]
-        airmass = cframe.airmass.value()
-
-        # GAIN, RNO
-        if readSpeed == 'Fast':
-            gain = GAIN_NORM_FAST if lnormal else GAIN_AV_FAST
-            read = RNO_NORM_FAST if lnormal else RNO_AV_FAST
-
-        elif readSpeed == 'Medium':
-            gain = GAIN_NORM_MED if lnormal else GAIN_AV_MED
-            read = RNO_NORM_MED if lnormal else RNO_AV_MED
-                    
-        elif readSpeed == 'Slow':
-            gain = GAIN_NORM_SLOW if lnormal else GAIN_AV_SLOW
-            read = RNO_NORM_SLOW if lnormal else RNO_AV_SLOW
-                    
-        plateScale = tinfo['plateScale']
-
-        # calculate expected electrons 
-        total   = 10.**((zero-mag-airmass*EXTINCTION[filter])/2.5)*expTime
-        peak    = total*xbin*ybin*(plateScale/(seeing/2.3548))**2/(2.*m.pi)
-
-        # Work out fraction of flux in aperture with radius AP_SCALE*seeing
-        correct = 1. - m.exp(-(2.3548*AP_SCALE)**2/2.)
-		    
-        # expected sky e- per arcsec
-        skyPerArcsec = 10.**((zero-sky)/2.5)*expTime
-        skyPerPixel  = skyPerArcsec*plateScale**2*xbin*ybin
-        narcsec      = m.pi*(AP_SCALE*seeing)**2
-        skyTot       = skyPerArcsec*narcsec
-        npix         = m.pi*(AP_SCALE*seeing/plateScale)**2/xbin/ybin
-                
-        signal       = correct*total # in electrons
-        darkTot      = npix*DARK_E*expTime  # in electrons
-        readTot      = npix*read**2 # in electrons
-        cic          = CIC if lnormal else 0.
-
-        if lnormal:
-            noise = m.sqrt(readTot + darkTot + skyTot + signal + cic) # in electrons
-        else:
-            # assume high gain observations in proportional mode
-            noise = m.sqrt(readTot/AVALANCHE_GAIN_9**2 + 
-                           2.0*(darkTot + skyTot + signal) + cic) # in electrons
-		    
-        # Now compute signal-to-noise in 3 hour seconds run
-        signalToNoise = signal/noise*m.sqrt(3*3600./cycleTime);
-
-        # if using the avalanche mode, check that the signal level 
-        # is safe. A single electron entering the avalanche register 
-        # results in a distribution of electrons at the output with 
-        # mean value given by the parameter avalanche_gain. The 
-        # distribution is close to exponential, hence the probability
-        # of obtaining an amplification n times higher than the mean is 
-        # given by e**-n. A value of 3/5 for n is adopted here for 
-        # warning/safety, which will occur once in every ~20/100 amplifications
-
-        # convert from electrons to counts
-        total /= gain
-        peak  /= gain
-        
-        warn = 25000
-        sat  = 60000
-
-        if lnormal:
-            sat = AVALANCHE_SATURATE/AVALANCHE_GAIN_9/5/gain
-            warn = AVALANCHE_SATURATE/AVALANCHE_GAIN_9/3/gain
-
-        peakSat  = peak > sat
-        peakWarn = peak > warn
-
-        return (frameRate, cycleTime, dutyCycle, expTime, total, 
-                peak, peakSat, peakWarn, signalToNoise)
+        return (expTime, deadTime, cycleTime, dutyCycle, frameRate)
 
 class RunPars(tk.LabelFrame):
     """
@@ -850,26 +779,34 @@ class RunPars(tk.LabelFrame):
     DTYPES = ('acquisition','science','bias','flat','dark','technical')
         
     def __init__(self, master, share):
-        tk.LabelFrame.__init__(self, master, text='Run parameters', padx=10, pady=10)
+        tk.LabelFrame.__init__(self, master, text='Run parameters', 
+                               padx=10, pady=10)
 
         row     = 0
         column  = 0
-        tk.Label(self, text='Target name').grid(row=row,column=column, sticky=tk.W)
+        tk.Label(self, text='Target name').grid(
+            row=row,column=column, sticky=tk.W)
 
         row += 1
-        tk.Label(self, text='Programme ID').grid(row=row,column=column, sticky=tk.W)
+        tk.Label(self, text='Programme ID').grid(
+            row=row,column=column, sticky=tk.W)
             
         row += 1
-        tk.Label(self, text='Principal Investigator').grid(row=row,column=column, sticky=tk.W)
+        tk.Label(self, 
+                 text='Principal Investigator').grid(
+            row=row,column=column, sticky=tk.W)
             
         row += 1
-        tk.Label(self, text='Observer(s)').grid(row=row,column=column, sticky=tk.W)
+        tk.Label(self, text='Observer(s)').grid(
+            row=row, column=column, sticky=tk.W)
 
         row += 1
-        tk.Label(self, text='Pre-run comment').grid(row=row,column=column, sticky=tk.W)
+        tk.Label(self, text='Pre-run comment').grid(
+            row=row,column=column, sticky=tk.W)
 
         row += 1
-        tk.Label(self, text='Data type').grid(row=row,column=column, sticky=tk.W+tk.N)
+        tk.Label(self, text='Data type').grid(
+            row=row,column=column, sticky=tk.W+tk.N)
             
         # spacer
         column += 1
@@ -901,21 +838,11 @@ class RunPars(tk.LabelFrame):
         self.comment = drvs.TextEntry(self, 38)
         self.comment.grid(row=row, column=column, sticky=tk.W)
 
-        # data types
+        # data type
         row += 1
-        self.dtype = tk.StringVar()
+        self.dtype = drvs.Radio(self, RunPars.DTYPES, 3)
         self.dtype.set('undef') 
-    
-        dtframe = tk.Frame(self)
-        r, c = 0, 0
-        for dtype in RunPars.DTYPES:
-            b = tk.Radiobutton(dtframe, text=dtype, variable=self.dtype, value=dtype)
-            b.grid(row=r, column=c, sticky=tk.W)
-            r += 1
-            if r == 2:
-                r  = 0
-                c += 1
-        dtframe.grid(row=row,column=column,sticky=tk.W)
+        self.dtype.grid(row=row,column=column,sticky=tk.W)
 
         self.share = share
 
@@ -943,7 +870,8 @@ class RunPars(tk.LabelFrame):
             ok = False
             msg += 'Target name field cannot be blank\n'
 
-        if dtype == 'acquisition' or dtype == 'science' or dtype == 'technical':
+        if dtype == 'acquisition' or \
+                dtype == 'science' or dtype == 'technical':
 
             if self.progid.ok():
                 self.progid.config(bg=drvs.COL['text_bg'])
@@ -979,8 +907,8 @@ def createXML(post, cpars, instpars, runpars, clog, rlog):
 
     Arguments:
 
-      post      : True if posting an application. This is a safty feature to avoid
-                  querying the camera server during a run.
+      post      : True if posting an application. This is a safety 
+                  feature to avoid querying the camera server during a run.
       cpars     : configuration parameters
       instpars  : windows etc
       runpars   : target, PI name etc.
@@ -1427,3 +1355,267 @@ class Observe(tk.LabelFrame):
             self.post.setExpert()
             self.start.setExpert()
             self.stop.setExpert()
+
+
+class CountsFrame(tk.LabelFrame):
+    """
+    Frame for count rate estimates
+    """
+    def __init__(self, master, share):
+        """
+        master : enclosing widget
+        share  : other objects. 'instpars' for timing & binning info.
+        """
+        tk.LabelFrame.__init__(self, master, pady=2, text='Count & S/N estimator')
+
+        # divide into left and right frames 
+        lframe = tk.Frame(self, padx=2)
+        rframe = tk.Frame(self, padx=2)
+
+        # entries
+        self.filter    = drvs.Radio(lframe, ('u', 'g', 'r', 'i', 'z'), 3, self.checkUpdate)
+        self.filter.set('g')
+        self.mag       = drvs.RangedFloat(lframe, 18., 0., 30., self.checkUpdate, True, width=5)
+        self.seeing    = drvs.RangedFloat(lframe, 1.0, 0.2, 20., self.checkUpdate, True, width=5)
+        self.airmass   = drvs.RangedFloat(lframe, 1.5, 1.0, 5.0, self.checkUpdate, True, width=5)
+        self.moon      = drvs.Radio(lframe, ('d', 'g', 'b'),  self.checkUpdate)
+
+        # results
+        self.expose    = tk.Label(rframe,text='UNDEF',width=11,anchor=tk.W)
+        self.duty      = tk.Label(rframe,text='UNDEF',width=11,anchor=tk.W)
+        self.peak      = tk.Label(rframe,text='UNDEF',width=11,anchor=tk.W)
+        self.total     = tk.Label(rframe,text='UNDEF',width=11,anchor=tk.W)
+        self.ston      = tk.Label(rframe,text='UNDEF',width=11,anchor=tk.W)
+        self.ston3     = tk.Label(rframe,text='UNDEF',width=11,anchor=tk.W)
+
+        # layout
+        # left
+        tk.Label(lframe,text='Filter:').grid(
+            row=0,column=0,padx=5,pady=3,sticky=tk.W+tk.N)
+        self.filter.grid(row=0,column=1,padx=5,pady=3,sticky=tk.W)
+
+        tk.Label(lframe,text='Mag:').grid(
+            row=1,column=0,padx=5,pady=3,sticky=tk.W)
+        self.mag.grid(row=1,column=1,padx=5,pady=3,sticky=tk.W)
+
+        tk.Label(lframe,text='Seeing:').grid(
+            row=2,column=0,padx=5,pady=3,sticky=tk.W)
+        self.seeing.grid(row=2,column=1,padx=5,pady=3,sticky=tk.W)
+
+        tk.Label(lframe,text='Airmass:').grid(
+            row=3,column=0,padx=5,pady=3,sticky=tk.W)
+        self.airmass.grid(row=3,column=1,padx=5,pady=3,sticky=tk.W)
+
+        tk.Label(lframe,text='Moon:').grid(
+            row=4,column=0,padx=5,pady=3,sticky=tk.W)
+        self.moon.grid(row=4,column=1,padx=5,pady=3,sticky=tk.W)
+
+        # right
+        tk.Label(rframe,text='Exposure:').grid(
+            row=0,column=0,padx=5,pady=3,sticky=tk.W)
+        self.expose.grid(row=0,column=1,padx=5,pady=3,sticky=tk.W)
+
+        tk.Label(rframe,text='Duty cycle:').grid(
+            row=1,column=0,padx=5,pady=3,sticky=tk.W)
+        self.duty.grid(row=1,column=1,padx=5,pady=3,sticky=tk.W)
+
+        tk.Label(rframe,text='Peak:').grid(
+            row=2,column=0,padx=5,pady=3,sticky=tk.W)
+        self.peak.grid(row=2,column=1,padx=5,pady=3,sticky=tk.W)
+
+        tk.Label(rframe,text='Total:').grid(
+            row=3,column=0,padx=5,pady=3,sticky=tk.W)
+        self.total.grid(row=3,column=1,padx=5,pady=3,sticky=tk.W)
+
+        tk.Label(rframe,text='S/N:').grid(
+            row=4,column=0,padx=5,pady=3,sticky=tk.W)
+        self.ston.grid(row=4,column=1,padx=5,pady=3,sticky=tk.W)
+
+        tk.Label(rframe,text='S/N (3h):').grid(
+            row=5,column=0,padx=5,pady=3,sticky=tk.W)
+        self.ston3.grid(row=5,column=1,padx=5,pady=3,sticky=tk.W)
+        
+        # slot frames in
+        lframe.grid(row=0,column=0,sticky=tk.W+tk.N)
+        rframe.grid(row=0,column=1,sticky=tk.W+tk.N)
+
+        self.share = share
+
+    def checkUpdate(self, *args):
+        """
+        Updates values after first checking instrument parameters are OK.
+        This is not integrated within update to prevent ifinite recursion
+        since update gets called from ipars.
+        """
+        ipars = self.share['instpars']
+        if not ipars.check():
+            raise drvs.DriverError('drivers.CountsFrame.checkUpdate: invalid parameters')
+
+        self.update(*args)
+
+    def update(self, *args):
+        """
+        Updates values. You should run a check on the instrument parameters
+        before calling this.
+        """
+
+        ipars = self.share['instpars']
+
+        expTime, deadTime, cycleTime, dutyCycle, frameRate = ipars.timing()
+        total, peak, peakSat, peakWarn, ston, ston3 = self.counts(expTime, cycleTime)
+
+        if expTime < 0.01:
+            self.expose.config(text='{0:7.5f} s'.format(expTime))
+        elif expTime < 0.1:
+            self.expose.config(text='{0:6.4f} s'.format(expTime))
+        elif expTime < 1.:
+            self.expose.config(text='{0:5.3f} s'.format(expTime))
+        elif expTime < 10.:
+            self.expose.config(text='{0:4.2f} s'.format(expTime))
+        elif expTime < 100.:
+            self.expose.config(text='{0:4.1f} s'.format(expTime))
+        elif expTime < 1000.:
+            self.expose.config(text='{0:4.0f} s'.format(expTime))
+        else:
+            self.expose.config(text='{0:5.0f} s'.format(expTime))
+        self.duty.config(text='{0:4.1f} %'.format(dutyCycle))
+        self.peak.config(text='{0:d} cts'.format(int(round(peak))))
+        if peakSat:
+            self.peak.config(bg=drvs.COL['error'])
+        elif peakWarn:
+            self.peak.config(bg=drvs.COL['warn'])
+        else:
+            self.peak.config(bg=drvs.COL['main'])
+
+        self.total.config(text='{0:d} cts'.format(int(round(total))))
+        self.ston.config(text='{0:.1f}'.format(ston))
+        self.ston3.config(text='{0:.1f}'.format(ston3))
+
+    def counts(self, expTime, cycleTime, ap_scale=1.6):
+        """
+        Computes counts per pixel, total counts, sky counts
+        etc given current magnitude, seeing etc. You should
+        run a check on the instrument parameters before calling
+        this.
+
+        expTime   : exposure time per frame (seconds)
+        cycleTime : sampling, cadence (seconds)
+        ap_scale  : aperture radius as multiple of seeing
+
+        Returns: (total, peak, peakSat, peakWarn, ston, ston3)
+
+        total    -- total number of object counts in aperture
+        peak     -- peak counts in a pixel
+        peakSat  -- flag to indicate saturation
+        peakWarn -- flag to indication level approaching saturation
+        ston     -- signal-to-noise per exposure
+        ston3    -- signal-to-noise after 3 hours on target
+        """
+
+        # code directly translated from Java equivalent.
+        o = self.share
+        ipars, cpars = o['instpars'], o['cpars']
+ 
+        # avalanche mode y/n?
+        lnormal = not ipars.avalanche()
+		
+        # Set the readout speed
+        readSpeed = ipars.readSpeed.value()
+
+        if readSpeed == 'Fast':
+            video = VIDEO_NORM_FAST if lnormal else VIDEO_AV_FAST
+        elif readSpeed == 'Medium':
+            video = VIDEO_NORM_MED if lnormal else VIDEO_AV_MED
+        elif readSpeed == 'Slow':
+            video = VIDEO_NORM_SLOW if lnormal else VIDEO_AV_SLOW
+        else:
+            raise drvs.DriverError('drivers.CountsFrame.counts: readout speed = ' 
+                                   + readSpeed + ' not recognised.')
+
+        xbin   = ipars.xbin.value()	
+        ybin   = ipars.ybin.value()	
+
+        # calculate SN info. 
+        zero, sky, skyTot, gain, read, darkTot = 0., 0., 0., 0., 0., 0.
+        total, peak, correct, signal, readTot, seeing = 0., 0., 0., 0., 0., 0.
+        noise,  skyPerPixel, narcsec, npix, signalToNoise3 = 1., 0., 0., 0., 0.
+
+        tinfo   = drvs.TINS[cpars['telins_name']]
+        filtnam = self.filter.value()
+
+        zero    = tinfo['zerop'][filtnam]
+        mag     = self.mag.value()
+        seeing  = self.seeing.value()
+        sky     = drvs.SKY[self.moon.value()][filtnam]
+        airmass = self.airmass.value()
+
+        # GAIN, RNO
+        if readSpeed == 'Fast':
+            gain = GAIN_NORM_FAST if lnormal else GAIN_AV_FAST
+            read = RNO_NORM_FAST if lnormal else RNO_AV_FAST
+
+        elif readSpeed == 'Medium':
+            gain = GAIN_NORM_MED if lnormal else GAIN_AV_MED
+            read = RNO_NORM_MED if lnormal else RNO_AV_MED
+                    
+        elif readSpeed == 'Slow':
+            gain = GAIN_NORM_SLOW if lnormal else GAIN_AV_SLOW
+            read = RNO_NORM_SLOW if lnormal else RNO_AV_SLOW
+                    
+        plateScale = tinfo['plateScale']
+
+        # calculate expected electrons 
+        total   = 10.**((zero-mag-airmass*drvs.EXTINCTION[filtnam])/2.5)*expTime
+        peak    = total*xbin*ybin*(plateScale/(seeing/2.3548))**2/(2.*m.pi)
+
+        # Work out fraction of flux in aperture with radius AP_SCALE*seeing
+        correct = 1. - m.exp(-(2.3548*ap_scale)**2/2.)
+		    
+        # expected sky e- per arcsec
+        skyPerArcsec = 10.**((zero-sky)/2.5)*expTime
+        skyPerPixel  = skyPerArcsec*plateScale**2*xbin*ybin
+        narcsec      = m.pi*(ap_scale*seeing)**2
+        skyTot       = skyPerArcsec*narcsec
+        npix         = m.pi*(ap_scale*seeing/plateScale)**2/xbin/ybin
+                
+        signal       = correct*total # in electrons
+        darkTot      = npix*DARK_E*expTime  # in electrons
+        readTot      = npix*read**2 # in electrons
+        cic          = 0 if lnormal else CIC
+
+        # noise, in electrons
+        if lnormal:
+            noise = m.sqrt(readTot + darkTot + skyTot + signal + cic) 
+        else:
+            # assume high gain observations in proportional mode
+            noise = m.sqrt(readTot/AVALANCHE_GAIN_9**2 + 
+                           2.0*(darkTot + skyTot + signal) + cic)
+		    
+        # Now compute signal-to-noise in 3 hour seconds run
+        signalToNoise3 = signal/noise*m.sqrt(3*3600./cycleTime);
+
+        # if using the avalanche mode, check that the signal level 
+        # is safe. A single electron entering the avalanche register 
+        # results in a distribution of electrons at the output with 
+        # mean value given by the parameter avalanche_gain. The 
+        # distribution is close to exponential, hence the probability
+        # of obtaining an amplification n times higher than the mean is 
+        # given by e**-n. A value of 3/5 for n is adopted here for 
+        # warning/safety, which will occur once in every ~20/100 
+        # amplifications
+
+        # convert from electrons to counts
+        total /= gain
+        peak  /= gain
+        
+        warn = 25000
+        sat  = 60000
+
+        if not lnormal:
+            sat = AVALANCHE_SATURATE/AVALANCHE_GAIN_9/5/gain
+            warn = AVALANCHE_SATURATE/AVALANCHE_GAIN_9/3/gain
+
+        peakSat  = peak > sat
+        peakWarn = peak > warn
+
+        return (total, peak, peakSat, peakWarn, signal/noise, signalToNoise3)
