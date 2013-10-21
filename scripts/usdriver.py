@@ -37,9 +37,10 @@ class GUI(tk.Tk):
         # Style it
         drvs.addStyle(self)
 
-        # The GUI has a grid layout with 4 rows by 2 columns. The bottom 
-        # row is occupied by logger windows. Frames are used to group 
-        # widgets. 
+        # We now create the various container widgets. The order here
+        # is mostly a case of the most basic first which often need to
+        # be passed to later ones. This cannot entirely be followed however
+        # see the 'share' dictionary below
 
         # First the loggers, command and response
         clog = drvs.LogDisplay(self, 5, 50, 'Command log')
@@ -49,8 +50,6 @@ class GUI(tk.Tk):
         # from one to another. Basically a thinly-disguised global
         share = {'clog' : clog, 'rlog' : rlog, 'cpars' : cpars}
 
-        # The right-hand side
-
         # Instrument setup frame. 
         instpars  = uspec.InstPars(self, share)
         share.update({'instpars' : instpars})
@@ -59,25 +58,11 @@ class GUI(tk.Tk):
         runpars = uspec.RunPars(self, share)
         share.update({'runpars' : runpars})
 
-        # Grid vertically
-        instpars.grid(row=0,column=1,sticky=tk.W+tk.N,padx=10,pady=10)
-        runpars.grid(row=1,column=1,rowspan=2,sticky=tk.W+tk.N,padx=10,pady=10)
-        rlog.grid(row=4,column=1,sticky=tk.W,padx=10,pady=10)
-
-        # The left-hand side: 3 frames at top, 1 log
-        # at the bottom. First frame simply provides switches 
-        # 'setup' and 'observe' to allow switching of the second
-        # between the two possibilities. The third frame is an 
-        # information frame.
-
-        # Kick off with some frames that have to be available to the 
-        # observation frame
-
-        # The information frame
+        # The information frame (run and frame number, exposure time)
         info = drvs.InfoFrame(self, share)
         share.update({'info' : info})
 
-        # Container frame for switch options and observe & setup parameters
+        # Container frame for switch options, observe, focal plane slide and setup widgets
         topLhsFrame = tk.Frame(self)
 
         # Focal plane slide frame
@@ -85,7 +70,6 @@ class GUI(tk.Tk):
         share.update({'fpslide' : fpslide})
 
         # Observe frame: needed for the setup frame so defined first.
-        # observeOther serves the same purpose as instOther above
         observe = uspec.Observe(topLhsFrame, share)
         share.update({'observe' : observe})
 
@@ -94,30 +78,33 @@ class GUI(tk.Tk):
         setup = drvs.InstSetup(topLhsFrame, share)
         share.update({'setup' : setup})
 
-        # Count rate frame
-        count = drvs.CountsFrame(self, share)
-        share.update({'cframe' : count)
+        # Count & S/N frame
+        count = uspec.CountsFrame(self, share)
+        share.update({'cframe' : count})
 
         # Astronomical information frame
         astro = drvs.AstroFrame(self, share)
 
-        # Sub-frame to select between setup or observe
-        # Requires both of the previous two frames to have been set.
+        # Sub-frame to select between setup, observe, focal plane slide
         switch = drvs.Switch(topLhsFrame, share)
 
         # Pack vertically into the container frame
         switch.pack(pady=5,anchor=tk.W)
         setup.pack(pady=5,anchor=tk.W)
 
-        # Now format the left-hand side: container frame, info, astro
-        # and clog arranged in a vertical grid.
+        # Format the left-hand side
         topLhsFrame.grid(row=0,column=0,sticky=tk.W+tk.N,padx=10,pady=10)
         info.grid(row=1,column=0,sticky=tk.W+tk.N,padx=10,pady=10)
         count.grid(row=2,column=0,sticky=tk.W+tk.N,padx=10,pady=10)
-        astro.grid(row=3,column=0,sticky=tk.W+tk.N,padx=10,pady=10)
-        clog.grid(row=4,column=0,sticky=tk.W,padx=10,pady=10)
+        clog.grid(row=3,column=0,sticky=tk.W,padx=10,pady=10)
 
-        # Create top menubar
+        # Right-hand side
+        instpars.grid(row=0,column=1,sticky=tk.W+tk.N,padx=10,pady=10)
+        runpars.grid(row=1,column=1,sticky=tk.W+tk.N,padx=10,pady=10)
+        astro.grid(row=2,column=1,sticky=tk.W+tk.N,padx=10,pady=10)
+        rlog.grid(row=3,column=1,sticky=tk.W,padx=10,pady=10)
+
+        # Top menubar
         menubar = tk.Menu(self)
         menubar.add_command(label="Quit", command=self.quit)
 
