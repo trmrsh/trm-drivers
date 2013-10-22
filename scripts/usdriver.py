@@ -94,8 +94,8 @@ class GUI(tk.Tk):
 
         # Format the left-hand side
         topLhsFrame.grid(row=0,column=0,sticky=tk.W+tk.N,padx=10,pady=10)
-        info.grid(row=1,column=0,sticky=tk.W+tk.N,padx=10,pady=10)
-        count.grid(row=2,column=0,sticky=tk.W+tk.N,padx=10,pady=10)
+        count.grid(row=1,column=0,sticky=tk.W+tk.N,padx=10,pady=10)
+        info.grid(row=2,column=0,sticky=tk.W+tk.N,padx=10,pady=10)
         clog.grid(row=3,column=0,sticky=tk.W,padx=10,pady=10)
 
         # Right-hand side
@@ -116,14 +116,17 @@ class GUI(tk.Tk):
         settingsMenu.add_cascade(label='Expert', menu=expertMenu)
 
         # Some boolean switches
-        settingsMenu.add_checkbutton(label='Force run params', 
-                                     var=drvs.Boolean('require_run_params',cpars))
+        settingsMenu.add_checkbutton(
+            label='Require run params',
+            var=drvs.Boolean('require_run_params',cpars))
 
-        settingsMenu.add_checkbutton(label='Confirm HV gain', 
-                                     var=drvs.Boolean('confirm_hv_gain_on',cpars))
+        settingsMenu.add_checkbutton(
+            label='Confirm HV gain', 
+            var=drvs.Boolean('confirm_hv_gain_on',cpars))
 
-        settingsMenu.add_checkbutton(label='Confirm target', 
-                                     var=drvs.Boolean('confirm_on_change',cpars))
+        settingsMenu.add_checkbutton(
+            label='Confirm target', 
+            var=drvs.Boolean('confirm_on_change',cpars))
 
         # Add to menubar
         menubar.add_cascade(label='Settings', menu=settingsMenu)

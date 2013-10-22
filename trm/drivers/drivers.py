@@ -184,10 +184,12 @@ def loadCpars(fp):
 
     # Special code for the templates
     labels = [x.strip() for x in parser.get('All','TEMPLATE_LABELS').split(';')]
-    pairs  = [int(x.strip()) for x in parser.get('All','TEMPLATE_PAIRS').split(';')]
+    pairs  = [int(x.strip()) for x in 
+              parser.get('All','TEMPLATE_PAIRS').split(';')]
     apps   = [x.strip() for x in parser.get('All','TEMPLATE_APPS').split(';')]
     ids    = [x.strip() for x in parser.get('All','TEMPLATE_IDS').split(';')]
-    if len(pairs) != len(labels) or len(apps) != len(labels) or len(ids) != len(labels):
+    if len(pairs) != len(labels) or \
+            len(apps) != len(labels) or len(ids) != len(labels):
         print('TEMPLATE_LABELS, TEMPLATE_PAIRS, TEMPLATE_APPS and TEMPLATE_IDS must all')
         print('have the same number of items.')
         print('Please fix the configuration file = ' + fp.name)
@@ -661,6 +663,101 @@ class RangedMint (RangedInt):
         chunk = self.mfac.value()
         return chunk*(self.imax // chunk)
 
+class ListInt (IntegerEntry):
+    """
+    Provides integer input allowing only a finite list of integers.
+    Needed for the binning factors.
+    """
+    def __init__(self, master, ival, allowed, checker, **kw):
+        """
+        master  -- enclosing widget
+        ival    -- initial integer value
+        allowed -- list of allowed values. Will be checked for uniqueness
+        checker -- command that is run on any change to the entry
+        kw      -- keyword arguments
+        """
+        if ival not in allowed:
+            raise DriverError('drivers.ListInt: value = ' + str(ival) + ' not in list of allowed values.')
+        if len(set(allowed)) != len(allowed):
+            raise DriverError('drivers.ListInt: not all values unique in allowed list.')
+
+        # we need to maintain an index of which integer has been selected
+        self.allowed = allowed
+        self.index   = allowed.index(ival)
+        IntegerEntry.__init__(self, master, ival, checker, False, **kw)
+        self.set_bind()
+
+
+    def set_bind(self):
+        """
+        Sets key bindings -- we need this more than once
+        """
+        self.unbind('<Shift-Up>')
+        self.unbind('<Shift-Down>')
+        self.unbind('<Control-Up>')
+        self.unbind('<Control-Down>')
+        self.unbind('<Double-Button-1>')
+        self.unbind('<Double-Button-3>')
+        self.unbind('<Shift-Button-1>')
+        self.unbind('<Shift-Button-3>')
+        self.unbind('<Control-Button-1>')
+        self.unbind('<Control-Button-3>')
+
+        self.bind('<Button-1>', lambda e : self.add(1))
+        self.bind('<Button-3>', lambda e : self.sub(1))
+        self.bind('<Up>', lambda e : self.add(1))
+        self.bind('<Down>', lambda e : self.sub(1))
+        self.bind('<Enter>', self._enter)
+        self.bind('<Next>', lambda e : self.set(self.allowed[0]))
+        self.bind('<Prior>', lambda e : self.set(self.allowed[-1]))
+
+    def set_unbind(self):
+        """
+        Unsets key bindings -- we need this more than once
+        """
+        self.unbind('<Button-1>')
+        self.unbind('<Button-3>')
+        self.unbind('<Up>')
+        self.unbind('<Down>')
+        self.unbind('<Enter>')
+        self.unbind('<Next>')
+        self.unbind('<Prior>')
+
+    def validate(self, value):
+        """
+        Applies the validation criteria. 
+        Returns value, new value, or None if invalid.
+
+        Overload this in derived classes.
+        """
+        try:
+            v = int(value)
+            if v not in self.allowed:
+                return None
+            return value
+        except ValueError:
+            return None
+
+    def add(self, num):
+        """
+        Adds num to the current value
+        """
+        self.index = max(0,min(len(self.allowed)-1,self.index+num)) 
+        self.set(self.allowed[self.index])
+
+    def sub(self, num):
+        """
+        Subtracts num from the current value
+        """
+        self.index = max(0,min(len(self.allowed)-1,self.index-num)) 
+        self.set(self.allowed[self.index])
+
+    def ok(self):
+        """
+        Returns True if OK to use, else False
+        """
+        return True
+
 class FloatEntry(tk.Entry):
     """
     Defines an Entry field which only accepts floating point input. 
@@ -707,7 +804,7 @@ class FloatEntry(tk.Entry):
 
     def value(self):
         """
-        Returns integer value, if possible, None if not.
+        Returns float value, if possible, None if not.
         """
         try:
             return float(self._value)
@@ -844,24 +941,28 @@ class RangedFloat (FloatEntry):
     """
     Provides range-checked float input.
     """
-    def __init__(self, master, fval, fmin, fmax, checker, blank, **kw):
+    def __init__(self, master, fval, fmin, fmax, checker, blank, allowzero=False, **kw):
         """
-        master  -- enclosing widget
-        fval    -- initial float value
-        fmin    -- minimum value
-        fmax    -- maximum value
-        checker -- command that is run on any change to the entry
-        blank   -- controls whether the field is allowed to be
+        master    -- enclosing widget
+        fval      -- initial float value
+        fmin      -- minimum value
+        fmax      -- maximum value
+        checker   -- command that is run on any change to the entry
+        blank     -- controls whether the field is allowed to be
                    blank. In some cases it makes things easier if
                    a blank field is allowed, even if it is technically
                    invalid.
-        kw      -- keyword arguments
+        allowzero -- if 0 < fmin < 1 input of numbers in the range fmin to 1
+                     can be difficult unless 0 is allowed even though it is
+                     an invalid value.
+        kw        -- keyword arguments
         """
         self.fmin = fmin
         self.fmax = fmax
         FloatEntry.__init__(self, master, fval, checker, blank, **kw)
         self.bind('<Next>', lambda e : self.set(self.fmin))
         self.bind('<Prior>', lambda e : self.set(self.fmax))
+        self.allowzero = allowzero
 
     def set_bind(self):
         """
@@ -890,7 +991,8 @@ class RangedFloat (FloatEntry):
             # trap blank fields here
             if not self.blank or value: 
                 v = float(value)
-                if v < self.fmin or v > self.fmax:
+                if (self.allowzero and v != 0 and v < self.fmin) or \
+                        (not self.allowzero and v < self.fmin) or v > self.fmax:
                     return None
             return value
         except ValueError:
@@ -922,7 +1024,7 @@ class RangedFloat (FloatEntry):
         """
         try:
             v = float(self._value)
-            if v < self.fmin or v > self.imax:
+            if v < self.fmin or v > self.fmax:
                 return False
             else:
                 return True
@@ -930,6 +1032,64 @@ class RangedFloat (FloatEntry):
             return False
 
 
+class Expose (RangedFloat):
+    """
+    Special entry field for exposure times designed to return
+    an integer number of 0.1ms increments.
+    """
+    def __init__(self, master, fval, fmin, fmax, checker, **kw):
+        """
+        master  -- enclosing widget
+        fval    -- initial value, seconds
+        fmin    -- minimum value, seconds
+        fmax    -- maximum value, seconds
+        checker -- command that is run on any change to the entry
+
+        fval, fmin and fmax must be multiples of 0.0001
+        """
+        if round(10000*fval) != 10000*fval:
+            raise DriverError('drivers.Expose.__init__: fval must be a multiple of 0.0001')
+        if round(10000*fmin) != 10000*fmin:
+            raise DriverError('drivers.Expose.__init__: fmin must be a multiple of 0.0001')
+        if round(10000*fmax) != 10000*fmax:
+            raise DriverError('drivers.Expose.__init__: fmax must be a multiple of 0.0001')
+
+        RangedFloat.__init__(self, master, fval, fmin, fmax, checker, True, **kw)
+
+    def validate(self, value):
+        """
+        This prevents setting any value more precise than 0.0001
+        """
+        try:
+            # trap blank fields here
+            if value: 
+                v = float(value)
+                if (v != 0 and v < self.fmin) or v > self.fmax:
+                    return None
+                if round(10000*v) != 10000*v:
+                    return None
+            return value
+        except ValueError:
+            return None
+
+    def ivalue(self):
+        """
+        Returns integer value in units of 0.1ms, if possible, None if not.
+        """
+        try:
+            return int(round(10000*float(self._value)))
+        except:
+            return None
+
+    def set_min(self, fmin):
+        """
+        Updates minimum value
+        """
+        if round(10000*fmin) != 10000*fmin:
+            raise DriverError('drivers.Expose.set_min: fmin must be a multiple of 0.0001')
+        self.fmin = fmin
+        self.set(self.fmin)
+        
 class TextEntry (tk.Entry):
     """
     Sub-class of Entry for basic text input. Not a lot to
@@ -1223,6 +1383,7 @@ class Start(ActButton):
         """
         
         ActButton.__init__(self, master, width, share, bg=COL['start'], text='Start')
+        self.target = None
 
     def act(self):
         """
@@ -1230,10 +1391,25 @@ class Start(ActButton):
         """
 
         o = self.share
-        cpars, ipars, clog, rlog = \
-            o['cpars'], o['instpars'], o['clog'], o['rlog']
+        cpars, ipars, rpars, clog, rlog = \
+            o['cpars'], o['instpars'], o['runpars'], o['clog'], o['rlog']
 
-        clog.log.debug('Start pressed\n')
+        # Copule of safety checks
+        if cpars['expert_level'] == 0 and cpars['confirm_hv_gain_on'] and \
+                ipars.avalanche() and ipars.avgain.value() > 0:
+            if not tkMessageBox.askokcancel('Avalanche gain is on at level = ' + 
+                                            ipars.avgain.value() + '\n' + 
+                                            'Continue?'):
+                clog.log.warn('Start operation cancelled\n')
+                return False
+
+        if cpars['expert_level'] == 0 and cpars['confirm_on_change'] and \
+                self.target is not None and self.target != rpars.target.value():
+             if not tkMessageBox.askokcancel('Target name has changed\n' + 
+                                             'Continue?'):
+                clog.log.warn('Start operation cancelled\n')
+                return False
+        
 
         if execCommand('GO', cpars, clog, rlog):
             clog.log.info('Run started\n')
@@ -2362,46 +2538,68 @@ class InfoFrame(tk.LabelFrame):
     Information frame: run number, exposure time, etc.
     """
     def __init__(self, master, share):
-        tk.LabelFrame.__init__(self, master, text='Run status', padx=3, pady=3)
+        tk.LabelFrame.__init__(self, master, text='Run status', padx=4, pady=4)
 
-        crun   = CurrentRun(self, share)
-        fnum   = tk.Label(self,text='UNDEF') 
-        timer  = Timer(self)
-        filter = tk.Label(self,text='UNDEF ') 
-        ra     = tk.Label(self,text='UNDEF ') 
-        dec    = tk.Label(self,text='UNDEF  ') 
-        alt    = tk.Label(self,text='UNDEF ') 
-        az     = tk.Label(self,text='UNDEF ') 
-        mdist  = tk.Label(self,text='UNDEF ') 
+        run     = CurrentRun(self, share)
+        frame   = tk.Label(self,text='UNDEF') 
+        timer   = Timer(self)
+        cadence = tk.Label(self,text='UNDEF') 
+        duty    = tk.Label(self,text='UNDEF') 
+        filt    = tk.Label(self,text='UNDEF ') 
+        ra      = tk.Label(self,text='UNDEF ') 
+        dec     = tk.Label(self,text='UNDEF  ') 
+        alt     = tk.Label(self,text='UNDEF ') 
+        az      = tk.Label(self,text='UNDEF ') 
+        ha      = tk.Label(self,text='UNDEF ') 
+        pa      = tk.Label(self,text='UNDEF ') 
+        mdist   = tk.Label(self,text='UNDEF ') 
+        fpslide = tk.Label(self,text='UNDEF ') 
 
         # left-hand side
-        tk.Label(self,text='Current run:').grid(row=0,column=0,padx=5,sticky=tk.W)
-        crun.grid(row=0,column=1,padx=5,sticky=tk.W)
+        tk.Label(self,text='Run:').grid(row=0,column=0,padx=5,sticky=tk.W)
+        run.grid(row=0,column=1,padx=5,sticky=tk.W)
 
-        tk.Label(self,text='Frame number:').grid(row=1,column=0,padx=5,sticky=tk.W)
-        fnum.grid(row=1,column=1,padx=5,sticky=tk.W)
+        tk.Label(self,text='Frame:').grid(row=1,column=0,padx=5,sticky=tk.W)
+        frame.grid(row=1,column=1,padx=5,sticky=tk.W)
 
-        tk.Label(self,text='Exposure time:').grid(row=2,column=0,padx=5,sticky=tk.W)
+        tk.Label(self,text='Exposure:').grid(row=2,column=0,padx=5,sticky=tk.W)
         timer.grid(row=2,column=1,padx=5,sticky=tk.W)
 
         tk.Label(self,text='Filter:').grid(row=3,column=0,padx=5,sticky=tk.W)
-        filter.grid(row=3,column=1,padx=5,sticky=tk.W)
+        filt.grid(row=3,column=1,padx=5,sticky=tk.W)
+
+        tk.Label(self,text='Cadence:').grid(row=4,column=0,padx=5,sticky=tk.W)
+        cadence.grid(row=4,column=1,padx=5,sticky=tk.W)
+
+        tk.Label(self,text='Duty cycle:').grid(row=5,column=0,padx=5,
+                                               sticky=tk.W)
+        duty.grid(row=5,column=1,padx=5,sticky=tk.W)
 
         # right-hand side
-        tk.Label(self,text='RA:').grid(row=0,column=2,padx=5,sticky=tk.W)
-        ra.grid(row=0,column=3,padx=5,sticky=tk.W)
+        tk.Label(self,text='RA:').grid(row=0,column=3,padx=5,sticky=tk.W)
+        ra.grid(row=0,column=4,padx=5,sticky=tk.W)
 
-        tk.Label(self,text='Dec:').grid(row=1,column=2,padx=5,sticky=tk.W)
-        dec.grid(row=1,column=3,padx=5,sticky=tk.W)
+        tk.Label(self,text='Dec:').grid(row=1,column=3,padx=5,sticky=tk.W)
+        dec.grid(row=1,column=4,padx=5,sticky=tk.W)
 
-        tk.Label(self,text='Alt:').grid(row=2,column=2,padx=5,sticky=tk.W)
-        alt.grid(row=2,column=3,padx=5,sticky=tk.W)
+        # right-hand side
+        tk.Label(self,text='PA:').grid(row=2,column=3,padx=5,sticky=tk.W)
+        pa.grid(row=2,column=4,padx=5,sticky=tk.W)
 
-        tk.Label(self,text='Az:').grid(row=3,column=2,padx=5,sticky=tk.W)
-        az.grid(row=3,column=3,padx=5,sticky=tk.W)
+        tk.Label(self,text='Alt:').grid(row=3,column=3,padx=5,sticky=tk.W)
+        alt.grid(row=3,column=4,padx=5,sticky=tk.W)
 
-        tk.Label(self,text='Mdist:').grid(row=4,column=2,padx=5,sticky=tk.W)
-        mdist.grid(row=4,column=3,padx=5,sticky=tk.W)
+        tk.Label(self,text='Az:').grid(row=4,column=3,padx=5,sticky=tk.W)
+        az.grid(row=4,column=4,padx=5,sticky=tk.W)
+
+        tk.Label(self,text='HA:').grid(row=5,column=3,padx=5,sticky=tk.W)
+        ha.grid(row=5,column=4,padx=5,sticky=tk.W)
+
+        tk.Label(self,text='Mdist:').grid(row=0,column=6,padx=5,sticky=tk.W)
+        mdist.grid(row=0,column=7,padx=5,sticky=tk.W)
+
+        tk.Label(self,text='FP slide:').grid(row=1,column=6,padx=5,sticky=tk.W)
+        fpslide.grid(row=1,column=7,padx=5,sticky=tk.W)
 
 class AstroFrame(tk.LabelFrame):
     """
@@ -2641,6 +2839,480 @@ def checkSimbad(target, maxobj=5):
         print('drivers.check: Simbad: there appear to be some results but an error was unexpectedly raised.')
     return results
 
+
+class WinPairs (tk.Frame):
+    """
+    Class to define a frame of multiple window pairs, contained within a gridded block
+    that can be easily position.
+    """
+
+    def __init__(self, master, xsl, xslmin, xslmax, xsr, xsrmin, xsrmax, ys, ysmax, ysmin,
+                 nx, nxmin, nxmax, ny, nymin, nymax, xbin, ybin, nactive, checker):
+        """
+        Arguments:
+
+          master :
+            container widget
+
+          xsl, xslmin, xslmax :
+            initial X value(s) of the leftmost column of left-hand window(s) 
+            along with minimum and maximum values
+
+          xsr, xsrmin, xsrmax :
+            initial X value(s) of the leftmost column of right-hand window(s)
+            along with minimum and maximum values
+
+          ys, ysmin, ysmax :
+            initial Y value(s) of the lowest row of the window
+            along with minimum and maximum values
+
+          nx, nxmin, nxmax :
+            X dimension(s) of windows, unbinned pixels
+            along with minimum and maximum values
+
+          ny, nxmin, nxmax :
+            Y dimension(s) of windows, unbinned pixels
+            along with minimum and maximum values
+
+          xbin : 
+            xbinning factor; must have a 'value' method. Used to step and check nx
+
+          ybin : 
+            ybinning factor; must have a 'value' method. Used to step and check ny 
+
+          nactive : 
+            number of active pairs
+
+          checker : 
+            checker function to provide a global check and update in response
+            to any changes made to the values stored in a Window. Can be None. 
+
+        NB xsl, xsr etc can be arrays or single values.
+        """
+
+        # force inputs into lists
+        xsls, xsrs, yss, nxs, nys = list(xsl), list(xsr), list(ys), list(nx), list(ny)
+        xslmins, xslmaxs, xsrmins, xsrmaxs = list(xslmin), list(xslmax), list(xsrmin), list(xsrmax)
+        ysmins, ysmaxs = list(ysmin), list(ysmax)
+        nxmins, nxmaxs, nymins, nymaxs = list(nxmin), list(nxmax), list(nymin), list(nymax)
+
+        npair = len(xsls)        
+        checks = (xsls, xslmins, xslmaxs, xsrs, xsrmins, xsrmaxs, yss, ysmins, ysmaxs, nxs, nxmins, nxmaxs, nys, nymins, nymaxs)
+        for check in checks:
+            if npair != len(check):
+                raise DriverError('drivers.WindowPairs.__init__: conflict array lengths amonst inputs')
+
+        if nactive > npair:
+            raise DriverError("drivers.WindowPairs.__init__: can't have more active pairs than there are pairs")
+
+        tk.Frame.__init__(self, master)
+
+        # top row
+        tk.Label(self, text='xsl').grid(row=0,column=1)
+        tk.Label(self, text='xsr').grid(row=0,column=2)
+        tk.Label(self, text='ys').grid(row=0,column=3)
+        tk.Label(self, text='nx').grid(row=0,column=4)
+        tk.Label(self, text='ny').grid(row=0,column=5)
+
+        row = 1
+        self.xsl, self.xsr, self.ys, self.nx, self.ny = [],[],[],[],[]
+        for xsl, xslmin, xslmax, xsr, xsrmin, xsrmax, ys, ysmin, ysmax, nx, nxmin, nxmax, ny, nymin, nymax in \
+                zip(*checks):
+
+            # create
+            if npair == 1:
+                self.label = tk.Label(self, text='Pair:')
+            else:
+                self.label = tk.Label(self, text='Pair ' + str(row) + ':')
+
+            self.xsl.append(RangedInt(self, xsl, xslmin, xslmax, checker, True, width=4))
+            self.xsr.append(RangedInt(self, xsr, xsrmin, xsrmax, checker, True, width=4))
+            self.ys.append(RangedInt(self, ys, ysmin, ysmax, checker, True, width=4))
+            self.nx.append(RangedMint(self, nx, nxmin, nxmax, xbin, checker, True, width=4))
+            self.ny.append(RangedMint(self, ny, nymin, nymax, ybin, checker, True, width=4))
+                           
+            # arrange
+            self.label.grid(row=row,column=0)
+            self.xsl.grid(row=row,column=1)
+            self.xsr.grid(row=row,column=2)
+            self.ys.grid(row=row,column=3)
+            self.nx.grid(row=row,column=4)
+            self.ny.grid(row=row,column=5)
+
+            row += 1
+
+        self.xbin = xbin
+        self.ybin = ybin
+        self.nactive = nactive
+
+    def set_nactive(self, nactive):
+        if nactive > len(self.xsl):
+            raise DriverError("drivers.WindowPairs.set_nactive: can't have more active pairs than there are pairs")
+        self.nactive = nactive
+
+    def check(self):
+        """
+        Checks the values of the window pairs. If any problems are found, it 
+        flags them by changing the background colour.
+
+        Returns (status, synced)
+
+          status : flag for whether parameters are viable at all
+          synced : flag for whether the windows are synchronised.
+        """
+
+        status = True
+        synced = False
+
+        xbin = self.xbin.value()
+        ybin = self.ybin.value()
+        nact = self.nactive
+
+        # individual pair checks
+        for xslw, xsrw, ysw, nxw, nyw in \
+                zip(self.xsl[:nact], self.xsr[:nact], self.ys[:nact], self.nx[:nact], self.ny[:nact]):
+            xslw.config(bg=COL['text_bg'])
+            xsrw.config(bg=COL['text_bg'])
+            ysw.config(bg=COL['text_bg'])
+            nxw.config(bg=COL['text_bg'])
+            nyw.config(bg=COL['text_bg'])
+            status = status if xslw.ok() else False
+            status = status if xsrw.ok() else False
+            status = status if ysw.ok() else False
+            status = status if nxw.ok() else False
+            status = status if nyw.ok() else False
+            xsl = xslw.value()
+            xsr = xsrw.value()
+            ys  = ysw.value()
+            nx  = nxw.value()
+            ny  = nyw.value()
+
+            # Are unbinned dimensions consistent with binning factors?
+            if nx is None or nx % xbin != 0:
+                nxw.config(bg=COL['error'])
+                status = False
+
+            if ny is None or ny % ybin != 0:
+                nyw.config(bg=COL['error'])
+                status = False
+
+            # overlap checks
+            if xsl is None or xsr is None or xsl >= xsr:
+                xsrw.config(bg=COL['error'])
+                status = False
+
+            if xsl is None or xsr is None or nx is None or xsl + nx > xsr:
+                xsrw.config(bg=COL['error'])
+                status = False
+
+            # Are the windows synchronised? This means that they would be consistent with
+            # the pixels generated were the whole CCD to be binned by the same factors
+            # If relevant values are not set, we count that as "synced" because the purpose
+            # of this is to enable / disable the sync button and we don't want it to be
+            # enabled just because xs or ys are not set.
+            synced = True if \
+                xsl is None or xsr is None or ys is None or nx is None or ny is None or \
+                ((xsl - 1) % xbin == 0 and (xsr - 1) % xbin == 0 and (ys - 1) % ybin == 0) \
+                else synced
+            
+            # Range checks
+            if xsl is None or nx is None or xsl + nx - 1 > xslw.imax:
+                xslw.config(bg=COL['error'])
+                status = False
+
+            if xsr is None or nx is None or xsr + nx - 1 > xsrw.imax:
+                xsrw.config(bg=COL['error'])
+                status = False
+
+            if ys is None or ny is None or ys + ny - 1 > ysw.imax:
+                ysw.config(bg=COL['error'])
+                status = False
+
+        # Pair overlap checks. Compare one pair with the next one upstream (if there is one)
+        # Only bother if we have survived so far, which save a lot of checks
+        if status:
+            n1 = 0
+            for ysw1, nyw1 in zip(self.ys[:nact-1], self.ny[:nact-1]):
+
+                ys1  = ysw1.value()
+                ny1  = nyw1.value()
+            
+                n1 += 1
+
+                ysw2, nyw2 = self.ys[n1], self.ny[n1]
+
+                ys2  = ysw2.value()
+                ny2  = nyw2.value()
+                
+                if ys1 + ny1 > ys2:
+                    ysw2.config(bg=COL['error'])
+                    status = False
+
+        return (status, synced)
+    
+    def enable(self):
+        nact = self.active
+        for label, xsl, xsr, ys, nx, ny in \
+                zip(self.label[:nact], self.xsl[:nact], self.xsr[:nact], self.ys[:nact], self.nx[:nact], self.ny[:nact]):
+            label.config(state='normal')
+            xsl.enable()
+            xsr.enable()
+            ys.enable()
+            nx.enable()
+            ny.enable()
+
+        for label, xsl, xsr, ys, nx, ny in \
+                zip(self.label[nact:], self.xsl[nact:], self.xsr[nact:], self.ys[nact:], self.nx[nact:], self.ny[nact:]):
+            label.config(state='disable')
+            xsl.disable()
+            xsr.disable()
+            ys.disable()
+            nx.disable()
+            ny.disable()
+
+    def disable(self):
+        for label, xsl, xsr, ys, nx, ny in zip(self.label, self.xsl, self.xsr, self.ys, self.nx, self.ny):
+            label.config(state='disable')
+            xsl.disable()
+            xsr.disable()
+            ys.disable()
+            nx.disable()
+            ny.disable()
+
+class Windows (tk.Frame):
+    """
+    Class to define a frame of multiple windows as a gridded
+    block that can be placed easily within a container widget.
+    Also defines binning factors and the number of active windows.
+    """
+
+    def __init__(self, master, xs, xsmin, xsmax, ys, ysmin, ysmax,
+                 nx, nxmin, nxmax, ny, nymin, nymax, checker):
+        """
+        Arguments:
+
+          master :
+            container widget
+
+          xs, xsmin, xsmax :
+            initial X value(s) of the leftmost column of window(s) 
+            along with minimum and maximum values
+
+          ys, ysmin, ysmax :
+            initial Y value(s) of the lowest row of the window
+            along with minimum and maximum values
+
+          nx, nxmin, nxmax :
+            initial X dimension(s) of windows, unbinned pixels
+            along with minimum and maximum values
+
+          ny, nxmin, nxmax :
+            initial Y dimension(s) of windows, unbinned pixels
+            along with minimum and maximum values
+
+          checker : 
+            checker function to provide a global check and update in response
+            to any changes made to the values stored in a Window. Can be None. 
+
+        NB xs, ys etc can be arrays or single values. If they are arrays their
+        lengths must match
+        """
+
+        # force inputs into lists
+        xss, yss, nxs, nys = list(xs), list(ys), list(nx), list(ny)
+        xsmins, xsmaxs = list(xsmin), list(xsmax)
+        ysmins, ysmaxs = list(ysmin), list(ysmax)
+        nxmins, nxmaxs, nymins, nymaxs = list(nxmin), list(nxmax), list(nymin), list(nymax)
+
+        nwin = len(xss)        
+        checks = (xss, xsmins, xsmaxs, yss, ysmins, ysmaxs, nxs, nxmins, nxmaxs, nys, nymins, nymaxs)
+        for check in checks:
+            if nwin != len(check):
+                raise DriverError('drivers.Windows.__init__: conflict array lengths amonst inputs')
+
+        tk.Frame.__init__(self, master)
+
+        # top part contains the binning factors and the number of active windows
+        top = tk.Frame(self)
+        top.pack(anchor=tk.W)
+
+        tk.Label(top, text='Binning factors (X x Y)').grid(row=0, column=0, sticky=tk.W)
+
+        xyframe = tk.Frame(top)
+        self.xbin = ListInt(xyframe, 1, (1,2,3,4,5,6,8), checker, width=2)
+        self.xbin.pack(side=tk.LEFT)
+        tk.Label(xyframe, text=' x ').pack(side=tk.LEFT)
+        self.ybin = ListInt(xyframe, 1, (1,2,3,4,5,6,8), checker, width=2)
+        self.ybin.pack(side=tk.LEFT)
+        xyframe.grid(row=0,column=1,sticky=tk.W)
+
+        # Second row: number of windows
+        tk.Label(top, text='Number of windows').grid(row=1,column=0, sticky=tk.W)
+        self.nwin = RangedInt(top, 1, 1, nwin, checker, False, width=2)
+        self.nwin.grid(row=1,column=1,sticky=tk.W,pady=2)
+
+        # bottom part contains the window settings
+        bottom = tk.Frame(self)
+        bottom.pack(anchor=tk.W)
+
+        # top row
+        tk.Label(bottom, text='xs').grid(row=0,column=1)
+        tk.Label(bottom, text='ys').grid(row=0,column=2)
+        tk.Label(bottom, text='nx').grid(row=0,column=3)
+        tk.Label(bottom, text='ny').grid(row=0,column=4)
+
+        row = 1
+        self.label, self.xs, self.ys, self.nx, self.ny = [],[],[],[], []
+        for xs, xsmin, xsmax, ys, ysmin, ysmax, nx, nxmin, nxmax, ny, nymin, nymax in \
+                zip(*checks):
+
+            # create
+            if nwin == 1:
+                self.label.append(tk.Label(bottom, text='Window:'))
+            else:
+                self.label.append(tk.Label(bottom, text='Window ' + str(row) + ':'))
+
+            self.xs.append(RangedInt(bottom, xs, xsmin, xsmax, checker, True, width=4))
+            self.ys.append(RangedInt(bottom, ys, ysmin, ysmax, checker, True, width=4))
+            self.nx.append(RangedMint(bottom, nx, nxmin, nxmax, self.xbin, checker, True, width=4))
+            self.ny.append(RangedMint(bottom, ny, nymin, nymax, self.ybin, checker, True, width=4))
+                           
+            # arrange
+            self.label[-1].grid(row=row,column=0)
+            self.xs[-1].grid(row=row,column=1)
+            self.ys[-1].grid(row=row,column=2)
+            self.nx[-1].grid(row=row,column=3)
+            self.ny[-1].grid(row=row,column=4)
+
+            row += 1
+
+    def check(self):
+        """
+        Checks the values of the windows. If any problems are found, it 
+        flags them by changing the background colour. Only active
+        windows are checked.
+
+        Returns (status, synced)
+
+          status : flag for whether parameters are viable at all
+          synced : flag for whether the windows are synchronised.
+        """
+
+        status = True
+        synced = False
+
+        xbin = self.xbin.value()
+        ybin = self.ybin.value()
+        nwin = self.nwin.value()
+
+        # individual window checks
+        for xsw, ysw, nxw, nyw in \
+                zip(self.xs[:nwin], self.ys[:nwin], self.nx[:nwin], self.ny[:nwin]):
+            xsw.config(bg=COL['text_bg'])
+            ysw.config(bg=COL['text_bg'])
+            nxw.config(bg=COL['text_bg'])
+            nyw.config(bg=COL['text_bg'])
+            status = status if xsw.ok() else False
+            status = status if ysw.ok() else False
+            status = status if nxw.ok() else False
+            status = status if nyw.ok() else False
+            xs  = xsw.value()
+            ys  = ysw.value()
+            nx  = nxw.value()
+            ny  = nyw.value()
+
+            # Are unbinned dimensions consistent with binning factors?
+            if nx is None or nx % xbin != 0:
+                nxw.config(bg=COL['error'])
+                status = False
+
+            if ny is None or ny % ybin != 0:
+                nyw.config(bg=COL['error'])
+                status = False
+
+            # Are the windows synchronised? This means that they would be consistent with
+            # the pixels generated were the whole CCD to be binned by the same factors
+            # If relevant values are not set, we count that as "synced" because the purpose
+            # of this is to enable / disable the sync button and we don't want it to be
+            # enabled just because xs or ys are not set.
+            synced = True if \
+                xs is None or ys is None or nx is None or ny is None or \
+                ((xs - 1) % xbin == 0 and (ys - 1) % ybin == 0) \
+                else synced
+            
+            # Range checks
+            if xs is None or nx is None or xs + nx - 1 > xsw.imax:
+                xsw.config(bg=COL['error'])
+                status = False
+
+            if ys is None or ny is None or ys + ny - 1 > ysw.imax:
+                ysw.config(bg=COL['error'])
+                status = False
+
+        # Overlap checks. Compare each window with every other
+        # Only bother if we have survived so far, which saves a lot of checks
+        # At the moment, checks are the minimum (just check that there is no
+        # direct overlap of any pairs of active windows) and more may be 
+        # required depending upon the constraints ... ??
+        if status:
+            n1 = 0
+            for xsw1, ysw1, nxw1, nyw1 in zip(self.xs[:nwin-1], self.ys[:nwin-1], self.nx[:nwin-1], self.ny[:nwin-1]):
+
+                xs1  = xsw1.value()
+                ys1  = ysw1.value()
+                nx1  = nxw1.value()
+                ny1  = nyw1.value()
+            
+                n1 += 1
+                for xsw2, ysw2, nxw2, nyw2 in zip(self.xs[n1:nwin-1], self.ys[n1:nwin-1], self.nx[n1:nwin-1], self.ny[n1:nwin-1]):
+                    xs2  = xsw2.value()
+                    ys2  = ysw2.value()
+                    nx2  = nxw2.value()
+                    ny2  = nyw2.value()
+
+                    if xs2 < xs1 + nx1 and xs1 < xs2 + nx2 and ys2 < ys1 + ny1 and ys1 < ys2 + ny2:
+                        xsw2.config(bg=COL['error'])
+                        ysw2.config(bg=COL['error'])
+                        status = False
+
+        return (status, synced)
+    
+    def enable(self):
+        nwin = self.nwin.value()
+        for label, xs, ys, nx, ny in \
+                zip(self.label[:nwin], self.xs[:nwin], self.ys[:nwin], self.nx[:nwin], self.ny[:nwin]):
+            label.config(state='normal')
+            xs.enable()
+            ys.enable()
+            nx.enable()
+            ny.enable()
+
+        for label, xs, ys, nx, ny in \
+                zip(self.label[nwin:], self.xs[nwin:], self.ys[nwin:], self.nx[nwin:], self.ny[nwin:]):
+            label.config(state='disable')
+            xs.disable()
+            ys.disable()
+            nx.disable()
+            ny.disable()
+
+    def disable(self):
+        for label, xs, ys, nx, ny in zip(self.label, self.xs, self.ys, self.nx, self.ny):
+            label.config(state='disable')
+            xs.disable()
+            ys.disable()
+            nx.disable()
+            ny.disable()
+
+    def __iter__(self):
+        """
+        Generator to allow looping through through the window values. Successive
+        calls return xs, ys, nx, ny for each window
+        """
+        n = 0
+        nwin = self.nwin.value()
+        while n < nwin:
+            yield (self.xs[n].value(),self.ys[n].value(),self.nx[n].value(),self.ny[n].value())
+            n += 1
+
 class DriverError(Exception):
     pass
-

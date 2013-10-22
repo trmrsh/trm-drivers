@@ -12,9 +12,6 @@ import os
 import drivers as drvs
 import math as m
 
-# maximum number of windows on any application
-MAXWIN = 4
-
 # Timing, gain, noise parameters lifted from java usdriver
 VCLOCK           =  14.4e-6  # vertical clocking time 
 HCLOCK_NORM      =  0.48e-6  # normal mode horizontal clock
@@ -60,266 +57,40 @@ DARK_E         =  0.001 # electrons/pix/sec
 CIC            =  0.010 # Clock induced charge, electrons/pix
 
 
-class Window (object):
-    """
-    Class to define a plain Window with an x,y left-lower pixel
-    and dimensions.
-    """
-
-    def __init__(self, master, row, column, xstart, ystart, nx, ny, xbin, ybin, checker):
-        """
-        Sets up a window pair as a row of values, initialised to
-        the arguments supplied. The row is created within a sub-frame
-        of master.
-
-        Arguments:
-
-          master :
-            master widget within which the Frame containing the values
-            will be placed. A grid layout will be adopted to allow
-            other Windows to abutted nicely, hence the row and
-            column of the leftmost entry field must be specified
-
-          row :
-            row along which values will be placed
-
-          column :
-            first column for fields
-
-          xstart :
-            initial X value of the leftmost column of the window
-
-          ystart :
-            initial Y value of the lowest row of the window
-
-          nx :
-            X dimension of windows, unbinned pixels
-
-          ny :
-            Y dimension of windows, unbinned pixels
-
-          xbin : 
-            xbinning factor; must have a 'value' method. Used to step and check nx
-
-          ybin : 
-            ybinning factor; must have a 'value' method. Used to step and check ny 
-
-          checker : 
-            checker function to provide a global check and update in response
-            to any changes made to the values stored in a Window. Can be None. 
-        """
-
-        # A window needs 4 parameters to specify it:
-        #
-        #  xstart -- first x value to be read
-        #  ystart -- first y value to be read
-        #  nx     -- X dimension, unbinned pixels
-        #  ny     -- Y dimension, unbinned pixels
-
-        self.xstart = drvs.RangedInt(master, xstart, 1, 1056, checker, True, width=4)
-        self.xstart.grid(row=row,column=column)
-
-        self.ystart = drvs.RangedInt(master, ystart, 1, 1072, checker, True, width=4)
-        self.ystart.grid(row=row,column=column+1)
-
-        self.nx = drvs.RangedMint(master, nx, 1, 1056, xbin, checker, True, width=4)
-        self.nx.grid(row=row,column=column+2)
-
-        self.ny = drvs.RangedMint(master, ny, 1, 1072, ybin, checker, True, width=4)
-        self.ny.grid(row=row,column=column+3)
-
-        self.xbin = xbin
-        self.ybin = ybin
-        
-
-    def value(self):
-        "Returns current xstart, ystart, nx, ny values"
-        return (self.xstart.value(),self.ystart.value(),self.nx.value(),self.ny.value())
-
-    def check(self):
-        """
-        Checks the values of a Window. If any problems are found, it 
-        flags them by changing the background colour.
-
-        Returns (status, synced)
-
-          status : flag for whether parameters are viable at all
-          synced : flag for whether the Window is synchronised.
-
-        """
-
-        # set all OK to start with
-        self.xstart.config(bg=drvs.COL['text_bg'])
-        self.ystart.config(bg=drvs.COL['text_bg'])
-        self.nx.config(bg=drvs.COL['text_bg'])
-        self.ny.config(bg=drvs.COL['text_bg'])    
-
-        # Get values
-        xstart, ystart, nx, ny = self.value()
-        xbin = self.xbin.value()
-        ybin = self.ybin.value()
-
-        # Are they all OK individually?
-        status = self.xstart.ok() and self.ystart.ok() and self.nx.ok() and self.ny.ok()
-
-        # Are unbinned dimensions consistent with binning factors?
-        if nx is None or nx % xbin != 0:
-            self.nx.config(bg=drvs.COL['error'])
-            status = False
-
-        if ny is None or ny % ybin != 0:
-            self.ny.config(bg=drvs.COL['error'])
-            status = False
-
-        # Are the windows synchronised? This means that they would be consistent with
-        # the pixels generated were the whole CCD to be binned by the same factors
-        # If xstart or ystart are not set, we count that as "synced" because the purpose
-        # of this is to enable / disable the sync button and we don't want it to be
-        # enabled just because xstart or ystart are not set.
-        synced = xstart is None or ystart is None or nx is None or ny is None or \
-            ((xstart - 1) % xbin == 0 and (ystart - 1) % ybin == 0)
-            
-        # Now come cross-value checks:
-
-        # Is rightmost pixel of lefthand window within range?
-        if xstart is None or xstart + nx - 1 > 1056:
-            self.xstart.config(bg=drvs.COL['error'])
-            status = False
-
-        # Is top pixel within range?
-        if ystart is None or ystart + ny - 1 > 1072:
-            self.ystart.config(bg=drvs.COL['error'])
-            status = False
-
-        return (status, synced)
-    
-    def enable(self):
-        self.xstart.enable()
-        self.ystart.enable()
-        self.nx.enable()
-        self.ny.enable()
-
-    def disable(self):
-        self.xstart.disable()
-        self.ystart.disable()
-        self.nx.disable()
-        self.ny.disable()
-
-class UspecWins(tk.Frame):
-    """
-    Defines a block with window info
-    """
-
-    def __init__(self, master, cpars, xbin, ybin, checker):
-        """
-        master  : enclosing widget
-        cpars : configuration parameters
-        xbin    : xbinning factor (with a get method)
-        ybin    : ybinning factor (with a get method)
-        checker : callback that runs checks on the setup parameters. It is passed down 
-                  to the individual Windows so that it is run any time a parameter is
-                  changed.
-        """          
-        tk.Frame.__init__(self, master)
-
-        # First row
-        row    = 0
-        column = 0
-
-        # Spacer column between first and third
-        column += 1
-        tk.Label(self, text=' ').grid(row=0,column=column,padx=5)
-
-        # Third column
-        column += 1
-
-        # First row: names of parameters
-        small_font = tkFont.nametofont("TkDefaultFont").copy()
-        small_font.configure(size=10)
-        tk.Label(self, text='xstart', font=small_font).grid(row=row,column=column)
-        tk.Label(self, text='ystart', font=small_font).grid(row=row,column=column+1)
-        tk.Label(self, text='nx', font=small_font).grid(row=row,column=column+2)
-        tk.Label(self, text='ny', font=small_font).grid(row=row,column=column+3)
-        
-        # Now window rows. Keep the labels as well so they can be disabled.
-        self.wlabs = []
-        self.wins  = []
-        column = 0
-        for i in range(MAXWIN):
-            self.wlabs.append(tk.Label(self, text='Window ' + str(i+1)))
-            self.wlabs[-1].grid(row=i+2,column=column, sticky=tk.W)
-            self.wins.append(Window(self, i+2, column+2, 1+100*i, 1+100*i, 100, 100, xbin, ybin, checker))
-
-        # Save cpars parameters
-        self.cpars = cpars
-
-    def check(self, nwin):
-        """
-        Checks the validity of the window parameters. 
-
-          nwin : numbers of windows to check
-
-        Returns (status, synced), flags which indicate whether the window 
-        parameters are viable and synced.
-        """
-
-        status = True
-        synced = True
-        
-        # Pick up global status and need to synchronise
-        for win in self.wins[:nwin]:
-            stat, syncd = win.check()
-            if not stat: status = False
-            if not syncd: synced = False
-
-        # Check that no two windows overlap
-        for i,win1 in enumerate(self.wins[:nwin]):
-            xl1,yl1,nx1,ny1 = win1.value()
-            for j, win2 in enumerate(self.wins[i+1:nwin]):
-                xl2,yl2,nx2,ny2 = win2.value()
-                if drvs.overlap(xl1,yl1,nx1,ny1,xl2,yl2,nx2,ny2):
-                    win2.xstart.config(bg=drvs.COL['error'])
-                    win2.ystart.config(bg=drvs.COL['error'])
-                    status = False
-
-        return (status, synced)
-
 class Sync(drvs.ActButton):
     """
     Class defining the 'Sync' button's operation. This moves the windows to ensure that
     the pixels are in step with a full-frame of the same binning.
     """
 
-    def __init__(self, master, width, xbin, ybin, nwin, wframe, callback):
+    def __init__(self, master, width, wframe, callback):
         """
         master   : containing widget
         width    : width of button
-        xbin, ybin, nwin, wframe : window parameters
+        wframe   : window parameters
         """
         drvs.ActButton.__init__(self, master, width, {}, callback, text='Sync')        
-        self.xbin   = xbin
-        self.ybin   = ybin
-        self.nwin   = nwin
         self.wframe = wframe
 
     def act(self):
         """
         Carries out the action associated with the Sync button
         """
-        xbin = self.xbin.value()
-        ybin = self.ybin.value()
-        nwin = self.nwin.value()
-        for win in self.wframe.wins[:nwin]:
-            xstart = win.xstart.value()
-            xstart = xbin*((xstart-1)//xbin)+1
-            win.xstart.set(xstart)
-            ystart = win.ystart.value()
-            ystart = ybin*((ystart-1)//xbin)+1
-            win.ystart.set(ystart)
+        xbin = self.wframe.xbin.value()
+        ybin = self.wframe.ybin.value()
+        n = 0
+        for xs, ys, nx, ny in self.wframe:
+            xs = win.xs.value()
+            xs = xbin*((xs-1)//xbin)+1
+            self.wframe.xs[n].set(xs)
+            ys = win.ys.value()
+            ys = ybin*((ys-1)//xbin)+1
+            self.wframe.ys[n].set(ys)
+            n += 1
         self.config(bg=drvs.COL['main'])
         self.disable()
         self.callback()
-    
+
 class InstPars(tk.LabelFrame):
     """
     Ultraspec instrument parameters block.
@@ -334,126 +105,84 @@ class InstPars(tk.LabelFrame):
         tk.LabelFrame.__init__(self, master, text='Instrument parameters', 
                                padx=10, pady=10)
 
+        # left hand side
+        lhs = tk.Frame(self)
+
         # First column: the labels
-        row     = 0
-        column  = 0
-        tk.Label(self, text='Mode').grid(row=row,column=column,sticky=tk.W)
+        tk.Label(lhs, text='Mode').grid(row=0,column=0,sticky=tk.W)
+        tk.Label(lhs, text='Clear').grid(row=1,column=0, sticky=tk.W)
+        tk.Label(lhs, text='Avalanche').grid(row=2,column=0,sticky=tk.W)
+        tk.Label(lhs, text='Readout speed').grid(row=3,column=0, sticky=tk.W)
+        tk.Label(lhs, text='LED setting').grid(row=4,column=0, sticky=tk.W)
+        tk.Label(lhs, text='Exposure delay').grid(row=5,column=0, sticky=tk.W)
+        tk.Label(lhs, text='Num. exposures  ').grid(row=6,column=0, sticky=tk.W)
 
-        row += 1
-        tk.Label(self, text='Clear').grid(row=row,column=column, sticky=tk.W)
-
-        row += 1
-        tk.Label(self, text='Avalanche').grid(row=row,column=column,sticky=tk.W)
-
-        row += 1
-        self.avgainLabel = tk.Label(self, text='Avalanche gain')
-        self.avgainLabel.grid(row=row,column=column,sticky=tk.W)
-
-        row += 1
-        tk.Label(self, text='Readout speed').grid(row=row,column=column, sticky=tk.W)
-
-        row += 1
-        tk.Label(self, text='LED setting').grid(row=row,column=column, sticky=tk.W)
-
-        row += 1
-        tk.Label(self, text='Exposure delay').grid(row=row,column=column, sticky=tk.W)
-
-        row += 1
-        tk.Label(self, text='Num. exposures').grid(row=row,column=column, sticky=tk.W)
-
-        # Spacer column between first and third columns
-        column += 1
-        tk.Label(self, text=' ').grid(row=0,column=column)
-
-        # Second column: various entry fields
-        row     = 0
-        column += 1
-
-        # Application
-        self.appLab = drvs.Radio(self, ('Wins', 'Drift'), 2, self.check, ('Windows', 'Drift'))
-        self.appLab.grid(row=row,column=column,sticky=tk.W)
+        # Application (mode)
+        self.appLab = drvs.Radio(lhs, ('Wins', 'Drift'), 2, self.check, ('Windows', 'Drift'))
+        self.appLab.grid(row=0,column=1,sticky=tk.W)
 
         # Clear enabled
-        row += 1
-        self.clear = drvs.OnOff(self, True)
-        self.clear.grid(row=row,column=column,sticky=tk.W)
+        self.clear = drvs.OnOff(lhs, True)
+        self.clear.grid(row=1,column=1,sticky=tk.W)
 
-        # Avalanche or not
-        row += 1
-        self.avalanche = drvs.OnOff(self, False, self.check)
-        self.avalanche.grid(row=row,column=column,sticky=tk.W)
-
-        # Avalanche gain
-        row += 1
-        self.avgain = drvs.RangedInt(self, 0, 0, 7, None, False, width=2)
-        self.avgain.grid(row=row,column=column,sticky=tk.W)
+        # Avalanche settings
+        aframe = tk.Frame(lhs)
+        self.avalanche = drvs.OnOff(aframe, False, self.check)
+        self.avalanche.pack(side=tk.LEFT)
+        self.avgainLabel = tk.Label(aframe, text='gain ')
+        self.avgainLabel.pack(side=tk.LEFT)
+        self.avgain = drvs.RangedInt(aframe, 0, 0, 9, self.check, False, width=2)
+        self.avgain.pack(side=tk.LEFT)
+        aframe.grid(row=2,column=1,pady=2,sticky=tk.W)
 
         # Readout speed
-        row += 1
-        self.readSpeed = drvs.Radio(self, ('S', 'M', 'F'), 3, self.check, ('Slow', 'Medium', 'Fast'))
-        self.readSpeed.grid(row=row,column=column,sticky=tk.W)
+        self.readSpeed = drvs.Radio(lhs, ('S', 'M', 'F'), 3, 
+                                    self.check, ('Slow', 'Medium', 'Fast'))
+        self.readSpeed.grid(row=3,column=1,pady=2,sticky=tk.W)
 
         # LED setting
-        row += 1
-        self.led = drvs.RangedInt(self, 0, 0, 4095, None, False, width=6)
-        self.led.grid(row=row,column=column,sticky=tk.W)
+        self.led = drvs.RangedInt(lhs, 0, 0, 4095, None, False, width=7)
+        self.led.grid(row=4,column=1,sticky=tk.W)
 
         # Exposure delay
-        row += 1
-        self.expose = drvs.PosInt(self, 0, None, False, width=6)
-        self.expose.grid(row=row,column=column,sticky=tk.W)
+        elevel = share['cpars']['expert_level']
+        if elevel == 0:
+            self.expose = drvs.Expose(lhs, 0.0007, 0.0007, 1200., self.check, width=7)
+        else:
+            self.expose = drvs.Expose(lhs, 0., 0., 1200., self.check, width=7)
+        self.expose.grid(row=5,column=1,sticky=tk.W)
 
         # Number of exposures
-        row += 1
-        self.number = drvs.PosInt(self, 1, None, False, width=6)
-        self.number.grid(row=row,column=column,sticky=tk.W)
+        self.number = drvs.PosInt(lhs, 1, None, False, width=7)
+        self.number.grid(row=6,column=1,sticky=tk.W)
 
-        # Spacer column between third and fifth columns
-        column += 1
-        tk.Label(self, text='   ').grid(row=0,column=column)
+        # right-hand side: the window parameters
+        rhs = tk.Frame(self)
 
-        # Fifth column
-        column += 1
-        colstart = column
+        xs    = [1,101,201,301]
+        xsmin = [1,1,1,1]
+        xsmax = [1024,1024,1024,1024]
+        ys    = [1,101,201,301]
+        ysmin = [1,1,1,1]
+        ysmax = [1024,1024,1024,1024]
+        nx    = [100,100,100,100]
+        nxmin = [1,1,1,1]
+        nxmax = [1024,1024,1024,1024]
+        ny    = [100,100,100,100]
+        nymin = [1,1,1,1]
+        nymax = [1024,1024,1024,1024]
 
-        # First row: binning factors
-        row = 0
-        tk.Label(self, text='Binning factors (X x Y)').grid(row=row,
-                                                            column=column, sticky=tk.W)
-        # Spacer
-        column += 1
-        tk.Label(self, text=' ').grid(row=row,column=column)
-
-        column += 1
-        xyframe = tk.Frame(self)
-        self.xbin = drvs.RangedInt(xyframe, 1, 1, 8, self.check, False, width=2)
-        self.xbin.pack(side=tk.LEFT)
-
-        tk.Label(xyframe, text=' x ').pack(side=tk.LEFT)
-
-        self.ybin = drvs.RangedInt(xyframe, 1, 1, 8, self.check, False, width=2)
-        self.ybin.pack(side=tk.LEFT)
-
-        xyframe.grid(row=row,column=column,columnspan=4,sticky=tk.W)
-
-        # Second row: number of windows
-        row += 1
-        column = colstart
-        tk.Label(self, text='Number of windows').grid(row=row,column=column, sticky=tk.W)
-
-        column += 2
-        self.nwin = drvs.RangedInt(self, 1, 1, MAXWIN, self.check, False, width=2)
-        self.nwin.grid(row=row,column=column,sticky=tk.W,columnspan=4,pady=10)
-        
-        # Third row: the windows
-        row += 1
-        self.wframe = UspecWins(self, share['cpars'], self.xbin, self.ybin, self.check)
-        self.wframe.grid(row=row,column=colstart,rowspan=6,columnspan=3,sticky=tk.W+tk.N)
+        self.wframe = drvs.Windows(rhs, xs, xsmin, xsmax, ys, ysmin, ysmax, nx, nxmin, nxmax, 
+                                   ny, nymin, nymax, self.check)
+        self.wframe.grid(row=2,column=0,columnspan=3,sticky=tk.W+tk.N)
 
         # Final row: buttons to synchronise windows.
-        row += 1
-        self.sync = Sync(self, 5, self.xbin, self.ybin, self.nwin, self.wframe, self.check)
-        self.sync.grid(row=7,column=colstart,sticky=tk.W)
+        self.sync = Sync(lhs, 5, self.wframe, self.check)
+        self.sync.grid(row=7,column=0,sticky=tk.W,pady=5)
+
+        # Pack two halfs
+        lhs.pack(side=tk.LEFT,padx=5)
+        rhs.pack(side=tk.LEFT,anchor=tk.N,padx=5)
 
         # Store configuration parameters and freeze state
         self.share  = share
@@ -479,27 +208,15 @@ class InstPars(tk.LabelFrame):
         o = self.share
         cpars, observe, cframe = o['cpars'], o['observe'], o['cframe']
 
+        if not self.frozen: 
+            self.wframe.enable()
+
         # Adjust number of windows according to the application
         if self.appLab.value() == 'Windows':
-            self.nwin.imax == MAXWIN
-            if not self.frozen: self.nwin.enable()
+            if not self.frozen: self.wframe.nwin.enable()
         elif self.appLab.value() == 'Drift':
-            self.nwin.imax == 1
-            self.nwin.set(1)
-            self.nwin.disable()
-
-        # enable / disable windows
-        nwin = self.nwin.value()
-        for win in self.wframe.wins[nwin:]:
-            win.disable()
-        for wlab in self.wframe.wlabs[nwin:]:
-            wlab.configure(state='disable')
-
-        if not self.frozen: 
-            for win in self.wframe.wins[:nwin]:
-                win.enable()
-        for wlab in self.wframe.wlabs[:nwin]:
-            wlab.configure(state='normal')
+            self.wframe.nwin.set(1)
+            self.wframe.nwin.disable()
 
         # check avalanche settings
         if self.avalanche():
@@ -509,9 +226,11 @@ class InstPars(tk.LabelFrame):
         else:
             self.avgain.disable()
             self.avgainLabel.configure(state='disable')
- 
-        # finally check the window settings
-        status, synced = self.wframe.check(self.nwin.value())
+
+        # check the window settings
+        print('got here 1')
+        status, synced = self.wframe.check()
+        print('got here 2')
 
         if status and not synced:
             if not self.frozen: 
@@ -520,6 +239,13 @@ class InstPars(tk.LabelFrame):
         else:
             self.sync.config(bg=drvs.COL['main'])
             self.sync.configure(state='disable')
+
+        # exposure delay
+        if self.expose.ok():
+            self.expose.config(bg=drvs.COL['main'])
+        else:
+            self.expose.config(bg=drvs.COL['warn'])
+            status = False
 
         # allow posting according to whether the parameters are ok
         # update count and S/N estimates as well
@@ -543,11 +269,7 @@ class InstPars(tk.LabelFrame):
         self.led.disable()
         self.expose.disable()
         self.number.disable()
-        self.xbin.disable()
-        self.ybin.disable()
-        self.nwin.disable()
-        for win in self.wframe.wins:
-            win.disable()
+        self.wframe.disable()
         self.sync.configure(state='disable')
         self.frozen = True
 
@@ -562,9 +284,7 @@ class InstPars(tk.LabelFrame):
         self.led.enable()
         self.expose.enable()
         self.number.enable()
-        self.xbin.enable()
-        self.ybin.enable()
-        self.nwin.enable()
+        self.wframe.enable()
         self.frozen = False
         self.check()
 
@@ -579,17 +299,12 @@ class InstPars(tk.LabelFrame):
         called outside of the main thread.
         """
         try:
-            xbin = self.xbin.value()
-            ybin = self.ybin.value()
-            nwin = self.nwin.value()
+            xbin = self.wframe.xbin.value()
+            ybin = self.wframe.ybin.value()
+            nwin = self.wframe.nwin.value()
             ret  = str(xbin) + ' ' + str(ybin) + ' ' + str(nwin) + '\r\n'
-            for win in self.wframe.wins[:nwin]:
-                xstart = win.xstart.value()
-                ystart = win.xstart.value()
-                nx     = win.nx.value()
-                ny     = win.ny.value()
-                ret   += str(xstart) + ' ' + str(ystart) + ' ' + \
-                    str(nx) + ' ' + str(ny) + '\r\n'
+            for xs, ys, nx, ny in self.wframe:
+                ret   += str(xs) + ' ' + str(ys) + ' ' + str(nx) + ' ' + str(ny) + '\r\n'
             return ret
         except:
             return ''
@@ -631,37 +346,37 @@ class InstPars(tk.LabelFrame):
         # clear chip on/off?
         lclear = isDriftMode and self.clear 
 
-        # get exposure delay (in units of 0.1 ms ?? check) and binning factors
+        # get exposure delay and binning factors
         expose = self.expose.value()
-        xbin   = self.xbin.value()	
-        ybin   = self.ybin.value()	
+        xbin   = self.wframe.xbin.value()	
+        ybin   = self.wframe.ybin.value()	
 
         # window parameters
-        xstart, ystart, nx, ny = [], [], [], []
-        nwin = self.nwin.value()
-        for win in self.wframe.wins[:nwin]:
-            xstart.append(win.xstart.value())
-            ystart.append(win.ystart.value())
-            nx.append(win.nx.value())
-            ny.append(win.ny.value())
+        xs, ys, nx, ny = [], [], [], []
+        nwin = self.wframe.nwin.value()
+        for xsv, ysv, nxv, nyv in self.wframe:
+            xs.append(xsv)
+            ys.append(ysv)
+            nx.append(nxv)
+            ny.append(nyv)
             
-        # alternatives for drift mode
-        dxleft  = win.xstart.value()
-        dxright = win.xstart.value()
-        dystart = win.ystart.value()
-        dnx     = win.nx.value()
-        dny     = win.ny.value()
-
+        # alternatives for drift mode ??
+        # dxleft  = win.xs.value()
+        # dxright = win.xs.value()
+        # dys = win.ys.value()
+        # dnx     = win.nx.value()
+        # dny     = win.ny.value()
+        dxleft, dxright, dys, dnx, dny = 1, 101, 1, 100, 100
         if lnormal:
-            # normal mode convert xstart by ignoring 16 overscan pixels
+            # normal mode convert xs by ignoring 16 overscan pixels
             for nw in xrange(nwin):
-                xstart[nw] += 16
+                xs[nw] += 16
             dxleft  += 16
             dxright += 16
         else:
             # in avalanche mode, need to swap windows around
             for nw in xrange(nwin):
-                xstart[nw] = FFX - (xstart[nw]-1) - (nx[nw]-1)
+                xs[nw] = FFX - (xs[nw]-1) - (nx[nw]-1)
 
             dxright = FFX - (dxright-1) - (dnx-1)
             dxleft  = FFX - (dxleft-1) - (dnx-1)
@@ -670,7 +385,7 @@ class InstPars(tk.LabelFrame):
             dxright, dxleft = dxleft, dxright
 		    
         # convert timing parameters to seconds
-        expose_delay = 1.0e-4*expose
+        expose_delay = expose
 
         # clear chip by VCLOCK-ing the image and storage areas
         if lclear:
@@ -694,17 +409,17 @@ class InstPars(tk.LabelFrame):
         
         frame_transfer = (FFY-35)*VCLOCK + 49.0e-6
         if isDriftMode:
-            frame_transfer = (dny+dystart-1.)*VCLOCK + 49.0e-6
+            frame_transfer = (dny+dys-1.)*VCLOCK + 49.0e-6
 
         # calculate the yshift, which places windows adjacent to the 
         # serial register
         yshift = nwin*[0.]
         if isDriftMode: 
-            yshift[0]=(dystart-1.0)*VCLOCK
+            yshift[0]=(dys-1.0)*VCLOCK
         else:
-            yshift[0]=(ystart[0]-1.0)*VCLOCK
+            yshift[0]=(ys[0]-1.0)*VCLOCK
             for nw in xrange(1,nwin):
-                yshift[nw] = (ystart[nw]-ystart[nw-1]-ny[nw-1])*VCLOCK
+                yshift[nw] = (ys[nw]-ys[nw-1]-ny[nw-1])*VCLOCK
 		
         # After placing the window adjacent to the serial register, the 
         # register must be cleared by clocking out the entire register, 
@@ -985,17 +700,19 @@ def createXML(post, cpars, instpars, runpars, clog, rlog):
     nwin  = int(instpars.nwin.value())
 
     # Load up enabled windows, null disabled windows
-    for nw, win in enumerate(instpars.wframe.wins):
-        if nw < nwin:
-            pdict['X' + str(nw+1) + '_START']['value'] = str(win.xstart.value())
-            pdict['Y' + str(nw+1) + '_START']['value'] = str(win.ystart.value())
-            pdict['X' + str(nw+1) + '_SIZE']['value']  = str(win.nx.value())
-            pdict['Y' + str(nw+1) + '_SIZE']['value']  = str(win.ny.value())
-        else:
-            pdict['X' + str(nw+1) + '_START']['value'] = '1'
-            pdict['Y' + str(nw+1) + '_START']['value'] = '1'
-            pdict['X' + str(nw+1) + '_SIZE']['value']  = '0'
-            pdict['Y' + str(nw+1) + '_SIZE']['value']  = '0'
+    nw = 0
+    for xs, ys, nx, ny in instpars.wframe:
+        pdict['X' + str(nw+1) + '_START']['value'] = str(xs)
+        pdict['Y' + str(nw+1) + '_START']['value'] = str(ys)
+        pdict['X' + str(nw+1) + '_SIZE']['value']  = str(nx)
+        pdict['Y' + str(nw+1) + '_SIZE']['value']  = str(ny)
+        nw += 1
+
+    for nw in xrange(nwin,4):
+        pdict['X' + str(nw+1) + '_START']['value'] = '1'
+        pdict['Y' + str(nw+1) + '_START']['value'] = '1'
+        pdict['X' + str(nw+1) + '_SIZE']['value']  = '0'
+        pdict['Y' + str(nw+1) + '_SIZE']['value']  = '0'
 
     # Load the user parameters
     uconfig    = root.find('user')
@@ -1179,26 +896,23 @@ class Load(drvs.ActButton):
 
         # Load up windows
         nwin = 0
-        start = True
-        for nw, win in instpars.wframe.wins:
+        for nw in xrange(4):
             xs = 'X' + str(nw+1) + '_START'
             ys = 'X' + str(nw+1) + '_START'
             nx = 'X' + str(nw+1) + '_SIZE'
             ny = 'Y' + str(nw+1) + '_SIZE'
-            if start and xs in pdict and ys in pdict and nx in pdict and ny in pdict \
+            if xs in pdict and ys in pdict and nx in pdict and ny in pdict \
                     and pdict[nx] != '0' and pdict[ny] != 0:
-                win.enable()
-                win.xstart.set(pdict[xs])
-                win.ystart.set(pdict[ys])
-                win.nx.set(pdict[nx])
-                win.ny.set(pdict[ny])
+                self.wframe.xs[nw].set(pdict[xs])
+                self.wframe.ys[nw].set(pdict[ys])
+                self.wframe.nx[nw].set(pdict[nx])
+                self.wframe.ny[nw].set(pdict[ny])
                 nwin += 1
             else:
-                start = False
-                win.disable()
+                break
 
         # Set the number of windows
-        nwin  = instpars.nwin.value()
+        instpars.wframe.nwin.set(nwin)
 
         # User parameters ...
 
@@ -1367,6 +1081,7 @@ class CountsFrame(tk.LabelFrame):
         share  : other objects. 'instpars' for timing & binning info.
         """
         tk.LabelFrame.__init__(self, master, pady=2, text='Count & S/N estimator')
+        self.share = share
 
         # divide into left and right frames 
         lframe = tk.Frame(self, padx=2)
@@ -1376,17 +1091,17 @@ class CountsFrame(tk.LabelFrame):
         self.filter    = drvs.Radio(lframe, ('u', 'g', 'r', 'i', 'z'), 3, self.checkUpdate)
         self.filter.set('g')
         self.mag       = drvs.RangedFloat(lframe, 18., 0., 30., self.checkUpdate, True, width=5)
-        self.seeing    = drvs.RangedFloat(lframe, 1.0, 0.2, 20., self.checkUpdate, True, width=5)
+        self.seeing    = drvs.RangedFloat(lframe, 1.0, 0.2, 20., self.checkUpdate, True, True, width=5)
         self.airmass   = drvs.RangedFloat(lframe, 1.5, 1.0, 5.0, self.checkUpdate, True, width=5)
         self.moon      = drvs.Radio(lframe, ('d', 'g', 'b'),  self.checkUpdate)
 
         # results
-        self.expose    = tk.Label(rframe,text='UNDEF',width=11,anchor=tk.W)
-        self.duty      = tk.Label(rframe,text='UNDEF',width=11,anchor=tk.W)
-        self.peak      = tk.Label(rframe,text='UNDEF',width=11,anchor=tk.W)
-        self.total     = tk.Label(rframe,text='UNDEF',width=11,anchor=tk.W)
-        self.ston      = tk.Label(rframe,text='UNDEF',width=11,anchor=tk.W)
-        self.ston3     = tk.Label(rframe,text='UNDEF',width=11,anchor=tk.W)
+        self.cadence   = tk.Label(rframe,text='UNDEF',width=10,anchor=tk.W)
+        self.duty      = tk.Label(rframe,text='UNDEF',width=10,anchor=tk.W)
+        self.peak      = tk.Label(rframe,text='UNDEF',width=10,anchor=tk.W)
+        self.total     = tk.Label(rframe,text='UNDEF',width=10,anchor=tk.W)
+        self.ston      = tk.Label(rframe,text='UNDEF',width=10,anchor=tk.W)
+        self.ston3     = tk.Label(rframe,text='UNDEF',width=10,anchor=tk.W)
 
         # layout
         # left
@@ -1411,9 +1126,9 @@ class CountsFrame(tk.LabelFrame):
         self.moon.grid(row=4,column=1,padx=5,pady=3,sticky=tk.W)
 
         # right
-        tk.Label(rframe,text='Exposure:').grid(
+        tk.Label(rframe,text='Cadence:').grid(
             row=0,column=0,padx=5,pady=3,sticky=tk.W)
-        self.expose.grid(row=0,column=1,padx=5,pady=3,sticky=tk.W)
+        self.cadence.grid(row=0,column=1,padx=5,pady=3,sticky=tk.W)
 
         tk.Label(rframe,text='Duty cycle:').grid(
             row=1,column=0,padx=5,pady=3,sticky=tk.W)
@@ -1439,24 +1154,54 @@ class CountsFrame(tk.LabelFrame):
         lframe.grid(row=0,column=0,sticky=tk.W+tk.N)
         rframe.grid(row=0,column=1,sticky=tk.W+tk.N)
 
-        self.share = share
-
     def checkUpdate(self, *args):
         """
         Updates values after first checking instrument parameters are OK.
         This is not integrated within update to prevent ifinite recursion
         since update gets called from ipars.
         """
-        ipars = self.share['instpars']
-        if not ipars.check():
-            raise drvs.DriverError('drivers.CountsFrame.checkUpdate: invalid parameters')
+        print('args = ',args)
+        ipars, clog = self.share['instpars'], self.share['clog']
 
-        self.update(*args)
+        if not self.check():
+            clog.log.warn('Current observing parameters are not valid.\n')
+            return False
+
+        if not ipars.check():
+            clog.log.warn('Current instrument parameters are not valid.\n')
+            return False
+
+    def check(self):
+        """
+        Checks values
+        """
+        status = True
+
+        if self.mag.ok():
+            self.mag.config(bg=drvs.COL['main'])
+        else:
+            self.mag.config(bg=drvs.COL['warn'])
+            status = False
+
+        if self.airmass.ok():
+            self.airmass.config(bg=drvs.COL['main'])
+        else:
+            self.airmass.config(bg=drvs.COL['warn'])
+            status = False
+
+        if self.seeing.ok():
+            print('seeing = ',self.seeing.value())
+            self.seeing.config(bg=drvs.COL['main'])
+        else:
+            self.seeing.config(bg=drvs.COL['warn'])
+            status = False
+
+        return status
 
     def update(self, *args):
         """
-        Updates values. You should run a check on the instrument parameters
-        before calling this.
+        Updates values. You should run a check on the instrument and 
+        target parameters before calling this.
         """
 
         ipars = self.share['instpars']
@@ -1464,20 +1209,20 @@ class CountsFrame(tk.LabelFrame):
         expTime, deadTime, cycleTime, dutyCycle, frameRate = ipars.timing()
         total, peak, peakSat, peakWarn, ston, ston3 = self.counts(expTime, cycleTime)
 
-        if expTime < 0.01:
-            self.expose.config(text='{0:7.5f} s'.format(expTime))
-        elif expTime < 0.1:
-            self.expose.config(text='{0:6.4f} s'.format(expTime))
-        elif expTime < 1.:
-            self.expose.config(text='{0:5.3f} s'.format(expTime))
-        elif expTime < 10.:
-            self.expose.config(text='{0:4.2f} s'.format(expTime))
-        elif expTime < 100.:
-            self.expose.config(text='{0:4.1f} s'.format(expTime))
-        elif expTime < 1000.:
-            self.expose.config(text='{0:4.0f} s'.format(expTime))
+        if cycleTime < 0.01:
+            self.cadence.config(text='{0:7.5f} s'.format(cycleTime))
+        elif cycleTime < 0.1:
+            self.cadence.config(text='{0:6.4f} s'.format(cycleTime))
+        elif cycleTime < 1.:
+            self.cadence.config(text='{0:5.3f} s'.format(cycleTime))
+        elif cycleTime < 10.:
+            self.cadence.config(text='{0:4.2f} s'.format(cycleTime))
+        elif cycleTime < 100.:
+            self.cadence.config(text='{0:4.1f} s'.format(cycleTime))
+        elif cycleTime < 1000.:
+            self.cadence.config(text='{0:4.0f} s'.format(cycleTime))
         else:
-            self.expose.config(text='{0:5.0f} s'.format(expTime))
+            self.cadence.config(text='{0:5.0f} s'.format(cycleTime))
         self.duty.config(text='{0:4.1f} %'.format(dutyCycle))
         self.peak.config(text='{0:d} cts'.format(int(round(peak))))
         if peakSat:
@@ -1532,8 +1277,8 @@ class CountsFrame(tk.LabelFrame):
             raise drvs.DriverError('drivers.CountsFrame.counts: readout speed = ' 
                                    + readSpeed + ' not recognised.')
 
-        xbin   = ipars.xbin.value()	
-        ybin   = ipars.ybin.value()	
+        xbin   = ipars.wframe.xbin.value()	
+        ybin   = ipars.wframe.ybin.value()	
 
         # calculate SN info. 
         zero, sky, skyTot, gain, read, darkTot = 0., 0., 0., 0., 0., 0.
