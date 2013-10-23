@@ -31,9 +31,9 @@ AVALANCHE_PIXELS = 1072
 AVALANCHE_GAIN_9   = 1200.0  # dimensionless gain, hvgain=9
 AVALANCHE_SATURATE = 80000   # electrons
 
-# avalanche gains assume HVGain = 9. We can adapt this later when we decide how
-# gain should be set at TNO. Might be better to make gain a function if we allow 
-# 0 < HVgain < 9 (SL)
+# avalanche gains assume HVGain = 9. We can adapt this later when we decide 
+# how gain should be set at TNO. Might be better to make gain a function if 
+# we allow 0 < HVgain < 9 (SL)
 
 GAIN_NORM_FAST = 0.8    # electrons per count
 GAIN_NORM_MED  = 0.7    # electrons per count
@@ -80,10 +80,8 @@ class Sync(drvs.ActButton):
         ybin = self.wframe.ybin.value()
         n = 0
         for xs, ys, nx, ny in self.wframe:
-            xs = win.xs.value()
             xs = xbin*((xs-1)//xbin)+1
             self.wframe.xs[n].set(xs)
-            ys = win.ys.value()
             ys = ybin*((ys-1)//xbin)+1
             self.wframe.ys[n].set(ys)
             n += 1
@@ -147,7 +145,8 @@ class InstPars(tk.LabelFrame):
         # Exposure delay
         elevel = share['cpars']['expert_level']
         if elevel == 0:
-            self.expose = drvs.Expose(lhs, 0.0007, 0.0007, 1200., self.check, width=7)
+            self.expose = drvs.Expose(lhs, 0.0007, 0.0007, 1200., 
+                                      self.check, width=7)
         else:
             self.expose = drvs.Expose(lhs, 0., 0., 1200., self.check, width=7)
         self.expose.grid(row=5,column=1,sticky=tk.W)
@@ -159,22 +158,38 @@ class InstPars(tk.LabelFrame):
         # right-hand side: the window parameters
         rhs = tk.Frame(self)
 
-        xs    = [1,101,201,301]
-        xsmin = [1,1,1,1]
-        xsmax = [1024,1024,1024,1024]
-        ys    = [1,101,201,301]
-        ysmin = [1,1,1,1]
-        ysmax = [1024,1024,1024,1024]
-        nx    = [100,100,100,100]
-        nxmin = [1,1,1,1]
-        nxmax = [1024,1024,1024,1024]
-        ny    = [100,100,100,100]
-        nymin = [1,1,1,1]
-        nymax = [1024,1024,1024,1024]
-
-        self.wframe = drvs.Windows(rhs, xs, xsmin, xsmax, ys, ysmin, ysmax, nx, nxmin, nxmax, 
-                                   ny, nymin, nymax, self.check)
+        # window mode frame
+        xs    = (1,101,201,301)
+        xsmin = (1,1,1,1)
+        xsmax = (1024,1024,1024,1024)
+        ys    = (1,101,201,301)
+        ysmin = (1,1,1,1)
+        ysmax = (1024,1024,1024,1024)
+        nx    = (100,100,100,100)
+        ny    = (100,100,100,100)
+        xbfac = (1,2,3,4,5,6,8)
+        ybfac = (1,2,3,4,5,6,8)
+        self.wframe = drvs.Windows(rhs, xs, xsmin, xsmax, ys, ysmin, ysmax, 
+                                   nx, ny, xbfac, ybfac, self.check)
         self.wframe.grid(row=2,column=0,columnspan=3,sticky=tk.W+tk.N)
+
+        # drift mode frame (just one pair)
+        xsl    = (1,)
+        xslmin = (1,)
+        xslmax = (1024,)
+        xsr    = (201,)
+        xsrmin = (1,)
+        xsrmax = (1024,)
+        ys     = (1,)
+        ysmin  = (1,)
+        ysmax  = (1024,)
+        nx     = (100,)
+        ny     = (100,)
+        xbfac  = (1,2,3,4,5,6,8)
+        ybfac  = (1,2,3,4,5,6,8)
+        self.pframe = drvs.WinPairs(rhs, xsl, xslmin, xslmax, xsr, xsrmin, 
+                                    xsrmax, ys, ysmin, ysmax, nx, ny,
+                                    xbfac, ybfac, self.check)
 
         # Final row: buttons to synchronise windows.
         self.sync = Sync(lhs, 5, self.wframe, self.check)
@@ -211,12 +226,22 @@ class InstPars(tk.LabelFrame):
         if not self.frozen: 
             self.wframe.enable()
 
-        # Adjust number of windows according to the application
+        # Switch visible widget according to the application
         if self.appLab.value() == 'Windows':
-            if not self.frozen: self.wframe.nwin.enable()
+            self.pframe.grid_forget()
+            self.wframe.grid(row=2,column=0,columnspan=3,sticky=tk.W+tk.N)
+            if not self.frozen:
+                self.wframe.nwin.enable()
+
         elif self.appLab.value() == 'Drift':
-            self.wframe.nwin.set(1)
-            self.wframe.nwin.disable()
+            self.wframe.grid_forget()
+            self.pframe.grid(row=2,column=0,columnspan=3,sticky=tk.W+tk.N)
+            if not self.frozen:
+                self.pframe.npair.enable()
+
+        else:
+            raise drvs.DriverError('Application = ' + self.appLab.value() + \
+                                       ' not recognised.')
 
         # check avalanche settings
         if self.avalanche():
@@ -228,9 +253,10 @@ class InstPars(tk.LabelFrame):
             self.avgainLabel.configure(state='disable')
 
         # check the window settings
-        print('got here 1')
-        status, synced = self.wframe.check()
-        print('got here 2')
+        if self.appLab.value() == 'Windows':
+            status, synced = self.wframe.check()
+        elif self.appLab.value() == 'Drift':
+            status, synced = self.pframe.check()
 
         if status and not synced:
             if not self.frozen: 
@@ -270,6 +296,7 @@ class InstPars(tk.LabelFrame):
         self.expose.disable()
         self.number.disable()
         self.wframe.disable()
+        self.pframe.disable()
         self.sync.configure(state='disable')
         self.frozen = True
 
@@ -285,6 +312,7 @@ class InstPars(tk.LabelFrame):
         self.expose.enable()
         self.number.enable()
         self.wframe.enable()
+        self.pframe.enable()
         self.frozen = False
         self.check()
 
@@ -301,10 +329,21 @@ class InstPars(tk.LabelFrame):
         try:
             xbin = self.wframe.xbin.value()
             ybin = self.wframe.ybin.value()
-            nwin = self.wframe.nwin.value()
-            ret  = str(xbin) + ' ' + str(ybin) + ' ' + str(nwin) + '\r\n'
-            for xs, ys, nx, ny in self.wframe:
-                ret   += str(xs) + ' ' + str(ys) + ' ' + str(nx) + ' ' + str(ny) + '\r\n'
+            if self.appLab.value() == 'Windows':
+                nwin = self.wframe.nwin.value()
+                ret  = str(xbin) + ' ' + str(ybin) + ' ' + str(nwin) + '\r\n'
+                for xs, ys, nx, ny in self.wframe:
+                    ret   += str(xs) + ' ' + str(ys) + ' ' + str(nx) + ' ' + \
+                        str(ny) + '\r\n'
+            elif self.appLab.value() == 'Drift':
+                nwin = 2*self.wframe.npair.value()
+                ret  = str(xbin) + ' ' + str(ybin) + ' ' + str(nwin) + '\r\n'
+                for xsl, xsr, ys, nx, ny in self.pframe:
+                    ret   += str(xsl) + ' ' + str(ys) + ' ' + str(nx) + ' ' + \
+                        str(ny) + '\r\n'
+                    ret   += str(xsr) + ' ' + str(ys) + ' ' + str(nx) + ' ' + \
+                        str(ny) + '\r\n'
+
             return ret
         except:
             return ''
@@ -352,37 +391,40 @@ class InstPars(tk.LabelFrame):
         ybin   = self.wframe.ybin.value()	
 
         # window parameters
-        xs, ys, nx, ny = [], [], [], []
-        nwin = self.wframe.nwin.value()
-        for xsv, ysv, nxv, nyv in self.wframe:
-            xs.append(xsv)
-            ys.append(ysv)
-            nx.append(nxv)
-            ny.append(nyv)
-            
-        # alternatives for drift mode ??
-        # dxleft  = win.xs.value()
-        # dxright = win.xs.value()
-        # dys = win.ys.value()
-        # dnx     = win.nx.value()
-        # dny     = win.ny.value()
-        dxleft, dxright, dys, dnx, dny = 1, 101, 1, 100, 100
-        if lnormal:
-            # normal mode convert xs by ignoring 16 overscan pixels
-            for nw in xrange(nwin):
-                xs[nw] += 16
-            dxleft  += 16
-            dxright += 16
+        if isDriftMode:
+            dxleft  = self.pframe.xsl[0].value()
+            dxright = self.pframe.xsr[0].value()
+            dys     = self.pframe.ys[0].value()
+            dnx     = self.pframe.nx[0].value()
+            dny     = self.pframe.ny[0].value()
         else:
-            # in avalanche mode, need to swap windows around
-            for nw in xrange(nwin):
-                xs[nw] = FFX - (xs[nw]-1) - (nx[nw]-1)
+            xs, ys, nx, ny = [], [], [], []
+            nwin = self.wframe.nwin.value()
+            for xsv, ysv, nxv, nyv in self.wframe:
+                xs.append(xsv)
+                ys.append(ysv)
+                nx.append(nxv)
+                ny.append(nyv)
+            
+        if lnormal:
+            # normal mode convert xs by ignoring 16 overscan pixel
+            if isDriftMode:
+                dxleft  += 16
+                dxright += 16
+            else:
+                for nw in xrange(nwin):
+                    xs[nw] += 16
+        else:
+            if isDriftMode:
+                dxright = FFX - (dxright-1) - (dnx-1)
+                dxleft  = FFX - (dxleft-1) - (dnx-1)
 
-            dxright = FFX - (dxright-1) - (dnx-1)
-            dxleft  = FFX - (dxleft-1) - (dnx-1)
-
-            # in drift mode, also need to swap the windows around
-            dxright, dxleft = dxleft, dxright
+                # in drift mode, also need to swap the windows around
+                dxright, dxleft = dxleft, dxright
+            else:
+                # in avalanche mode, need to swap windows around
+                for nw in xrange(nwin):
+                    xs[nw] = FFX - (xs[nw]-1) - (nx[nw]-1)
 		    
         # convert timing parameters to seconds
         expose_delay = expose
@@ -396,79 +438,77 @@ class InstPars(tk.LabelFrame):
         else:
             clear_time = 0.0
 
-        # for drift mode, we need the number of windows in the pipeline and 
-        # the pipeshift
-        pnwin  = int(((1037. / dny) + 1.)/2.)
-        pshift = 1037.- (2.*pnwin-1.)*dny
+        hclockFactor = 1.0 if lnormal else 2.0
 
-        # If not drift mode, move entire image into storage area
-        # the -35 component is because Derek only shifts 1037 pixels
-        # (composed of 1024 active rows, 5 dark reference rows, 2 
-        # transition rows and 6 extra overscan rows for good measure) 
-        # If drift mode, just move the window into the storage area
-        
-        frame_transfer = (FFY-35)*VCLOCK + 49.0e-6
         if isDriftMode:
+            # for drift mode, we need the number of windows in the pipeline 
+            # and the pipeshift
+            pnwin  = int(((1037. / dny) + 1.)/2.)
+            pshift = 1037.- (2.*pnwin-1.)*dny
             frame_transfer = (dny+dys-1.)*VCLOCK + 49.0e-6
 
-        # calculate the yshift, which places windows adjacent to the 
-        # serial register
-        yshift = nwin*[0.]
-        if isDriftMode: 
+            yshift   = [0.]
             yshift[0]=(dys-1.0)*VCLOCK
+
+            # After placing the window adjacent to the serial register, the 
+            # register must be cleared by clocking out the entire register, 
+            # taking FFX hclocks (we no longer open the dump gates, which 
+            # took only 8 hclock cycles to complete, but gave ramps and 
+            # bright rows in the bias). We think dave does 2*FFX hclocks 
+            # in avalanche mode, but need to check this with him.
+            line_clear = [0.]
+            if yshift[0] != 0: 
+                line_clear[0] = hclockFactor*FFX*HCLOCK
+
+            numhclocks = [0]
+            numhclocks[0] = FFX
+            if not lnormal: 
+                numhclocks[0] += AVALANCHE_PIXELS
+
+            line_read = [0.]
+            line_read[0] = VCLOCK*ybin + numhclocks[0]*HCLOCK + \
+                video*2.0*dnx/xbin
+
+            readout = [0.]
+            readout[0] = (dny/ybin) * line_read[0]
+
         else:
+            # If not drift mode, move entire image into storage area
+            # the -35 component is because Derek only shifts 1037 pixels
+            # (composed of 1024 active rows, 5 dark reference rows, 2 
+            # transition rows and 6 extra overscan rows for good measure) 
+            # If drift mode, just move the window into the storage area
+            frame_transfer = (FFY-35)*VCLOCK + 49.0e-6
+
+            yshift = nwin*[0.]
             yshift[0]=(ys[0]-1.0)*VCLOCK
             for nw in xrange(1,nwin):
                 yshift[nw] = (ys[nw]-ys[nw-1]-ny[nw-1])*VCLOCK
 		
-        # After placing the window adjacent to the serial register, the 
-        # register must be cleared by clocking out the entire register, 
-        # taking FFX hclocks (we no longer open the dump gates, which 
-        # took only 8 hclock cycles to complete, but gave ramps and 
-        # bright rows in the bias). We think dave does 2*FFX hclocks 
-        # in avalanche mode, but need to check this with him.
+            line_clear = nwin*[0.]
+            for nw in xrange(nwin):
+                if yshift[nw] != 0: 
+                    line_clear[nw] = hclockFactor*FFX*HCLOCK
 
-        line_clear = nwin*[0.]
-        hclockFactor = 1.0 if lnormal else 2.0
-        if isDriftMode:
-            if yshift[0] != 0: 
-                line_clear[0] = hclockFactor*FFX*HCLOCK
-            else:
-                for nw in xrange(nwin):
-                    if yshift[nw] != 0: 
-                        line_clear[nw] = hclockFactor*FFX*HCLOCK
-
-        # calculate how long it takes to shift one row into the serial register
-        # shift along serial register and then read out the data. The charge 
-        # in a row after a window used to be dumped, taking 8 HCLOCK cycles. 
-        # This created ramps and bright rows/columns in the images, so was 
-        # removed.
-        numhclocks = nwin*[0]
-        if isDriftMode:
-            numhclocks[0] = FFX
-            if not lnormal: 
-                numhclocks[0] += AVALANCHE_PIXELS
-        else:
+            # calculate how long it takes to shift one row into the serial 
+            # register shift along serial register and then read out the data. 
+            # The charge in a row after a window used to be dumped, taking 
+            # 8 HCLOCK cycles. This created ramps and bright rows/columns in 
+            # the images, so was removed.
+            numhclocks = nwin*[0]
             for nw in xrange(nwin):
                 numhclocks[nw] = FFX;
                 if not lnormal:
                     numhclocks[nw] += AVALANCHE_PIXELS
 
-        line_read = nwin*[0.]
-        if isDriftMode:
-            line_read[0] = VCLOCK*ybin + numhclocks[0]*HCLOCK + \
-                video*2.0*dnx/xbin
-        else:
+            line_read = nwin*[0.]
             for nw in xrange(nwin):
                 line_read[nw] = VCLOCK*ybin + numhclocks[nw]*HCLOCK + \
                     video*nx[nw]/xbin
 
-        # multiply time to shift one row into serial register by 
-        # number of rows for total readout time
-        readout = nwin*[0.]
-        if isDriftMode:
-            readout[0] = (dny/ybin) * line_read[0]
-        else:
+            # multiply time to shift one row into serial register by 
+            # number of rows for total readout time
+            readout = nwin*[0.]
             for nw in xrange(nwin):
                 readout[nw] = (ny[nw]/ybin) * line_read[nw]
 
@@ -637,7 +677,8 @@ def createXML(post, cpars, instpars, runpars, clog, rlog):
     appLab = instpars.appLab.value()
     if cpars['debug']:
         print('DEBUG: createXML: application = ' + appLab)
-        print('DEBUG: createXML: application vals = ' + str(cpars['templates'][appLab]))
+        print('DEBUG: createXML: application vals = ' + \
+                  str(cpars['templates'][appLab]))
 
     if cpars['template_from_server']:
         # get template from server
@@ -736,7 +777,8 @@ def createXML(post, cpars, instpars, runpars, clog, rlog):
             # need to do a pre-post before reading otherwise memory won't 
             # have been set
             try:
-                url = cpars['http_camera_server'] + cpars['http_path_exec'] + '?RM,X,0x2E'
+                url = cpars['http_camera_server'] + cpars['http_path_exec'] + \
+                    '?RM,X,0x2E'
                 clog.log.info('execCommand, command = "' + command + '"\n')
                 response = urllib2.urlopen(url)
                 rs  = ReadServer(response.read())
@@ -787,7 +829,8 @@ class Post(drvs.ActButton):
         # check instrument parameters
         if not ipars.check():
             clog.log.warn('Invalid instrument parameters; post failed.\n')
-            tkMessageBox.showwarning('Post failure','Instrument parameters are invalid.')
+            tkMessageBox.showwarning('Post failure',
+                                     'Instrument parameters are invalid.')
             return False
 
         # check run parameters
@@ -795,7 +838,8 @@ class Post(drvs.ActButton):
         if not rok:
             clog.log.warn('Invalid run parameters; post failed.\n')
             clog.log.warn(msg + '\n')
-            tkMessageBox.showwarning('Post failure','Run parameters are invalid\n' + msg)
+            tkMessageBox.showwarning('Post failure',
+                                     'Run parameters are invalid\n' + msg)
             return False
 
         try:
@@ -836,9 +880,9 @@ class Load(drvs.ActButton):
         """
         master  : containing widget
         width   : width of button
-        share   : dictionary of other objects. Must have 'instpars' the instrument
-                  setup parameters (windows etc), and 'runpars' the run parameters 
-                  (target name etc)
+        share   : dictionary of other objects. Must have 'instpars' the 
+                  instrument setup parameters (windows etc), and 'runpars' 
+                  the run parameters (target name etc)
         """
         drvs.ActButton.__init__(self, master, width, share, text='Load')
 
@@ -847,7 +891,8 @@ class Load(drvs.ActButton):
         Carries out the action associated with the Load button
         """
 
-        fname = tkFileDialog.askopenfilename(defaultextension='.xml', filetypes=[('xml files', '.xml'),])
+        fname = tkFileDialog.askopenfilename(
+            defaultextension='.xml', filetypes=[('xml files', '.xml'),])
         if not fname: 
             share['clog'].warn('Aborted load from disk')
             return False
@@ -872,7 +917,8 @@ class Load(drvs.ActButton):
         instpars.ybin.set(pdict['Y_BIN'])
 
         # Number of exposures
-        instpars.number.set(pdict['NUM_EXPS'] if pdict['NUM_EXPS'] != '-1' else 0)
+        instpars.number.set(pdict['NUM_EXPS'] if \
+                                pdict['NUM_EXPS'] != '-1' else 0)
 
         # LED level
         instpars.led.set(pdict['LED_FLSH'])
@@ -891,7 +937,8 @@ class Load(drvs.ActButton):
 
         # Readout speed
         speed = pdict['SPEED']
-        instpars.readout.set('Slow' if speed == '0' else 'Medium' if speed == '1' \
+        instpars.readout.set('Slow' if \
+                                 speed == '0' else 'Medium' if speed == '1' \
                                  else 'Fast') 
 
         # Load up windows
@@ -928,9 +975,10 @@ class Save(drvs.ActButton):
         """
         master  : containing widget
         width   : width of button
-        share   : dictionary of other objects. Must have 'cpars' the configuration
-                  parameters, 'instpars' the instrument setup parameters (windows etc), 
-                  and 'runpars' the run parameters (target name etc), 'clog' and 'rlog'
+        share   : dictionary of other objects. Must have 'cpars' the 
+                  configuration parameters, 'instpars' the instrument 
+                  setup parameters (windows etc), and 'runpars' the 
+                  run parameters (target name etc), 'clog' and 'rlog'
         """
         drvs.ActButton.__init__(self, master, width, share, text='Save')        
 
@@ -999,19 +1047,21 @@ class Observe(tk.LabelFrame):
     """
     Observe Frame. Collects together buttons that fire off the commands needed
     during observing. These have in common interaction with external objects,
-    such as loading data from disk, or sending data to servers. All of these need
-    callback routines which are hidden within this class.
+    such as loading data from disk, or sending data to servers. All of these 
+    need callback routines which are hidden within this class.
     """
     
     def __init__(self, master, share):
         """
         master : container widget
-        share   : dictionary of other objects. Must have 'cpars' the configuration
-                  parameters, 'instpars' the instrument setup parameters (windows etc), 
-                  and 'runpars' the run parameters (target name etc), 'clog' and 'rlog'
+        share   : dictionary of other objects. Must have 'cpars' the 
+                  configuration parameters, 'instpars' the instrument 
+                  setup parameters (windows etc), and 'runpars' the 
+                  run parameters (target name etc), 'clog' and 'rlog'
         """
 
-        tk.LabelFrame.__init__(self, master, text='Observing commands', padx=10, pady=10)
+        tk.LabelFrame.__init__(
+            self, master, text='Observing commands', padx=10, pady=10)
 
         # create buttons
         width = 10
@@ -1080,7 +1130,8 @@ class CountsFrame(tk.LabelFrame):
         master : enclosing widget
         share  : other objects. 'instpars' for timing & binning info.
         """
-        tk.LabelFrame.__init__(self, master, pady=2, text='Count & S/N estimator')
+        tk.LabelFrame.__init__(
+            self, master, pady=2, text='Count & S/N estimator')
         self.share = share
 
         # divide into left and right frames 
@@ -1088,11 +1139,14 @@ class CountsFrame(tk.LabelFrame):
         rframe = tk.Frame(self, padx=2)
 
         # entries
-        self.filter    = drvs.Radio(lframe, ('u', 'g', 'r', 'i', 'z'), 3, self.checkUpdate)
-        self.filter.set('g')
-        self.mag       = drvs.RangedFloat(lframe, 18., 0., 30., self.checkUpdate, True, width=5)
-        self.seeing    = drvs.RangedFloat(lframe, 1.0, 0.2, 20., self.checkUpdate, True, True, width=5)
-        self.airmass   = drvs.RangedFloat(lframe, 1.5, 1.0, 5.0, self.checkUpdate, True, width=5)
+        self.filter    = drvs.Radio(
+            lframe, ('u', 'g', 'r', 'i', 'z'), 3, self.checkUpdate, initial=1)
+        self.mag       = drvs.RangedFloat(
+            lframe, 18., 0., 30., self.checkUpdate, True, width=5)
+        self.seeing    = drvs.RangedFloat(
+            lframe, 1.0, 0.2, 20., self.checkUpdate, True, True, width=5)
+        self.airmass   = drvs.RangedFloat(
+            lframe, 1.5, 1.0, 5.0, self.checkUpdate, True, width=5)
         self.moon      = drvs.Radio(lframe, ('d', 'g', 'b'),  self.checkUpdate)
 
         # results
@@ -1153,14 +1207,14 @@ class CountsFrame(tk.LabelFrame):
         # slot frames in
         lframe.grid(row=0,column=0,sticky=tk.W+tk.N)
         rframe.grid(row=0,column=1,sticky=tk.W+tk.N)
-
+        
     def checkUpdate(self, *args):
         """
         Updates values after first checking instrument parameters are OK.
         This is not integrated within update to prevent ifinite recursion
         since update gets called from ipars.
         """
-        print('args = ',args)
+
         ipars, clog = self.share['instpars'], self.share['clog']
 
         if not self.check():
@@ -1207,7 +1261,8 @@ class CountsFrame(tk.LabelFrame):
         ipars = self.share['instpars']
 
         expTime, deadTime, cycleTime, dutyCycle, frameRate = ipars.timing()
-        total, peak, peakSat, peakWarn, ston, ston3 = self.counts(expTime, cycleTime)
+        total, peak, peakSat, peakWarn, ston, ston3 = \
+            self.counts(expTime, cycleTime)
 
         if cycleTime < 0.01:
             self.cadence.config(text='{0:7.5f} s'.format(cycleTime))
@@ -1274,8 +1329,9 @@ class CountsFrame(tk.LabelFrame):
         elif readSpeed == 'Slow':
             video = VIDEO_NORM_SLOW if lnormal else VIDEO_AV_SLOW
         else:
-            raise drvs.DriverError('drivers.CountsFrame.counts: readout speed = ' 
-                                   + readSpeed + ' not recognised.')
+            raise drvs.DriverError(
+                'drivers.CountsFrame.counts: readout speed = ' 
+                + readSpeed + ' not recognised.')
 
         xbin   = ipars.wframe.xbin.value()	
         ybin   = ipars.wframe.ybin.value()	

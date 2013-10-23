@@ -1086,7 +1086,8 @@ class Expose (RangedFloat):
         Updates minimum value
         """
         if round(10000*fmin) != 10000*fmin:
-            raise DriverError('drivers.Expose.set_min: fmin must be a multiple of 0.0001')
+            raise DriverError('drivers.Expose.set_min: ' + \
+                                  'fmin must be a multiple of 0.0001')
         self.fmin = fmin
         self.set(self.fmin)
         
@@ -1152,39 +1153,44 @@ class Choice(tk.OptionMenu):
 
 class Radio(tk.Frame):
     """
-    Left-to-right radio button class. Layes out buttons in a grid
+    Left-to-right radio button class. Lays out buttons in a grid
     from left-to-right. Has a max number of columns after which it 
     will jump to left of next row and start over.
     """
-    def __init__(self, master, options, ncmax, checker=None, values=None):
+    def __init__(self, master, options, ncmax, checker=None, 
+                 values=None, initial=0):
         """
         master  : containing widget
         options : array of option strings, in order. These are the choices 
                   presented to the user.
         ncmax   : max number of columns (flows onto next row if need be)
         checker : callback to be run after any change
-        values  : array of string values used by the code internally. If 'None', 
-                  the value from 'options' will be used. 
+        values  : array of string values used by the code internally. 
+                  If 'None', the value from 'options' will be used. 
+        initial : index of initial value to set.
         """
         tk.Frame.__init__(self, master)
         if values is not None and len(values) != len(options):
-            raise DriverError('drvs.Radio.__init__: values and options must have same length')
+            raise DriverError('drvs.Radio.__init__: values and ' + \
+                                  'options must have same length')
 
         self.val = tk.StringVar()
         if values is None:
-            self.val.set(options[0])
+            self.val.set(options[initial])
         else:
-            self.val.set(values[0])
+            self.val.set(values[initial])
 
         row = 0
         col = 0
         for nopt, option in enumerate(options):
             if values is None:
                 tk.Radiobutton(self, text=option, variable=self.val, 
-                               value=option).grid(row=row, column=col, sticky=tk.W)
+                               value=option).grid(
+                    row=row, column=col, sticky=tk.W)
             else:
                 tk.Radiobutton(self, text=option, variable=self.val, 
-                               value=values[nopt]).grid(row=row, column=col, sticky=tk.W)
+                               value=values[nopt]).grid(
+                    row=row, column=col, sticky=tk.W)
             col += 1
             if col == ncmax:
                 row += 1
@@ -1214,7 +1220,8 @@ class OnOff(tk.Checkbutton):
     def __init__(self, master, value, checker=None):
         self.val = tk.IntVar()
         self.val.set(value)
-        tk.Checkbutton.__init__(self, master, variable=self.val, command=checker)
+        tk.Checkbutton.__init__(
+            self, master, variable=self.val, command=checker)
 
     def __call__(self):
         return self.val.get() 
@@ -1232,7 +1239,8 @@ def overlap(xl1,yl1,nx1,ny1,xl2,yl2,nx2,ny2):
     """
     Determines whether two windows overlap
     """
-    return (xl2 < xl1+nx1 and xl2+nx2 > xl1 and yl2 < yl1+ny1 and yl2+ny2 > yl1)
+    return (xl2 < xl1+nx1 and xl2+nx2 > xl1 and \
+                yl2 < yl1+ny1 and yl2+ny2 > yl1)
 
 def saveXML(root, clog):
     """
@@ -1241,8 +1249,8 @@ def saveXML(root, clog):
       root : (xml.etree.ElementTree.Element)
          The current setup.
     """
-    fname = tkFileDialog.asksaveasfilename(defaultextension='.xml', \
-                                               filetypes=[('xml files', '.xml'),])
+    fname = tkFileDialog.asksaveasfilename(
+        defaultextension='.xml', filetypes=[('xml files', '.xml'),])
     if not fname: 
         clog.log.warn('Aborted save to disk\n')
         return False
@@ -1313,7 +1321,8 @@ class ActButton(tk.Button):
         bg       : background colour
         kwargs   : keyword arguments
         """
-        tk.Button.__init__(self, master, fg='black', width=width, command=self.act, **kwargs)
+        tk.Button.__init__(
+            self, master, fg='black', width=width, command=self.act, **kwargs)
 
         # store some attributes. other anc calbback are obvious. 
         # _active indicates whether the button should be enabled or disabled 
@@ -1382,7 +1391,8 @@ class Start(ActButton):
         share    : dictionary with configuration parameters and the loggers
         """
         
-        ActButton.__init__(self, master, width, share, bg=COL['start'], text='Start')
+        ActButton.__init__(
+            self, master, width, share, bg=COL['start'], text='Start')
         self.target = None
 
     def act(self):
@@ -1397,9 +1407,9 @@ class Start(ActButton):
         # Copule of safety checks
         if cpars['expert_level'] == 0 and cpars['confirm_hv_gain_on'] and \
                 ipars.avalanche() and ipars.avgain.value() > 0:
-            if not tkMessageBox.askokcancel('Avalanche gain is on at level = ' + 
-                                            ipars.avgain.value() + '\n' + 
-                                            'Continue?'):
+            if not tkMessageBox.askokcancel(
+                'Avalanche gain is on at level = ' + \
+                    ipars.avgain.value() + '\n' + 'Continue?'):
                 clog.log.warn('Start operation cancelled\n')
                 return False
 
@@ -1453,7 +1463,8 @@ class Stop(ActButton):
         share    : dictionary with configuration parameters and the loggers
         """
         
-        ActButton.__init__(self, master, width, share, bg=COL['stop'], text='Stop')
+        ActButton.__init__(
+            self, master, width, share, bg=COL['stop'], text='Stop')
 
     def act(self):
         """
@@ -1497,14 +1508,20 @@ class Target(tk.Frame):
     def __init__(self, master, share, callback=None):
         tk.Frame.__init__(self, master)
 
-        # Entry field, linked to a StringVar which is traced for any modification
+        # Entry field, linked to a StringVar which is traced for 
+        # any modification
         self.val    = tk.StringVar()
         self.val.trace('w', self.modver)
-        self.entry  = tk.Entry(self, textvariable=self.val, fg=COL['text'], bg=COL['text_bg'], width=25)
+        self.entry  = tk.Entry(
+            self, textvariable=self.val, fg=COL['text'], 
+            bg=COL['text_bg'], width=25)
         self.entry.bind('<Enter>', lambda e : self.entry.focus())
 
-        # Verification button which accesses simbad to see if the target is recognised.
-        self.verify = tk.Button(self, fg='black', width=8, text='Verify', bg=COL['main'], command=self.act)
+        # Verification button which accesses simbad to see if 
+        # the target is recognised.
+        self.verify = tk.Button(
+            self, fg='black', width=8, text='Verify', 
+            bg=COL['main'], command=self.act)
         self.entry.pack(side=tk.LEFT,anchor=tk.W)
         self.verify.pack(side=tk.LEFT,anchor=tk.W,padx=5)
         self.verify.config(state='disable')
@@ -1555,9 +1572,12 @@ class Target(tk.Frame):
             self.verify.config(bg=COL['main'])
             self.verify.config(state='disable')
             rlog.log.info('Target verified OK\n')
-            rlog.log.info('Found ' + str(len(ret)) + ' matches to "' + tname + '"\n')
+            rlog.log.info(
+                'Found ' + str(len(ret)) + ' matches to "' + tname + '"\n')
             for entry in ret:
-                rlog.log.info('Name: ' + entry['Name'] + ', position: ' + entry['Position'] + '\n')
+                rlog.log.info(
+                    'Name: ' + entry['Name'] + ', position: ' + 
+                    entry['Position'] + '\n')
 
 class ReadServer(object):
     """
@@ -1662,7 +1682,8 @@ def execCommand(command, cpars, clog, rlog):
     succeeded or not.
     """
     try:
-        url = cpars['http_camera_server'] + cpars['http_path_exec'] + '?' + command
+        url = cpars['http_camera_server'] + cpars['http_path_exec'] + \
+            '?' + command
         clog.log.info('execCommand, command = "' + command + '"\n')
         response = urllib2.urlopen(url)
         rs  = ReadServer(response.read())
@@ -1706,7 +1727,8 @@ def execServer(name, app, cpars, clog, rlog):
     """
     print(cpars['http_camera_server'], cpars['http_path_config'], '?', app)
     if name == 'camera':
-        url = cpars['http_camera_server'] + cpars['http_path_config'] + '?' + app
+        url = cpars['http_camera_server'] + cpars['http_path_config'] + \
+            '?' + app
     elif name == 'data':
         url = cpars['http_data_server'] + cpars['http_path_config'] + '?' + app
     else:
@@ -1762,7 +1784,8 @@ class ResetSDSUhard(ActButton):
         share    : dictionary of other objects
         """
         
-        ActButton.__init__(self, master, width, share, text='Reset SDSU hardware')
+        ActButton.__init__(
+            self, master, width, share, text='Reset SDSU hardware')
 
     def act(self):
         """
@@ -1804,7 +1827,8 @@ class ResetSDSUsoft(ActButton):
         share    : dictionary of other objects
         """
         
-        ActButton.__init__(self, master, width, share, text='Reset SDSU software')
+        ActButton.__init__(
+            self, master, width, share, text='Reset SDSU software')
 
     def act(self):
         """
@@ -1941,9 +1965,11 @@ class SetupServers(ActButton):
         tapp = TINS[cpars['telins_name']]['app']
 
         if execServer('camera', tapp, cpars, clog, rlog) and \
-                execServer('camera', cpars['instrument_app'], cpars, clog, rlog) and \
-                execServer('data', tapp, cpars, clog, rlog) and \
-                execServer('data', cpars['instrument_app'], cpars, cLog, rLog):
+                execServer(
+            'camera', cpars['instrument_app'], cpars, clog, rlog) and \
+            execServer('data', tapp, cpars, clog, rlog) and \
+            execServer('data', cpars['instrument_app'], cpars, cLog, rLog):
+            
             clog.log.info('Setup servers succeeded\n')
 
             # alter buttons 
@@ -1986,7 +2012,9 @@ class PowerOn(ActButton):
 
         clog.log.debug('Power on pressed\n')
             
-        if execRemoteApp(cpars['power_on'], cpars, clog, rlog) and execCommand('GO', cpars, clog, rlog):
+        if execRemoteApp(cpars['power_on'], cpars, clog, rlog) and \
+                execCommand('GO', cpars, clog, rlog):
+
             clog.log.info('Power on successful\n')
 
             # change other buttons
@@ -2006,7 +2034,10 @@ class PowerOn(ActButton):
             while isRunActive() and n < 5:
                 n += 1
             if isRunActive():
-                clog.log.warn('Timed out waiting for power on run to de-activate; cannot initialise run number. Tell trm if this happens')
+                clog.log.warn(
+                    'Timed out waiting for power on run to ' + \
+                        'de-activate; cannot initialise run number. ' + \
+                        'Tell trm if this happens')
             else:
                 o['info'].currentrun.set(getRunNumber())
             return True
@@ -2038,9 +2069,12 @@ class PowerOff(ActButton):
         cpars, clog, rlog = o['cpars'], o['clog'], o['rlog']
 
         clog.log.debug('Power off pressed\n')
-        clog.log.debug('This is a placeholder as there is no Power off application so it will fail\n')
+        clog.log.debug('This is a placeholder as there is no Power' + \
+                           ' off application so it will fail\n')
             
-        if execRemoteApp(cpars['power_off'], cpars, clog, rlog) and execCommand('GO', cpars, clog, rlog):
+        if execRemoteApp(cpars['power_off'], cpars, clog, rlog) and \
+                execCommand('GO', cpars, clog, rlog):
+
             clog.log.info('Powered off SDSU\n')
             self.disable()
 
@@ -2109,7 +2143,8 @@ class InstSetup(tk.LabelFrame):
         master -- containing widget
         share  -- dictionary of other objects that this needs to access
         """
-        tk.LabelFrame.__init__(self, master, text='Instrument setup', padx=10, pady=10)
+        tk.LabelFrame.__init__(
+            self, master, text='Instrument setup', padx=10, pady=10)
 
         # Define all buttons
         width = 15
@@ -2266,7 +2301,9 @@ class LogDisplay(tk.LabelFrame):
         
         scrollbar = tk.Scrollbar(self)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        self.console = tk.Text(self, height=height, width=width, bg=COL['log'], yscrollcommand=scrollbar.set)
+        self.console = tk.Text(
+            self, height=height, width=width, bg=COL['log'], 
+            yscrollcommand=scrollbar.set)
         self.console.configure(state=tk.DISABLED)
         self.console.pack(side=tk.LEFT)
         scrollbar.config(command=self.console.yview)
@@ -2286,8 +2323,9 @@ class LogDisplay(tk.LabelFrame):
         
 class Switch(tk.Frame):
     """
-    Frame sub-class to switch between setup, focal plane slide and observing frames. 
-    Provides radio buttons and hides / shows respective frames
+    Frame sub-class to switch between setup, focal plane slide 
+    and observing frames. Provides radio buttons and hides / shows 
+    respective frames
     """
     def __init__(self, master, share):
         """
@@ -2303,7 +2341,8 @@ class Switch(tk.Frame):
         tk.Radiobutton(self, text='Setup', variable=self.val, 
                        value='Setup').grid(row=0, column=0, sticky=tk.W)
         tk.Radiobutton(self, text='Focal plane slide', variable=self.val, 
-                       value='Focal plane slide').grid(row=0, column=1, sticky=tk.W)
+                       value='Focal plane slide').grid(
+            row=0, column=1, sticky=tk.W)
         tk.Radiobutton(self, text='Observe', variable=self.val, 
                        value='Observe').grid(row=0, column=2, sticky=tk.W)
         
@@ -2332,9 +2371,10 @@ class Switch(tk.Frame):
 
 class ExpertMenu(tk.Menu):
     """
-    Provides a menu to select the level of expertise wanted when interacting with a
-    control GUI. This setting might be used to hide buttons for instance according to
-    ste status of others, etc.
+    Provides a menu to select the level of expertise wanted 
+    when interacting with a control GUI. This setting might 
+    be used to hide buttons for instance according to
+    the status of others, etc.
     """
     def __init__(self, master, cpars, *args):
         """
@@ -2385,7 +2425,8 @@ class RtplotServer (SocketServer.TCPServer):
     their positions.
     """
     def __init__(self, instpars, port):
-        SocketServer.TCPServer.__init__(self, ('localhost', port), RtplotHandler)
+        SocketServer.TCPServer.__init__(self, ('localhost', port), 
+                                        RtplotHandler)
         self.instpars = instpars
 
     def run(self):
@@ -2464,7 +2505,8 @@ class FocalPlaneSlide(tk.LabelFrame):
         """
         master  : containing widget
         """
-        tk.LabelFrame.__init__(self, master, text='Focal plane slide',padx=10,pady=10)
+        tk.LabelFrame.__init__(
+            self, master, text='Focal plane slide',padx=10,pady=10)
         width = 8
         self.park  = tk.Button(self, fg='black', text='Park',  width=width, 
                                command=lambda: self.wrap('park'))
@@ -2639,29 +2681,38 @@ class AstroFrame(tk.LabelFrame):
         self.moon = ephem.Moon()
 
         # arrange time info
-        tk.Label(self,text='MJD:').grid(row=0,column=0,padx=2,pady=3,sticky=tk.W)
+        tk.Label(self,text='MJD:').grid(
+            row=0,column=0,padx=2,pady=3,sticky=tk.W)
         self.mjd.grid(row=0,column=1,columnspan=2,padx=2,pady=3,sticky=tk.W)
-        tk.Label(self,text='UTC:').grid(row=0,column=3,padx=2,pady=3,sticky=tk.W)
+        tk.Label(self,text='UTC:').grid(
+            row=0,column=3,padx=2,pady=3,sticky=tk.W)
         self.utc.grid(row=0,column=4,padx=2,pady=3,sticky=tk.W)
-        tk.Label(self,text='LST:').grid(row=0,column=5,padx=2,pady=3,sticky=tk.W)
+        tk.Label(self,text='LST:').grid(
+            row=0,column=5,padx=2,pady=3,sticky=tk.W)
         self.lst.grid(row=0,column=6,padx=2,pady=3,sticky=tk.W)
 
         # arrange solar info
-        tk.Label(self,text='Sun:').grid(row=1,column=0,padx=2,pady=3,sticky=tk.W)
-        tk.Label(self,text='Alt:').grid(row=1,column=1,padx=2,pady=3,sticky=tk.W)
+        tk.Label(self,text='Sun:').grid(
+            row=1,column=0,padx=2,pady=3,sticky=tk.W)
+        tk.Label(self,text='Alt:').grid(
+            row=1,column=1,padx=2,pady=3,sticky=tk.W)
         self.sunalt.grid(row=1,column=2,padx=2,pady=3,sticky=tk.W)
         self.lriset.grid(row=1,column=3,padx=2,pady=3,sticky=tk.W)
         self.riset.grid(row=1,column=4,padx=2,pady=3,sticky=tk.W)
-        tk.Label(self,text='At -18:').grid(row=1,column=5,padx=2,pady=3,sticky=tk.W)
+        tk.Label(self,text='At -18:').grid(
+            row=1,column=5,padx=2,pady=3,sticky=tk.W)
         self.astro.grid(row=1,column=6,padx=2,pady=3,sticky=tk.W)
 
         # arrange moon info
-        tk.Label(self,text='Moon:').grid(row=2,column=0,padx=2,pady=3,sticky=tk.W)
-        tk.Label(self,text='RA:').grid(row=2,column=1,padx=2,pady=3,sticky=tk.W)
+        tk.Label(self,text='Moon:').grid(
+            row=2,column=0,padx=2,pady=3,sticky=tk.W)
+        tk.Label(self,text='RA:').grid(
+            row=2,column=1,padx=2,pady=3,sticky=tk.W)
         self.moonra.grid(row=2,column=2,padx=2,pady=3,sticky=tk.W)
         tk.Label(self,text='Dec:').grid(row=3,column=1,padx=2,sticky=tk.W)
         self.moondec.grid(row=3,column=2,padx=2,sticky=tk.W)
-        tk.Label(self,text='Alt:').grid(row=2,column=3,padx=2,pady=3,sticky=tk.W)
+        tk.Label(self,text='Alt:').grid(
+            row=2,column=3,padx=2,pady=3,sticky=tk.W)
         self.moonalt.grid(row=2,column=4,padx=2,pady=3,sticky=tk.W)
         tk.Label(self,text='Phase:').grid(row=3,column=3,padx=2,sticky=tk.W)
         self.moonphase.grid(row=3,column=4,padx=2,sticky=tk.W)
@@ -2704,11 +2755,14 @@ class AstroFrame(tk.LabelFrame):
             self.sun.compute(self.obs)
 
             self.sunalt.configure(\
-                text='{0:+03d} deg'.format(int(round(math.degrees(self.sun.alt)))))
+                text='{0:+03d} deg'.format(
+                    int(round(math.degrees(self.sun.alt)))))
 
-            if self.obs.date > self.lastRiset and  self.obs.date > self.lastAstro:
-                # Only re-compute rise and setting times when necessary, and only
-                # re-compute when both rise/set and astro twilight times have gone by
+            if self.obs.date > self.lastRiset and \
+                    self.obs.date > self.lastAstro:
+                # Only re-compute rise and setting times when necessary, 
+                # and only re-compute when both rise/set and astro twilight 
+                # times have gone by
 
                 # turn off refraction for both sunrise & set and astro 
                 # twilight calculation.
@@ -2754,13 +2808,16 @@ class AstroFrame(tk.LabelFrame):
                     self.lriset.configure(text='Rises:')
                     self.obs.horizon  = '-18'
                     self.lastRiset = sunrise
-                    self.lastAstro = self.obs.previous_rising(self.sun, use_center=True)
+                    self.lastAstro = self.obs.previous_rising(
+                        self.sun, use_center=True)
 
                 # Configure the corresponding text fields
                 ntime = DAY*(self.lastRiset + EPH0 - UNIX0)
-                self.riset.configure(text=time.strftime('%H:%M:%S',time.gmtime(ntime)))
+                self.riset.configure(
+                    text=time.strftime('%H:%M:%S',time.gmtime(ntime)))
                 ntime = DAY*(self.lastAstro + EPH0 - UNIX0)
-                self.astro.configure(text=time.strftime('%H:%M:%S',time.gmtime(ntime)))
+                self.astro.configure(
+                    text=time.strftime('%H:%M:%S',time.gmtime(ntime)))
 
                 # re-compute moon
                 self.obs.pressure = 1010.
@@ -2768,9 +2825,11 @@ class AstroFrame(tk.LabelFrame):
                 self.moonra.configure(text='{0}'.format(self.moon.ra))
                 self.moondec.configure(text='{0}'.format(self.moon.dec))
                 self.moonalt.configure(\
-                    text='{0:+03d} deg'.format(int(round(math.degrees(self.moon.alt)))))
+                    text='{0:+03d} deg'.format(
+                        int(round(math.degrees(self.moon.alt)))))
                 self.moonphase.configure(\
-                    text='{0:02d} %'.format(int(round(100.*self.moon.moon_phase))))
+                    text='{0:02d} %'.format(
+                        int(round(100.*self.moon.moon_phase))))
 
         # update counter
         self.counter += 1
@@ -2819,7 +2878,9 @@ def checkSimbad(target, maxobj=5):
     Returns with a list of results. 
     """
     url   = 'http://simbad.u-strasbg.fr/simbad/sim-script'
-    q     = 'set limit ' + str(maxobj) + '\nformat object form1 "Target: %IDLIST(1) | %COO(A D;ICRS)"\nquery ' + target
+    q     = 'set limit ' + str(maxobj) + \
+        '\nformat object form1 "Target: %IDLIST(1) | %COO(A D;ICRS)"\nquery ' \
+        + target
     query = urllib.urlencode({'submit' : 'submit script', 'script' : q})
     resp  = urllib2.urlopen(url, query)
     data  = False
@@ -2832,123 +2893,149 @@ def checkSimbad(target, maxobj=5):
             error = True
         if data and line.startswith('Target:'):
             name,coords = line[7:].split(' | ')
-            results.append({'Name' : name.strip(), 'Position' : coords.strip(), 'Frame' : 'ICRS'})
+            results.append(
+                {'Name' : name.strip(), 'Position' : coords.strip(), 
+                 'Frame' : 'ICRS'})
     resp.close()
     
     if error and len(results):
-        print('drivers.check: Simbad: there appear to be some results but an error was unexpectedly raised.')
+        print('drivers.check: Simbad: there appear to be some ' + \
+                  'results but an error was unexpectedly raised.')
     return results
 
 
 class WinPairs (tk.Frame):
     """
-    Class to define a frame of multiple window pairs, contained within a gridded block
-    that can be easily position.
+    Class to define a frame of multiple window pairs, 
+    contained within a gridded block that can be easily position.
     """
 
-    def __init__(self, master, xsl, xslmin, xslmax, xsr, xsrmin, xsrmax, ys, ysmax, ysmin,
-                 nx, nxmin, nxmax, ny, nymin, nymax, xbin, ybin, nactive, checker):
+    def __init__(self, master, xsls, xslmins, xslmaxs, xsrs, xsrmins, xsrmaxs, 
+                 yss, ysmins, ysmaxs, nxs, nys, xbfac, ybfac, checker):
         """
         Arguments:
 
           master :
             container widget
 
-          xsl, xslmin, xslmax :
-            initial X value(s) of the leftmost column of left-hand window(s) 
-            along with minimum and maximum values
+          xsls, xslmins, xslmaxs :
+            initial X values of the leftmost columns of left-hand windows 
+            along with minimum and maximum values (array-like)
 
-          xsr, xsrmin, xsrmax :
-            initial X value(s) of the leftmost column of right-hand window(s)
-            along with minimum and maximum values
+          xsrs, xsrmins, xsrmaxs :
+            initial X values of the leftmost column of right-hand windows
+            along with minimum and maximum values (array-like)
 
-          ys, ysmin, ysmax :
-            initial Y value(s) of the lowest row of the window
-            along with minimum and maximum values
+          yss, ysmins, ysmaxs :
+            initial Y values of the lowest row of the window
+            along with minimum and maximum values (array-like)
 
-          nx, nxmin, nxmax :
-            X dimension(s) of windows, unbinned pixels
-            along with minimum and maximum values
+          nxs :
+            X dimensions of windows, unbinned pixels
+            (array-like)
 
-          ny, nxmin, nxmax :
-            Y dimension(s) of windows, unbinned pixels
-            along with minimum and maximum values
+          nys :
+            Y dimensions of windows, unbinned pixels
+            (array-like)
 
-          xbin : 
-            xbinning factor; must have a 'value' method. Used to step and check nx
+          xbfac :
+            array of unique x-binning factors
 
-          ybin : 
-            ybinning factor; must have a 'value' method. Used to step and check ny 
-
-          nactive : 
-            number of active pairs
+          ybfac :
+            array of unique y-binning factors
 
           checker : 
             checker function to provide a global check and update in response
             to any changes made to the values stored in a Window. Can be None. 
 
-        NB xsl, xsr etc can be arrays or single values.
+        It is assumed that the maximum X dimension is the same for both left 
+        and right windows and equal to xslmax-xslmin+1.
         """
 
-        # force inputs into lists
-        xsls, xsrs, yss, nxs, nys = list(xsl), list(xsr), list(ys), list(nx), list(ny)
-        xslmins, xslmaxs, xsrmins, xsrmaxs = list(xslmin), list(xslmax), list(xsrmin), list(xsrmax)
-        ysmins, ysmaxs = list(ysmin), list(ysmax)
-        nxmins, nxmaxs, nymins, nymaxs = list(nxmin), list(nxmax), list(nymin), list(nymax)
-
         npair = len(xsls)        
-        checks = (xsls, xslmins, xslmaxs, xsrs, xsrmins, xsrmaxs, yss, ysmins, ysmaxs, nxs, nxmins, nxmaxs, nys, nymins, nymaxs)
+        checks = (xsls, xslmins, xslmaxs, xsrs, xsrmins, xsrmaxs, \
+                      yss, ysmins, ysmaxs, nxs, nys)
         for check in checks:
             if npair != len(check):
-                raise DriverError('drivers.WindowPairs.__init__: conflict array lengths amonst inputs')
-
-        if nactive > npair:
-            raise DriverError("drivers.WindowPairs.__init__: can't have more active pairs than there are pairs")
+                raise DriverError(
+                    'drivers.WindowPairs.__init__:' + \
+                        ' conflict array lengths amonst inputs')
 
         tk.Frame.__init__(self, master)
 
-        # top row
-        tk.Label(self, text='xsl').grid(row=0,column=1)
-        tk.Label(self, text='xsr').grid(row=0,column=2)
-        tk.Label(self, text='ys').grid(row=0,column=3)
-        tk.Label(self, text='nx').grid(row=0,column=4)
-        tk.Label(self, text='ny').grid(row=0,column=5)
+        # top part contains the binning factors and 
+        # the number of active windows
+        top = tk.Frame(self)
+        top.pack(anchor=tk.W)
+
+        tk.Label(top, text='Binning factors (X x Y): ').grid(
+            row=0, column=0, sticky=tk.W)
+
+        xyframe = tk.Frame(top)
+        self.xbin = ListInt(xyframe, xbfac[0], xbfac, checker, width=2)
+        self.xbin.pack(side=tk.LEFT)
+        tk.Label(xyframe, text=' x ').pack(side=tk.LEFT)
+        self.ybin = ListInt(xyframe, ybfac[0], ybfac, checker, width=2)
+        self.ybin.pack(side=tk.LEFT)
+        xyframe.grid(row=0,column=1,sticky=tk.W)
 
         row = 1
-        self.xsl, self.xsr, self.ys, self.nx, self.ny = [],[],[],[],[]
-        for xsl, xslmin, xslmax, xsr, xsrmin, xsrmax, ys, ysmin, ysmax, nx, nxmin, nxmax, ny, nymin, nymax in \
-                zip(*checks):
+        self.npair = RangedInt(top, 1, 1, npair, checker, False, width=2)
+        if npair > 1:
+            # Second row: number of windows
+            tk.Label(top, text='Number of window pairs').grid(
+                row=1,column=0, sticky=tk.W)
+            self.npair.grid(row=row,column=1,sticky=tk.W,pady=2)
+            row += 1
+
+        # bottom part contains the window settings
+        bottom = tk.Frame(self)
+        bottom.pack(anchor=tk.W)
+
+        # top row
+        tk.Label(bottom, text='xsl').grid(row=row,column=1,ipady=5,sticky=tk.S)
+        tk.Label(bottom, text='xsr').grid(row=row,column=2,ipady=5,sticky=tk.S)
+        tk.Label(bottom, text='ys').grid(row=row,column=3,ipady=5,sticky=tk.S)
+        tk.Label(bottom, text='nx').grid(row=row,column=4,ipady=5,sticky=tk.S)
+        tk.Label(bottom, text='ny').grid(row=row,column=5,ipady=5,sticky=tk.S)
+
+        row += 1
+        self.label, self.xsl, self.xsr, self.ys, self.nx, self.ny = \
+            [],[],[],[],[],[]
+        nr = 0
+        for xsl, xslmin, xslmax, xsr, xsrmin, xsrmax, ys, ysmin, ysmax, \
+                nx, ny in zip(*checks):
 
             # create
             if npair == 1:
-                self.label = tk.Label(self, text='Pair:')
+                self.label.append(tk.Label(bottom, text='Pair: '))
             else:
-                self.label = tk.Label(self, text='Pair ' + str(row) + ':')
+                self.label.append(
+                    tk.Label(bottom, text='Pair ' + str(nr) + ': '))
 
-            self.xsl.append(RangedInt(self, xsl, xslmin, xslmax, checker, True, width=4))
-            self.xsr.append(RangedInt(self, xsr, xsrmin, xsrmax, checker, True, width=4))
-            self.ys.append(RangedInt(self, ys, ysmin, ysmax, checker, True, width=4))
-            self.nx.append(RangedMint(self, nx, nxmin, nxmax, xbin, checker, True, width=4))
-            self.ny.append(RangedMint(self, ny, nymin, nymax, ybin, checker, True, width=4))
+            self.xsl.append(
+                RangedInt(bottom, xsl, xslmin, xslmax, checker, True, width=4))
+            self.xsr.append(
+                RangedInt(bottom, xsr, xsrmin, xsrmax, checker, True, width=4))
+            self.ys.append(
+                RangedInt(bottom, ys, ysmin, ysmax, checker, True, width=4))
+            self.nx.append(
+                RangedMint(bottom, nx, 1, xslmax-xslmin+1, self.xbin, 
+                           checker, True, width=4))
+            self.ny.append(
+                RangedMint(bottom, ny, 1, ysmax-ysmin+1, self.ybin, 
+                           checker, True, width=4))
                            
             # arrange
-            self.label.grid(row=row,column=0)
-            self.xsl.grid(row=row,column=1)
-            self.xsr.grid(row=row,column=2)
-            self.ys.grid(row=row,column=3)
-            self.nx.grid(row=row,column=4)
-            self.ny.grid(row=row,column=5)
+            self.label[-1].grid(row=row,column=0)
+            self.xsl[-1].grid(row=row,column=1)
+            self.xsr[-1].grid(row=row,column=2)
+            self.ys[-1].grid(row=row,column=3)
+            self.nx[-1].grid(row=row,column=4)
+            self.ny[-1].grid(row=row,column=5)
 
             row += 1
-
-        self.xbin = xbin
-        self.ybin = ybin
-        self.nactive = nactive
-
-    def set_nactive(self, nactive):
-        if nactive > len(self.xsl):
-            raise DriverError("drivers.WindowPairs.set_nactive: can't have more active pairs than there are pairs")
-        self.nactive = nactive
+            nr  += 1
 
     def check(self):
         """
@@ -2964,13 +3051,14 @@ class WinPairs (tk.Frame):
         status = True
         synced = False
 
-        xbin = self.xbin.value()
-        ybin = self.ybin.value()
-        nact = self.nactive
+        xbin  = self.xbin.value()
+        ybin  = self.ybin.value()
+        npair = self.npair.value()
 
         # individual pair checks
         for xslw, xsrw, ysw, nxw, nyw in \
-                zip(self.xsl[:nact], self.xsr[:nact], self.ys[:nact], self.nx[:nact], self.ny[:nact]):
+                zip(self.xsl[:npair], self.xsr[:npair], self.ys[:npair], 
+                    self.nx[:npair], self.ny[:npair]):
             xslw.config(bg=COL['text_bg'])
             xsrw.config(bg=COL['text_bg'])
             ysw.config(bg=COL['text_bg'])
@@ -3005,15 +3093,16 @@ class WinPairs (tk.Frame):
                 xsrw.config(bg=COL['error'])
                 status = False
 
-            # Are the windows synchronised? This means that they would be consistent with
-            # the pixels generated were the whole CCD to be binned by the same factors
-            # If relevant values are not set, we count that as "synced" because the purpose
-            # of this is to enable / disable the sync button and we don't want it to be
+            # Are the windows synchronised? This means that they would 
+            # be consistent with the pixels generated were the whole CCD 
+            # to be binned by the same factors. If relevant values are not 
+            # set, we count that as "synced" because the purpose of this is 
+            # to enable / disable the sync button and we don't want it to be
             # enabled just because xs or ys are not set.
-            synced = True if \
-                xsl is None or xsr is None or ys is None or nx is None or ny is None or \
-                ((xsl - 1) % xbin == 0 and (xsr - 1) % xbin == 0 and (ys - 1) % ybin == 0) \
-                else synced
+            synced = True if xsl is None or xsr is None or \
+                ys is None or nx is None or ny is None or \
+                ((xsl - 1) % xbin == 0 and (xsr - 1) % xbin == 0 \
+                     and (ys - 1) % ybin == 0) else synced
             
             # Range checks
             if xsl is None or nx is None or xsl + nx - 1 > xslw.imax:
@@ -3028,11 +3117,12 @@ class WinPairs (tk.Frame):
                 ysw.config(bg=COL['error'])
                 status = False
 
-        # Pair overlap checks. Compare one pair with the next one upstream (if there is one)
-        # Only bother if we have survived so far, which save a lot of checks
+        # Pair overlap checks. Compare one pair with the next one upstream 
+        # (if there is one). Only bother if we have survived so far, which 
+        # saves a lot of checks
         if status:
             n1 = 0
-            for ysw1, nyw1 in zip(self.ys[:nact-1], self.ny[:nact-1]):
+            for ysw1, nyw1 in zip(self.ys[:npair-1], self.ny[:npair-1]):
 
                 ys1  = ysw1.value()
                 ny1  = nyw1.value()
@@ -3051,9 +3141,10 @@ class WinPairs (tk.Frame):
         return (status, synced)
     
     def enable(self):
-        nact = self.active
+        npair = self.npair.value()
         for label, xsl, xsr, ys, nx, ny in \
-                zip(self.label[:nact], self.xsl[:nact], self.xsr[:nact], self.ys[:nact], self.nx[:nact], self.ny[:nact]):
+                zip(self.label[:npair], self.xsl[:npair], self.xsr[:npair], 
+                    self.ys[:npair], self.nx[:npair], self.ny[:npair]):
             label.config(state='normal')
             xsl.enable()
             xsr.enable()
@@ -3062,7 +3153,8 @@ class WinPairs (tk.Frame):
             ny.enable()
 
         for label, xsl, xsr, ys, nx, ny in \
-                zip(self.label[nact:], self.xsl[nact:], self.xsr[nact:], self.ys[nact:], self.nx[nact:], self.ny[nact:]):
+                zip(self.label[npair:], self.xsl[npair:], self.xsr[npair:], 
+                    self.ys[npair:], self.nx[npair:], self.ny[npair:]):
             label.config(state='disable')
             xsl.disable()
             xsr.disable()
@@ -3071,13 +3163,26 @@ class WinPairs (tk.Frame):
             ny.disable()
 
     def disable(self):
-        for label, xsl, xsr, ys, nx, ny in zip(self.label, self.xsl, self.xsr, self.ys, self.nx, self.ny):
+        for label, xsl, xsr, ys, nx, ny in \
+                zip(self.label, self.xsl, self.xsr, self.ys, self.nx, self.ny):
             label.config(state='disable')
             xsl.disable()
             xsr.disable()
             ys.disable()
             nx.disable()
             ny.disable()
+
+    def __iter__(self):
+        """
+        Generator to allow looping through through the window pairs. 
+        Successive calls return xsl, xsr, ys, nx, ny for each pair
+        """
+        n = 0
+        npair = self.npair.value()
+        while n < npair:
+            yield (self.xsl[n].value(),self.xsr[n].value(),
+                   self.ys[n].value(),self.nx[n].value(),self.ny[n].value())
+            n += 1
 
 class Windows (tk.Frame):
     """
@@ -3086,96 +3191,107 @@ class Windows (tk.Frame):
     Also defines binning factors and the number of active windows.
     """
 
-    def __init__(self, master, xs, xsmin, xsmax, ys, ysmin, ysmax,
-                 nx, nxmin, nxmax, ny, nymin, nymax, checker):
+    def __init__(self, master, xss, xsmins, xsmaxs, yss, ysmins, ysmaxs,
+                 nxs, nys, xbfac, ybfac, checker):
         """
         Arguments:
 
           master :
             container widget
 
-          xs, xsmin, xsmax :
-            initial X value(s) of the leftmost column of window(s) 
-            along with minimum and maximum values
+          xss, xsmins, xsmaxs :
+            initial X values of the leftmost column of window(s) 
+            along with minimum and maximum values (array-like)
 
-          ys, ysmin, ysmax :
-            initial Y value(s) of the lowest row of the window
-            along with minimum and maximum values
+          yss, ysmins, ysmaxs :
+            initial Y values of the lowest row of the window
+            along with minimum and maximum values (array-like)
 
-          nx, nxmin, nxmax :
-            initial X dimension(s) of windows, unbinned pixels
-            along with minimum and maximum values
+          nxs :
+            initial X dimensions of windows, unbinned pixels
+            (array-like)
 
-          ny, nxmin, nxmax :
+          nys :
             initial Y dimension(s) of windows, unbinned pixels
-            along with minimum and maximum values
+            (array-like)
+
+          xbfac :
+            set of x-binning factors
+
+          ybfac :
+            set of y-binning factors
 
           checker : 
             checker function to provide a global check and update in response
             to any changes made to the values stored in a Window. Can be None. 
-
-        NB xs, ys etc can be arrays or single values. If they are arrays their
-        lengths must match
         """
 
-        # force inputs into lists
-        xss, yss, nxs, nys = list(xs), list(ys), list(nx), list(ny)
-        xsmins, xsmaxs = list(xsmin), list(xsmax)
-        ysmins, ysmaxs = list(ysmin), list(ysmax)
-        nxmins, nxmaxs, nymins, nymaxs = list(nxmin), list(nxmax), list(nymin), list(nymax)
-
         nwin = len(xss)        
-        checks = (xss, xsmins, xsmaxs, yss, ysmins, ysmaxs, nxs, nxmins, nxmaxs, nys, nymins, nymaxs)
+        checks = (xss, xsmins, xsmaxs, yss, ysmins, ysmaxs, nxs, nys)
         for check in checks:
             if nwin != len(check):
-                raise DriverError('drivers.Windows.__init__: conflict array lengths amonst inputs')
+                raise DriverError('drivers.Windows.__init__: ' + \
+                                      'conflict array lengths amonst inputs')
 
         tk.Frame.__init__(self, master)
 
-        # top part contains the binning factors and the number of active windows
+        # top part contains the binning factors and the number 
+        # of active windows
         top = tk.Frame(self)
         top.pack(anchor=tk.W)
 
-        tk.Label(top, text='Binning factors (X x Y)').grid(row=0, column=0, sticky=tk.W)
+        tk.Label(top, text='Binning factors (X x Y): ').grid(
+            row=0, column=0, sticky=tk.W)
 
         xyframe = tk.Frame(top)
-        self.xbin = ListInt(xyframe, 1, (1,2,3,4,5,6,8), checker, width=2)
+        self.xbin = ListInt(xyframe, xbfac[0], xbfac, checker, width=2)
         self.xbin.pack(side=tk.LEFT)
         tk.Label(xyframe, text=' x ').pack(side=tk.LEFT)
-        self.ybin = ListInt(xyframe, 1, (1,2,3,4,5,6,8), checker, width=2)
+        self.ybin = ListInt(xyframe, ybfac[0], ybfac, checker, width=2)
         self.ybin.pack(side=tk.LEFT)
         xyframe.grid(row=0,column=1,sticky=tk.W)
 
         # Second row: number of windows
-        tk.Label(top, text='Number of windows').grid(row=1,column=0, sticky=tk.W)
         self.nwin = RangedInt(top, 1, 1, nwin, checker, False, width=2)
-        self.nwin.grid(row=1,column=1,sticky=tk.W,pady=2)
+        row = 1
+        if nwin > 1:
+            tk.Label(top, text='Number of windows').grid(
+                row=row,column=0, sticky=tk.W)
+            self.nwin.grid(row=1,column=1,sticky=tk.W,pady=2)
+            row += 1
 
         # bottom part contains the window settings
         bottom = tk.Frame(self)
         bottom.pack(anchor=tk.W)
 
         # top row
-        tk.Label(bottom, text='xs').grid(row=0,column=1)
-        tk.Label(bottom, text='ys').grid(row=0,column=2)
-        tk.Label(bottom, text='nx').grid(row=0,column=3)
-        tk.Label(bottom, text='ny').grid(row=0,column=4)
+        tk.Label(bottom, text='xs').grid(row=row,column=1,ipady=5,sticky=tk.S)
+        tk.Label(bottom, text='ys').grid(row=row,column=2,ipady=5,sticky=tk.S)
+        tk.Label(bottom, text='nx').grid(row=row,column=3,ipady=5,sticky=tk.S)
+        tk.Label(bottom, text='ny').grid(row=row,column=4,ipady=5,sticky=tk.S)
 
-        row = 1
         self.label, self.xs, self.ys, self.nx, self.ny = [],[],[],[], []
-        for xs, xsmin, xsmax, ys, ysmin, ysmax, nx, nxmin, nxmax, ny, nymin, nymax in \
-                zip(*checks):
+        nr = 0
+        row += 1
+        for xs, xsmin, xsmax, ys, ysmin, ysmax, nx, ny in zip(*checks):
 
             # create
             if nwin == 1:
-                self.label.append(tk.Label(bottom, text='Window:'))
+                self.label.append(tk.Label(bottom, text='Window: '))
             else:
-                self.label.append(tk.Label(bottom, text='Window ' + str(row) + ':'))
+                self.label.append(
+                    tk.Label(bottom, text='Window ' + str(nr+1) + ': '))
 
-            self.xs.append(RangedInt(bottom, xs, xsmin, xsmax, checker, True, width=4))
-            self.ys.append(RangedInt(bottom, ys, ysmin, ysmax, checker, True, width=4))
-            self.nx.append(RangedMint(bottom, nx, nxmin, nxmax, self.xbin, checker, True, width=4))
-            self.ny.append(RangedMint(bottom, ny, nymin, nymax, self.ybin, checker, True, width=4))
+            self.xs.append(
+                RangedInt(bottom, xs, xsmin, xsmax, checker, True, width=4))
+            self.ys.append(
+                RangedInt(bottom, ys, ysmin, ysmax, checker, True, width=4))
+            self.nx.append(
+                RangedMint(bottom, nx, 1, xsmax-xsmin+1, 
+                           self.xbin, checker, True, width=4))
+            self.ny.append(
+                RangedMint(bottom, ny, 1, ysmax-ysmin+1, 
+                           self.ybin, checker, True, width=4))
                            
             # arrange
             self.label[-1].grid(row=row,column=0)
@@ -3207,7 +3323,9 @@ class Windows (tk.Frame):
 
         # individual window checks
         for xsw, ysw, nxw, nyw in \
-                zip(self.xs[:nwin], self.ys[:nwin], self.nx[:nwin], self.ny[:nwin]):
+                zip(self.xs[:nwin], self.ys[:nwin], 
+                    self.nx[:nwin], self.ny[:nwin]):
+
             xsw.config(bg=COL['text_bg'])
             ysw.config(bg=COL['text_bg'])
             nxw.config(bg=COL['text_bg'])
@@ -3230,10 +3348,12 @@ class Windows (tk.Frame):
                 nyw.config(bg=COL['error'])
                 status = False
 
-            # Are the windows synchronised? This means that they would be consistent with
-            # the pixels generated were the whole CCD to be binned by the same factors
-            # If relevant values are not set, we count that as "synced" because the purpose
-            # of this is to enable / disable the sync button and we don't want it to be
+            # Are the windows synchronised? This means that they 
+            # would be consistent with the pixels generated were 
+            # the whole CCD to be binned by the same factors
+            # If relevant values are not set, we count that as 
+            # "synced" because the purpose of this is to enable 
+            # / disable the sync button and we don't want it to be
             # enabled just because xs or ys are not set.
             synced = True if \
                 xs is None or ys is None or nx is None or ny is None or \
@@ -3249,38 +3369,32 @@ class Windows (tk.Frame):
                 ysw.config(bg=COL['error'])
                 status = False
 
-        # Overlap checks. Compare each window with every other
-        # Only bother if we have survived so far, which saves a lot of checks
-        # At the moment, checks are the minimum (just check that there is no
-        # direct overlap of any pairs of active windows) and more may be 
-        # required depending upon the constraints ... ??
+        # Overlap checks. Compare each window with the next one, requiring 
+        # no y overlap and that the second is higher than the first
         if status:
             n1 = 0
-            for xsw1, ysw1, nxw1, nyw1 in zip(self.xs[:nwin-1], self.ys[:nwin-1], self.nx[:nwin-1], self.ny[:nwin-1]):
+            for ysw1, nyw1 in zip(self.ys[:nwin-1], self.ny[:nwin-1]):
 
-                xs1  = xsw1.value()
                 ys1  = ysw1.value()
-                nx1  = nxw1.value()
                 ny1  = nyw1.value()
             
                 n1 += 1
-                for xsw2, ysw2, nxw2, nyw2 in zip(self.xs[n1:nwin-1], self.ys[n1:nwin-1], self.nx[n1:nwin-1], self.ny[n1:nwin-1]):
-                    xs2  = xsw2.value()
-                    ys2  = ysw2.value()
-                    nx2  = nxw2.value()
-                    ny2  = nyw2.value()
+                ysw2, nyw2 = self.ys[n1], self.ny[n1]
 
-                    if xs2 < xs1 + nx1 and xs1 < xs2 + nx2 and ys2 < ys1 + ny1 and ys1 < ys2 + ny2:
-                        xsw2.config(bg=COL['error'])
-                        ysw2.config(bg=COL['error'])
-                        status = False
+                ys2  = ysw2.value()
+                ny2  = nyw2.value()
+
+                if ys2 < ys1 + ny1:
+                    ysw2.config(bg=COL['error'])
+                    status = False
 
         return (status, synced)
     
     def enable(self):
         nwin = self.nwin.value()
         for label, xs, ys, nx, ny in \
-                zip(self.label[:nwin], self.xs[:nwin], self.ys[:nwin], self.nx[:nwin], self.ny[:nwin]):
+                zip(self.label[:nwin], self.xs[:nwin], 
+                    self.ys[:nwin], self.nx[:nwin], self.ny[:nwin]):
             label.config(state='normal')
             xs.enable()
             ys.enable()
@@ -3288,7 +3402,8 @@ class Windows (tk.Frame):
             ny.enable()
 
         for label, xs, ys, nx, ny in \
-                zip(self.label[nwin:], self.xs[nwin:], self.ys[nwin:], self.nx[nwin:], self.ny[nwin:]):
+                zip(self.label[nwin:], self.xs[nwin:], 
+                    self.ys[nwin:], self.nx[nwin:], self.ny[nwin:]):
             label.config(state='disable')
             xs.disable()
             ys.disable()
@@ -3296,7 +3411,8 @@ class Windows (tk.Frame):
             ny.disable()
 
     def disable(self):
-        for label, xs, ys, nx, ny in zip(self.label, self.xs, self.ys, self.nx, self.ny):
+        for label, xs, ys, nx, ny in \
+                zip(self.label, self.xs, self.ys, self.nx, self.ny):
             label.config(state='disable')
             xs.disable()
             ys.disable()
@@ -3305,13 +3421,14 @@ class Windows (tk.Frame):
 
     def __iter__(self):
         """
-        Generator to allow looping through through the window values. Successive
-        calls return xs, ys, nx, ny for each window
+        Generator to allow looping through through the window values. 
+        Successive calls return xs, ys, nx, ny for each window
         """
         n = 0
         nwin = self.nwin.value()
         while n < nwin:
-            yield (self.xs[n].value(),self.ys[n].value(),self.nx[n].value(),self.ny[n].value())
+            yield (self.xs[n].value(),self.ys[n].value(),
+                   self.nx[n].value(),self.ny[n].value())
             n += 1
 
 class DriverError(Exception):
