@@ -56,39 +56,6 @@ RNO_AV_SLOW    =  5.6 # electrons per pixel
 DARK_E         =  0.001 # electrons/pix/sec
 CIC            =  0.010 # Clock induced charge, electrons/pix
 
-
-class Sync(drvs.ActButton):
-    """
-    Class defining the 'Sync' button's operation. This moves the windows to ensure that
-    the pixels are in step with a full-frame of the same binning.
-    """
-
-    def __init__(self, master, width, wframe, callback):
-        """
-        master   : containing widget
-        width    : width of button
-        wframe   : window parameters
-        """
-        drvs.ActButton.__init__(self, master, width, {}, callback, text='Sync')        
-        self.wframe = wframe
-
-    def act(self):
-        """
-        Carries out the action associated with the Sync button
-        """
-        xbin = self.wframe.xbin.value()
-        ybin = self.wframe.ybin.value()
-        n = 0
-        for xs, ys, nx, ny in self.wframe:
-            xs = xbin*((xs-1)//xbin)+1
-            self.wframe.xs[n].set(xs)
-            ys = ybin*((ys-1)//xbin)+1
-            self.wframe.ys[n].set(ys)
-            n += 1
-        self.config(bg=drvs.COL['main'])
-        self.disable()
-        self.callback()
-
 class InstPars(tk.LabelFrame):
     """
     Ultraspec instrument parameters block.
@@ -108,7 +75,8 @@ class InstPars(tk.LabelFrame):
 
         # First column: the labels
         tk.Label(lhs, text='Mode').grid(row=0,column=0,sticky=tk.W)
-        tk.Label(lhs, text='Clear').grid(row=1,column=0, sticky=tk.W)
+        self.clearLab = tk.Label(lhs, text='Clear')
+        self.clearLab.grid(row=1,column=0, sticky=tk.W)
         tk.Label(lhs, text='Avalanche').grid(row=2,column=0,sticky=tk.W)
         tk.Label(lhs, text='Readout speed').grid(row=3,column=0, sticky=tk.W)
         tk.Label(lhs, text='LED setting').grid(row=4,column=0, sticky=tk.W)
@@ -120,7 +88,7 @@ class InstPars(tk.LabelFrame):
         self.appLab.grid(row=0,column=1,sticky=tk.W)
 
         # Clear enabled
-        self.clear = drvs.OnOff(lhs, True)
+        self.clear = drvs.OnOff(lhs, True, self.check)
         self.clear.grid(row=1,column=1,sticky=tk.W)
 
         # Avalanche settings
@@ -140,7 +108,7 @@ class InstPars(tk.LabelFrame):
 
         # LED setting
         self.led = drvs.RangedInt(lhs, 0, 0, 4095, None, False, width=7)
-        self.led.grid(row=4,column=1,sticky=tk.W)
+        self.led.grid(row=4,column=1,pady=2,sticky=tk.W)
 
         # Exposure delay
         elevel = share['cpars']['expert_level']
@@ -149,13 +117,13 @@ class InstPars(tk.LabelFrame):
                                       self.check, width=7)
         else:
             self.expose = drvs.Expose(lhs, 0., 0., 1200., self.check, width=7)
-        self.expose.grid(row=5,column=1,sticky=tk.W)
+        self.expose.grid(row=5,column=1,pady=2,sticky=tk.W)
 
         # Number of exposures
         self.number = drvs.PosInt(lhs, 1, None, False, width=7)
-        self.number.grid(row=6,column=1,sticky=tk.W)
+        self.number.grid(row=6,column=1,pady=2,sticky=tk.W)
 
-        # right-hand side: the window parameters
+        # Right-hand side: the window parameters
         rhs = tk.Frame(self)
 
         # window mode frame
@@ -174,34 +142,42 @@ class InstPars(tk.LabelFrame):
         self.wframe.grid(row=2,column=0,columnspan=3,sticky=tk.W+tk.N)
 
         # drift mode frame (just one pair)
-        xsl    = (1,)
+        xsl    = (100,)
         xslmin = (1,)
         xslmax = (1024,)
-        xsr    = (201,)
+        xsr    = (600,)
         xsrmin = (1,)
         xsrmax = (1024,)
         ys     = (1,)
         ysmin  = (1,)
         ysmax  = (1024,)
-        nx     = (100,)
-        ny     = (100,)
+        nx     = (50,)
+        ny     = (50,)
         xbfac  = (1,2,3,4,5,6,8)
         ybfac  = (1,2,3,4,5,6,8)
         self.pframe = drvs.WinPairs(rhs, xsl, xslmin, xslmax, xsr, xsrmin, 
                                     xsrmax, ys, ysmin, ysmax, nx, ny,
                                     xbfac, ybfac, self.check)
 
-        # Final row: buttons to synchronise windows.
-        self.sync = Sync(lhs, 5, self.wframe, self.check)
-        self.sync.grid(row=7,column=0,sticky=tk.W,pady=5)
-
         # Pack two halfs
-        lhs.pack(side=tk.LEFT,padx=5)
+        lhs.pack(side=tk.LEFT,anchor=tk.N,padx=5)
         rhs.pack(side=tk.LEFT,anchor=tk.N,padx=5)
 
         # Store configuration parameters and freeze state
         self.share  = share
         self.frozen = False
+
+    def isDrift(self):
+        """
+        Returns True if we are in drift mode
+        """
+        if self.appLab.value() == 'Drift':
+            return True
+        elif self.appLab.value() == 'Windows':
+            return False
+        else:
+            raise drvs.DriverError('uspec.InstPars.isDrift: application = ' + \
+                                       self.appLab.value() + ' not recognised.')
 
     def check(self, *args):
         """
@@ -227,21 +203,23 @@ class InstPars(tk.LabelFrame):
             self.wframe.enable()
 
         # Switch visible widget according to the application
-        if self.appLab.value() == 'Windows':
-            self.pframe.grid_forget()
-            self.wframe.grid(row=2,column=0,columnspan=3,sticky=tk.W+tk.N)
-            if not self.frozen:
-                self.wframe.nwin.enable()
-
-        elif self.appLab.value() == 'Drift':
+        if self.isDrift():
+            # prevent frame from re-sizing when switching to drift
+            self.pack_propagate(False)
             self.wframe.grid_forget()
             self.pframe.grid(row=2,column=0,columnspan=3,sticky=tk.W+tk.N)
+            self.clearLab.config(state='disable')
             if not self.frozen:
+                self.clear.config(state='disable')
                 self.pframe.npair.enable()
 
         else:
-            raise drvs.DriverError('Application = ' + self.appLab.value() + \
-                                       ' not recognised.')
+            self.pframe.grid_forget()
+            self.wframe.grid(row=2,column=0,columnspan=3,sticky=tk.W+tk.N)
+            self.clearLab.config(state='normal')
+            if not self.frozen:
+                self.clear.config(state='normal')
+                self.wframe.nwin.enable()
 
         # check avalanche settings
         if self.avalanche():
@@ -253,18 +231,10 @@ class InstPars(tk.LabelFrame):
             self.avgainLabel.configure(state='disable')
 
         # check the window settings
-        if self.appLab.value() == 'Windows':
-            status, synced = self.wframe.check()
-        elif self.appLab.value() == 'Drift':
-            status, synced = self.pframe.check()
-
-        if status and not synced:
-            if not self.frozen: 
-                self.sync.configure(state='normal')
-            self.sync.config(bg=drvs.COL['warn'])
+        if self.isDrift():
+            status = self.pframe.check()
         else:
-            self.sync.config(bg=drvs.COL['main'])
-            self.sync.configure(state='disable')
+            status = self.wframe.check()
 
         # exposure delay
         if self.expose.ok():
@@ -295,8 +265,8 @@ class InstPars(tk.LabelFrame):
         self.led.disable()
         self.expose.disable()
         self.number.disable()
-        self.wframe.disable()
-        self.pframe.disable()
+        self.wframe.freeze()
+        self.pframe.freeze()
         self.sync.configure(state='disable')
         self.frozen = True
 
@@ -311,8 +281,8 @@ class InstPars(tk.LabelFrame):
         self.led.enable()
         self.expose.enable()
         self.number.enable()
-        self.wframe.enable()
-        self.pframe.enable()
+        self.wframe.unfreeze()
+        self.pframe.unfreeze()
         self.frozen = False
         self.check()
 
@@ -364,7 +334,7 @@ class InstPars(tk.LabelFrame):
 
         # avalanche mode y/n?
         lnormal = not self.avalanche()
-        HCLOCK  = HCLOCK_NORM if lnormal else HCLOCK_AV;
+        HCLOCK  = HCLOCK_NORM if lnormal else HCLOCK_AV
 		
         # drift mode y/n?
         isDriftMode = self.appLab.value() == 'Drift'
@@ -383,21 +353,23 @@ class InstPars(tk.LabelFrame):
                                        + readSpeed + ' not recognised.')
 
         # clear chip on/off?
-        lclear = isDriftMode and self.clear 
+        lclear = not isDriftMode and self.clear 
 
-        # get exposure delay and binning factors
+        # get exposure delay
         expose = self.expose.value()
-        xbin   = self.wframe.xbin.value()	
-        ybin   = self.wframe.ybin.value()	
 
         # window parameters
         if isDriftMode:
+            xbin    = self.pframe.xbin.value()	
+            ybin    = self.pframe.ybin.value()	
             dxleft  = self.pframe.xsl[0].value()
             dxright = self.pframe.xsr[0].value()
             dys     = self.pframe.ys[0].value()
             dnx     = self.pframe.nx[0].value()
             dny     = self.pframe.ny[0].value()
         else:
+            xbin   = self.wframe.xbin.value()	
+            ybin   = self.wframe.ybin.value()	
             xs, ys, nx, ny = [], [], [], []
             nwin = self.wframe.nwin.value()
             for xsv, ysv, nxv, nyv in self.wframe:

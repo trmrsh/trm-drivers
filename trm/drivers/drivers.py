@@ -1339,8 +1339,6 @@ class ActButton(tk.Button):
         """
         self.configure(state='normal')
         self._active = True
-        print('enable activity flag =',self._active)
-        
 
     def disable(self):
         """
@@ -1375,9 +1373,9 @@ class ActButton(tk.Button):
     def act(self):
         """
         Carry out the action associated with the button.
-        This must be overridden.
+        Override in derived classes
         """
-        return NotImplemented
+        self.callback()
 
 class Start(ActButton):
     """
@@ -3037,6 +3035,11 @@ class WinPairs (tk.Frame):
             row += 1
             nr  += 1
 
+        # syncing button
+        self.sbutt = ActButton(bottom, 5, {}, self.sync, text='Sync')        
+        self.sbutt.grid(row=row,column=0,columnspan=5,pady=10,sticky=tk.W)
+        self.frozen = False
+
     def check(self):
         """
         Checks the values of the window pairs. If any problems are found, it 
@@ -3138,7 +3141,15 @@ class WinPairs (tk.Frame):
                     ysw2.config(bg=COL['error'])
                     status = False
 
-        return (status, synced)
+        if synced:
+            self.sbutt.config(bg=COL['main'])
+            self.sbutt.disable()
+        else:
+            if not self.frozen:
+                self.sbutt.enable()
+            self.sbutt.config(bg=COL['warn'])
+
+        return status
     
     def enable(self):
         npair = self.npair.value()
@@ -3171,6 +3182,75 @@ class WinPairs (tk.Frame):
             ys.disable()
             nx.disable()
             ny.disable()
+    
+    def sync(self):
+        """
+        Synchronise the settings. This means that the pixel start 
+        values are shifted downwards so that they are synchronised 
+        with a full-frame binned version. This does nothing if the 
+        binning factors == 1. 
+        """
+
+        # needs some mods for ultracam ??
+        xbin = self.xbin.value()
+        ybin = self.ybin.value()
+        n = 0
+        for xsl, xsr, ys, nx, ny in self:
+            if xbin > 1:
+                if xsl % xbin != 1:
+                    xsl = xbin*((xsl-1)//xbin)+1
+                    self.xsl[n].set(xsl)
+                if xsr % xbin != 1:
+                    xsr = xbin*((xsr-1)//xbin)+1
+                    self.xsr[n].set(xsr)
+
+            if ybin > 1 and ys % ybin != 1:
+                ys = ybin*((ys-1)//ybin)+1
+                self.ys[n].set(ys)
+
+            n += 1
+        self.sbutt.config(state='disable')
+
+    def freeze(self):
+        """
+        Freeze all settings so they can't be altered
+        """
+        for xsl, xsr, ys, nx, ny in self:
+            xsl.disable()
+            xsr.disable()
+            ys.disable()
+            nx.disable()
+            ny.disable()
+        self.sbutt.config(state='disable')
+        self.frozen = True
+
+    def unfreeze(self):
+        """
+        Unfreeze all settings
+        """
+        npair = self.npair.value()
+        for label, xsl, xsr, ys, nx, ny in \
+                zip(self.label[:npair], self.xsl[:npair], self.xsr[:npair], 
+                    self.ys[:npair], self.nx[:npair], self.ny[:npair]):
+            label.config(state='normal')
+            xsl.enable()
+            xsr.enable()
+            ys.enable()
+            nx.enable()
+            ny.enable()
+
+        for label, xsl, xsr, ys, nx, ny in \
+                zip(self.label[npair:], self.xsl[npair:], self.xsr[npair:], 
+                    self.ys[npair:], self.nx[npair:], self.ny[npair:]):
+            label.config(state='disable')
+            xsl.disable()
+            xsr.disable()
+            ys.disable()
+            nx.disable()
+            ny.disable()
+        
+        self.frozen = False
+        self.check()
 
     def __iter__(self):
         """
@@ -3270,6 +3350,7 @@ class Windows (tk.Frame):
         tk.Label(bottom, text='nx').grid(row=row,column=3,ipady=5,sticky=tk.S)
         tk.Label(bottom, text='ny').grid(row=row,column=4,ipady=5,sticky=tk.S)
 
+        print('making windows')
         self.label, self.xs, self.ys, self.nx, self.ny = [],[],[],[], []
         nr = 0
         row += 1
@@ -3301,6 +3382,11 @@ class Windows (tk.Frame):
             self.ny[-1].grid(row=row,column=4)
 
             row += 1
+            nr  += 1
+
+        self.sbutt = ActButton(bottom, 5, {}, self.sync, text='Sync')        
+        self.sbutt.grid(row=row,column=0,columnspan=5,pady=6,sticky=tk.W)
+        self.frozen = False
 
     def check(self):
         """
@@ -3308,12 +3394,9 @@ class Windows (tk.Frame):
         flags them by changing the background colour. Only active
         windows are checked.
 
-        Returns (status, synced)
-
-          status : flag for whether parameters are viable at all
-          synced : flag for whether the windows are synchronised.
+        Returns status, flag for whether parameters are viable.
         """
-
+        print('checking windows')
         status = True
         synced = False
 
@@ -3388,13 +3471,25 @@ class Windows (tk.Frame):
                     ysw2.config(bg=COL['error'])
                     status = False
 
-        return (status, synced)
+        print('almost checked')
+        if synced:
+            self.sbutt.config(bg=COL['main'])
+            self.sbutt.disable()
+            print('synced')
+        else:
+            if not self.frozen:
+                self.sbutt.enable()
+            self.sbutt.config(bg=COL['warn'])
+            print('not synced')
+
+        return status
     
     def enable(self):
+        print('enabling windows')
         nwin = self.nwin.value()
         for label, xs, ys, nx, ny in \
-                zip(self.label[:nwin], self.xs[:nwin], 
-                    self.ys[:nwin], self.nx[:nwin], self.ny[:nwin]):
+                zip(self.label[:nwin], self.xs[:nwin], self.ys[:nwin], 
+                    self.nx[:nwin], self.ny[:nwin]):
             label.config(state='normal')
             xs.enable()
             ys.enable()
@@ -3402,8 +3497,8 @@ class Windows (tk.Frame):
             ny.enable()
 
         for label, xs, ys, nx, ny in \
-                zip(self.label[nwin:], self.xs[nwin:], 
-                    self.ys[nwin:], self.nx[nwin:], self.ny[nwin:]):
+                zip(self.label[nwin:], self.xs[nwin:], self.ys[nwin:], 
+                    self.nx[nwin:], self.ny[nwin:]):
             label.config(state='disable')
             xs.disable()
             ys.disable()
@@ -3411,6 +3506,7 @@ class Windows (tk.Frame):
             ny.disable()
 
     def disable(self):
+        print('disabling windows')
         for label, xs, ys, nx, ny in \
                 zip(self.label, self.xs, self.ys, self.nx, self.ny):
             label.config(state='disable')
@@ -3418,6 +3514,69 @@ class Windows (tk.Frame):
             ys.disable()
             nx.disable()
             ny.disable()
+
+    def sync(self, *args):
+        """
+        Synchronise the settings. This means that the pixel start 
+        values are shifted downwards so that they are synchronised 
+        with a full-frame binned version. This does nothing if the 
+        binning factor == 1
+        """
+        print('syncing windows ',args)
+        xbin = self.xbin.value()
+        ybin = self.ybin.value()
+        n = 0
+        for xs, ys, nx, ny in self:
+            if xbin > 1 and xs % xbin != 1:
+                xs = xbin*((xs-1)//xbin)+1
+                self.xs[n].set(xs)
+
+            if ybin > 1 and ys % ybin != 1:
+                ys = ybin*((ys-1)//ybin)+1
+                self.ys[n].set(ys)
+
+            n += 1
+        self.sbutt.config(state='disable')
+
+    def freeze(self):
+        """
+        Freeze all settings so they can't be altered
+        """
+        print('freezing windows')
+        for xs, ys, nx, ny in self:
+            xs.disable()
+            ys.disable()
+            nx.disable()
+            ny.disable()
+        self.sbutt.config(state='disable')
+        self.frozen = True
+
+    def unfreeze(self):
+        """
+        Unfreeze all settings
+        """
+        print('unfreezing windows')
+        nwin = self.nwin.value()
+        for label, xs, ys, nx, ny in \
+                zip(self.label[:nwin], self.xs[:nwin], self.ys[:nwin], 
+                    self.nx[:nwin], self.ny[:nwin]):
+            label.config(state='normal')
+            xs.enable()
+            ys.enable()
+            nx.enable()
+            ny.enable()
+
+        for label, xsl, xsr, ys, nx, ny in \
+                zip(self.label[nwin:], self.xs[nwin:], self.ys[nwin:], 
+                    self.nx[nwin:], self.ny[nwin:]):
+            label.config(state='disable')
+            xs.disable()
+            ys.disable()
+            nx.disable()
+            ny.disable()
+        
+        self.frozen = False
+        self.check()
 
     def __iter__(self):
         """
