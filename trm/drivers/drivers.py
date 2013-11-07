@@ -1188,15 +1188,18 @@ class Radio(tk.Frame):
 
         row = 0
         col = 0
+        self.buttons = []
         for nopt, option in enumerate(options):
             if values is None:
-                tk.Radiobutton(self, text=option, variable=self.val, 
-                               value=option).grid(
-                    row=row, column=col, sticky=tk.W)
+                self.buttons.append(
+                    tk.Radiobutton(self, text=option, variable=self.val, 
+                                   value=option))
+                self.buttons[-1].grid(row=row, column=col, sticky=tk.W)
             else:
-                tk.Radiobutton(self, text=option, variable=self.val, 
-                               value=values[nopt]).grid(
-                    row=row, column=col, sticky=tk.W)
+                self.buttons.append(
+                    tk.Radiobutton(self, text=option, variable=self.val, 
+                                   value=values[nopt]))
+                self.buttons[-1].grid(row=row, column=col, sticky=tk.W)
             col += 1
             if col == ncmax:
                 row += 1
@@ -1213,10 +1216,12 @@ class Radio(tk.Frame):
         return self.val.set(choice)
 
     def disable(self):
-        self.configure(state='disable')
+        for b in self.buttons:
+            b.configure(state='disable')
 
     def enable(self):
-        self.configure(state='normal')
+        for b in self.buttons:
+            b.configure(state='normal')
 
 class OnOff(tk.Checkbutton):
     """

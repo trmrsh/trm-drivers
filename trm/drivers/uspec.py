@@ -43,8 +43,9 @@ GAIN_AV_FAST   = 0.0034 # electrons per count
 GAIN_AV_MED    = 0.0013 # electrons per count
 GAIN_AV_SLOW   = 0.0016 # electrons per count
 
-# Note - avalanche RNO assume HVGain = 9. We can adapt this later when we decide how
-# gain should be set at TNO. Might be better to make RNO a function if we allow 0 < HVgain < 9 (SL)
+# Note - avalanche RNO assume HVGain = 9. We can adapt this later when we
+# decide how gain should be set at TNO. Might be better to make RNO a function
+# if we allow 0 < HVgain < 9 (SL)
    
 RNO_NORM_FAST  =  4.8 # electrons per pixel
 RNO_NORM_MED   =  2.8 # electrons per pixel
@@ -130,10 +131,10 @@ class InstPars(tk.LabelFrame):
         # window mode frame
         xs    = (1,101,201,301)
         xsmin = (1,1,1,1)
-        xsmax = (1024,1024,1024,1024)
+        xsmax = (1056,1056,1056,1056)
         ys    = (1,101,201,301)
         ysmin = (1,1,1,1)
-        ysmax = (1024,1024,1024,1024)
+        ysmax = (1072,1072,1072,1072)
         nx    = (100,100,100,100)
         ny    = (100,100,100,100)
         xbfac = (1,2,3,4,5,6,8)
@@ -636,7 +637,7 @@ class RunPars(tk.LabelFrame):
 # Observing section. First a helper routine needed
 # by the 'Save' and 'Post' buttons
 
-def createXML(post, cpars, instpars, runpars, clog, rlog):
+def createXML(post, cpars, ipars, rpars, clog, rlog):
     """
     This creates the XML representing the current setup. It does
     this by loading a template xml file using directives in the
@@ -647,8 +648,8 @@ def createXML(post, cpars, instpars, runpars, clog, rlog):
       post      : True if posting an application. This is a safety 
                   feature to avoid querying the camera server during a run.
       cpars     : configuration parameters
-      instpars  : windows etc
-      runpars   : target, PI name etc.
+      ipars     : windows etc
+      rpars     : target, PI name etc.
       clog      : command logger
       rlog      : response logger
 
@@ -656,7 +657,7 @@ def createXML(post, cpars, instpars, runpars, clog, rlog):
     """
 
     # identify the template
-    appLab = instpars.appLab.value()
+    appLab = ipars.appLab.value()
     if cpars['debug']:
         print('DEBUG: createXML: application = ' + appLab)
         print('DEBUG: createXML: application vals = ' + \
@@ -690,41 +691,44 @@ def createXML(post, cpars, instpars, runpars, clog, rlog):
     # Set them. This is designed so that missing 
     # parameters will cause exceptions to be raised.
 
+    # shorthand for the windows
+    w = ipars.wframe
+
     # X-binning factor
-    pdict['X_BIN']['value'] = str(instpars.xbin.value())
+    pdict['X_BIN']['value'] = str(w.xbin.value())
 
     # Y-binning factor
-    pdict['Y_BIN']['value'] = str(instpars.ybin.value())
+    pdict['Y_BIN']['value'] = str(w.ybin.value())
 
     # Number of exposures
-    pdict['NUM_EXPS']['value'] = '-1' if instpars.number.value() == 0 \
-        else str(instpars.number.value())
+    pdict['NUM_EXPS']['value'] = '-1' if ipars.number.value() == 0 \
+        else str(ipars.number.value())
 
     # LED level
-    pdict['LED_FLSH']['value'] = str(instpars.led.value())
+    pdict['LED_FLSH']['value'] = str(ipars.led.value())
 
     # Avalanche or normal
-    pdict['OUTPUT']['value'] = str(instpars.avalanche())
+    pdict['OUTPUT']['value'] = str(ipars.avalanche())
 
     # Avalanche gain
-    pdict['HV_GAIN']['value'] = str(instpars.avgain.value())
+    pdict['HV_GAIN']['value'] = str(ipars.avgain.value())
 
     # Clear or not
-    pdict['EN_CLR']['value'] = str(instpars.clear())
+    pdict['EN_CLR']['value'] = str(ipars.clear())
 
     # Dwell
-    pdict['DWELL']['value'] = str(instpars.expose.value())
+    pdict['DWELL']['value'] = str(ipars.expose.ivalue())
 
     # Readout speed
-    pdict['SPEED']['value'] = '0' if instpars.readout == 'Slow' else '1' \
-        if instpars.readout == 'Medium' else '2'
+    pdict['SPEED']['value'] = '0' if ipars.readSpeed.value() == 'Slow' \
+        else '1' if ipars.readSpeed.value() == 'Medium' else '2'
 
     # Number of windows -- needed to set output parameters correctly
-    nwin  = int(instpars.nwin.value())
+    nwin  = int(w.nwin.value())
 
     # Load up enabled windows, null disabled windows
     nw = 0
-    for xs, ys, nx, ny in instpars.wframe:
+    for xs, ys, nx, ny in zip(w.xs,w.ys,w.nx,w.ny):
         pdict['X' + str(nw+1) + '_START']['value'] = str(xs)
         pdict['Y' + str(nw+1) + '_START']['value'] = str(ys)
         pdict['X' + str(nw+1) + '_SIZE']['value']  = str(nx)
@@ -740,17 +744,17 @@ def createXML(post, cpars, instpars, runpars, clog, rlog):
     # Load the user parameters
     uconfig    = root.find('user')
     targ       = ET.SubElement(uconfig, 'target')
-    targ.text  = runpars.target.value()
+    targ.text  = rpars.target.value()
     id         = ET.SubElement(uconfig, 'ID')
-    id.text    = runpars.progid.value()
+    id.text    = rpars.progid.value()
     pi         = ET.SubElement(uconfig, 'PI')
-    pi.text    = runpars.pi.value()
+    pi.text    = rpars.pi.value()
     obs        = ET.SubElement(uconfig, 'Observers')
-    obs.text   = runpars.observers.value()
+    obs.text   = rpars.observers.value()
     comm       = ET.SubElement(uconfig, 'comment')
-    comm.text  = runpars.comment.value()
+    comm.text  = rpars.comment.value()
     dtype      = ET.SubElement(uconfig, 'dtype')
-    dtype.text = runpars.dtype.get()
+    dtype.text = rpars.dtype.value()
     
     if post:
         if not hasattr(createXML, 'revision'):
@@ -891,36 +895,36 @@ class Load(drvs.ActButton):
             pdict[param.attrib['ref']] = param.attrib['value']
 
         # Set them. 
-        instpars = self.share['instpars']
+        ipars = self.share['instpars']
 
         # X-binning factor
-        instpars.xbin.set(pdict['X_BIN'])
+        ipars.xbin.set(pdict['X_BIN'])
 
         # Y-binning factor
-        instpars.ybin.set(pdict['Y_BIN'])
+        ipars.ybin.set(pdict['Y_BIN'])
 
         # Number of exposures
-        instpars.number.set(pdict['NUM_EXPS'] if \
-                                pdict['NUM_EXPS'] != '-1' else 0)
+        ipars.number.set(pdict['NUM_EXPS'] if \
+                             pdict['NUM_EXPS'] != '-1' else 0)
 
         # LED level
-        instpars.led.set(pdict['LED_FLSH'])
+        ipars.led.set(pdict['LED_FLSH'])
 
         # Avalanche or normal
-        instpars.avalanche.set(pdict['OUTPUT'])
+        ipars.avalanche.set(pdict['OUTPUT'])
 
         # Avalanche gain
-        instpars.avgain.set(pdict['HV_GAIN'])
+        ipars.avgain.set(pdict['HV_GAIN'])
 
         # Clear or not
-        instpars.clear.set(pdict['EN_CLR'])
+        ipars.clear.set(pdict['EN_CLR'])
 
         # Dwell
-        instpars.expose.set(pdict['DWELL'])
+        ipars.expose.set(pdict['DWELL'])
 
         # Readout speed
         speed = pdict['SPEED']
-        instpars.readout.set('Slow' if \
+        ipars.readout.set('Slow' if \
                                  speed == '0' else 'Medium' if speed == '1' \
                                  else 'Fast') 
 
@@ -942,7 +946,7 @@ class Load(drvs.ActButton):
                 break
 
         # Set the number of windows
-        instpars.wframe.nwin.set(nwin)
+        ipars.wframe.nwin.set(nwin)
 
         # User parameters ...
 
