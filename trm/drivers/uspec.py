@@ -10,6 +10,7 @@ import tkFont, tkMessageBox, tkFileDialog
 import xml.etree.ElementTree as ET
 import os
 import drivers as drvs
+import filterwheel as fwheel
 import math as m
 
 # Timing, gain, noise parameters lifted from java usdriver
@@ -167,6 +168,9 @@ class InstPars(tk.LabelFrame):
         self.share  = share
         self.frozen = False
 
+        # stores current avalanche setting to check for changes
+        self.oldAvalanche = False
+
     def isDrift(self):
         """
         Returns True if we are in drift mode
@@ -176,8 +180,8 @@ class InstPars(tk.LabelFrame):
         elif self.appLab.value() == 'Windows':
             return False
         else:
-            raise drvs.DriverError('uspec.InstPars.isDrift: application = ' + \
-                                       self.appLab.value() + ' not recognised.')
+            raise UspecError('uspec.InstPars.isDrift: application = ' + \
+                                 self.appLab.value() + ' not recognised.')
 
     def check(self, *args):
         """
@@ -221,14 +225,20 @@ class InstPars(tk.LabelFrame):
                 self.clear.config(state='normal')
                 self.wframe.nwin.enable()
 
-        # check avalanche settings
         if self.avalanche():
             if not self.frozen: self.avgain.enable()
-            self.avgainLabel.configure(state='normal')
-            self.avgain.set(0)
+            if not self.oldAvalanche:
+                # only update status if there has been a change
+                # this is needed because any change to avGain causes
+                # this check to be run and we must prevent the gain
+                # automatically being set back to zero
+                self.avgainLabel.configure(state='normal')
+                self.avgain.set(0)
+                self.oldAvalanche = True
         else:
             self.avgain.disable()
             self.avgainLabel.configure(state='disable')
+            self.oldAvalanche = False
 
         # check the window settings
         if self.isDrift():
@@ -349,8 +359,8 @@ class InstPars(tk.LabelFrame):
         elif readSpeed == 'Slow':
             video = VIDEO_NORM_SLOW if lnormal else VIDEO_AV_SLOW
         else:
-            raise drvs.DriverError('uspec.InstPars.timing: readout speed = ' \
-                                       + readSpeed + ' not recognised.')
+            raise UspecError('uspec.InstPars.timing: readout speed = ' \
+                                 + readSpeed + ' not recognised.')
 
         # clear chip on/off?
         lclear = not isDriftMode and self.clear 
@@ -585,7 +595,7 @@ class RunPars(tk.LabelFrame):
 
         ok  = True
         msg = ''
-        dtype = self.dtype.get()
+        dtype = self.dtype.value()
         if dtype not in RunPars.DTYPES:
             ok = False
             msg += 'No data type has been defined\n'
@@ -827,6 +837,7 @@ class Post(drvs.ActButton):
                 o['Start'].enable()
                 o['Stop'].disable()
                 o['Post'].enable()
+                o['Filter'].disable()
                 o['setup'].resetSDSUhard.disable()
                 o['setup'].resetSDSUsoft.disable()
                 o['setup'].resetPCI.disable()
@@ -992,6 +1003,76 @@ class Save(drvs.ActButton):
         else:
             return False
 
+class Filter(drvs.ActButton):
+    """
+    Class defining the 'Filter' button's operation. This saves the
+    current configuration to disk.
+    """
+
+    def __init__(self, master, width, share):
+        """
+        master  : containing widget
+        width   : width of button
+        share   : dictionary of other objects. Must have 'cpars' the 
+                  configuration parameters, 'instpars' the instrument 
+                  setup parameters (windows etc), and 'runpars' the 
+                  run parameters (target name etc), 'clog' and 'rlog'
+        """
+        drvs.ActButton.__init__(self, master, width, share, text='Filter')
+        self.filter = 'undef'
+        self.nroot  = None
+        self.fwheel = fwheel.FilterWheel()
+
+    def act(self):
+        """
+        Carries out the action associated with the Save button
+        """
+
+        o = self.share
+        cpars, ipars, rpars, clog, rlog = \
+            o['cpars'], o['instpars'], o['runpars'], o['clog'], o['rlog']
+
+        print(self.nroot)
+        if not self.nroot:
+            self.nroot  = tk.Toplevel()
+            self.nroot.title('Filter selector')
+            self.nroot.protocol('WM_DELETE_WINDOW', self._nrootDestroy)
+            self.flabel = tk.Label(self.nroot,text='Choose the filter:')
+            self.flabel.pack()
+            self.selector = \
+                drvs.Radio(self.nroot, cpars['active_filter_names'], 6, self._setFilter)
+            self.selector.set(self.filter)
+            self.selector.pack()
+        return True
+
+    def _nrootDestroy(self):
+        self.nroot.destroy()
+        self.nroot = None
+
+    def _setFilter(self, *args):
+
+        try:
+            # work out index we are trying to set to
+            cpars = self.share['cpars']
+            fname = self.selector.value()
+            if fname not in cpars['active_filter_names']:
+                raise UspecError('Filter.set: fname = ' + fname + 
+                                 ' not recognised.')
+            findex = cpars['active_filter_names'].index(fname)+1
+
+            # finally try to set the wheel
+            if not self.fwheel.connected:
+                self.fwheel.connect()
+
+            if not self.fwheel.initialised:
+                self.fwheel.initialise()
+
+            self.fwheel.goto(findex)
+            self.filter = fname
+        except Exception, err:
+            print(err)
+            self.selector.set('undef')
+
 class Unfreeze(drvs.ActButton):
     """
     Class defining the 'Unfreeze' button's operation. 
@@ -1043,6 +1124,7 @@ class Observe(tk.LabelFrame):
         self.post     = Post(self, width, share)
         self.start    = drvs.Start(self, width, share)
         self.stop     = drvs.Stop(self, width, share)
+        self.filter   = Filter(self, width, share)
 
         # pass all buttons to each other
         share['Load']     = self.load
@@ -1051,6 +1133,7 @@ class Observe(tk.LabelFrame):
         share['Post']     = self.post
         share['Start']    = self.start
         share['Stop']     = self.stop
+        share['Filter']   = self.filter
 
         self.share = share
 
@@ -1061,6 +1144,7 @@ class Observe(tk.LabelFrame):
         self.post.grid(row=0,column=1)
         self.start.grid(row=1,column=1)
         self.stop.grid(row=2,column=1)
+        self.filter.grid(row=3,column=0)
 
         # Define initial status
         self.post.disable()
@@ -1392,3 +1476,6 @@ class CountsFrame(tk.LabelFrame):
         peakWarn = peak > warn
 
         return (total, peak, peakSat, peakWarn, signal/noise, signalToNoise3)
+
+class UspecError(Exception):
+    pass
