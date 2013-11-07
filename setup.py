@@ -10,9 +10,10 @@ except:
     cmdclass = {}
 
 setup(name='trm.drivers',
-      version='0',
+      version='0.1',
       packages = ['trm', 'trm.drivers'],
       scripts=['scripts/usdriver.py',],
+      package_data={'' : ['data/usdriver.conf',]},
 
       author='Tom Marsh',
       description="Python module for drivers ULTRACAM etc",
