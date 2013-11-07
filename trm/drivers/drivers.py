@@ -23,6 +23,7 @@ import subprocess
 import time
 import math
 import datetime
+import json
 
 # thirparty
 import ephem
@@ -62,7 +63,7 @@ TINS = {\
         'app'        : 'tno.xml', # Application for the telescope
         'plateScale' : 0.45,      # Arcsecs/unbinned pixel
         'zerop'      : {\
-            'u' : 22.66, # Zeropoints: mags for 1 e-/sec ??
+            'u' : 22.29, # update 06/11/13
             'g' : 25.20,
             'r' : 24.96,
             'i' : 24.64,
@@ -142,7 +143,7 @@ def loadCpars(fp):
         'HTTP_PATH_CONFIG' : 'string', 'HTTP_SEARCH_ATTR_NAME' : 'string', 
         'INSTRUMENT_APP' : 'string', 'POWER_ON' : 'string', 
         'FOCAL_PLANE_SLIDE' : 'string', 'TELINS_NAME' : 'string',
-        'REQUIRE_RUN_PARAMS' : 'boolean'}
+        'REQUIRE_RUN_PARAMS' : 'boolean', 'ACCESS_TCS' : 'boolean'}
 
     for key, value in SINGLE_ITEMS.iteritems():
         if value == 'boolean':
@@ -177,7 +178,8 @@ def loadCpars(fp):
 
     # Check the telescope/instrument combo
     if cpars['telins_name'] not in TINS:
-        print('Telescope/instrument combination = ' + cpars['telins_name'] + ' not recognised.')
+        print('Telescope/instrument combination = ' + 
+              cpars['telins_name'] + ' not recognised.')
         print('Current possibilities are : ' + str(TINS.keys().sort()))
         print('Please fix the configuration file = ' + fp.name)
         exit(1)
@@ -246,7 +248,7 @@ class IntegerEntry(tk.Entry):
         # to avoid immediate run of _callback.
         tk.Entry.__init__(self, master, **kw)
         self._variable = tk.StringVar()
-        self._value = str(int(ival))
+        self._value    = str(int(ival))
         self._variable.set(self._value)
         self._variable.trace("w", self._callback)
         self.config(textvariable=self._variable)
@@ -282,8 +284,10 @@ class IntegerEntry(tk.Entry):
         """
         Sets the current value equal to num
         """
+        print('set1: ',num,self._value)
         self._value = str(int(num))
         self._variable.set(self._value)
+        print('set2: ',num,self._value)
 
     def add(self, num):
         """
@@ -535,7 +539,9 @@ class RangedInt (IntegerEntry):
         Adds num to the current value
         """
         try:
+            print('1: ',self.value(),num)
             val = self.value() + num
+            print('2: ',val,self.value(),num,self.imin,self.imax)
         except:
             val = num
         self.set(min(self.imax,max(self.imin,val)))
@@ -1399,10 +1405,32 @@ class Start(ActButton):
         """
 
         o = self.share
-        cpars, ipars, rpars, clog, rlog = \
-            o['cpars'], o['instpars'], o['runpars'], o['clog'], o['rlog']
+        cpars, ipars, rpars, clog, rlog, info = \
+            o['cpars'], o['instpars'], o['runpars'], o['clog'], o['rlog'], o['info']
 
-        # Copule of safety checks
+        if cpars['access_tcs']:
+            try:
+                # TNT TCS access
+                url = 'http://192.168.20.190/TCSDataSharing/DataRequest.asmx/GetTelescopeData'
+                req = urllib2.Request(url,data="",headers={"content-type":"application/json"})
+                response = urllib2.urlopen(req,timeout=5)
+                string   = response.read()
+                jsonData = json.loads(string)
+                listData = eval(jsonData['d'])[0]
+                ignore,ra,dec,posang,focus = listData
+                gotPos = True
+            except Exception, err:
+                print(err)
+                if not tkMessageBox.askokcancel(
+                    'Could not get RA, Dec from telescope.\n' + 'Continue?'):
+                    clog.log.warn('Start operation cancelled\n')
+                    return False
+                gotPos = False
+        else:
+            gotPos = False
+
+
+        # Couple of safety checks
         if cpars['expert_level'] == 0 and cpars['confirm_hv_gain_on'] and \
                 ipars.avalanche() and ipars.avgain.value() > 0:
             if not tkMessageBox.askokcancel(
@@ -1418,7 +1446,6 @@ class Start(ActButton):
                 clog.log.warn('Start operation cancelled\n')
                 return False
         
-
         if execCommand('GO', cpars, clog, rlog):
             clog.log.info('Run started\n')
 
@@ -1439,7 +1466,13 @@ class Start(ActButton):
             ipars.freeze()
 
             # update the run number
-            o['info'].currentrun.addone()
+            info.currentrun.addone()
+
+            # update the positional info
+            if gotPos:
+                info.ra.config(text='{0:f} '.format(math.degrees(ra)))
+                info.dec.config(text='{0:f} '.format(math.degrees(dec)))
+                info.pa.config(text='{0:f} '.format(math.degrees(pa)))
 
             # start the exposure timer
             o['info'].timer.start()
@@ -2505,20 +2538,39 @@ class FocalPlaneSlide(tk.LabelFrame):
         """
         tk.LabelFrame.__init__(
             self, master, text='Focal plane slide',padx=10,pady=10)
-        width = 8
-        self.park  = tk.Button(self, fg='black', text='Park',  width=width, 
-                               command=lambda: self.wrap('park'))
-        self.block = tk.Button(self, fg='black', text='Block', width=width, 
-                               command=lambda: self.wrap('block'))
-        self.home  = tk.Button(self, fg='black', text='Home',  width=width, 
-                               command=lambda: self.wrap('home'))
-        self.reset = tk.Button(self, fg='black', text='Reset', width=width, 
-                               command=lambda: self.wrap('reset'))
-        
-        self.park.grid(row=0,column=0)
-        self.block.grid(row=1,column=0)
-        self.home.grid(row=0,column=1)
-        self.reset.grid(row=1,column=1)
+        width = 7
+        self.home    = tk.Button(self, fg='black', text='home',  width=width, 
+                                 command=lambda: self.wrap('home'))
+        self.park    = tk.Button(self, fg='black', text='park',  width=width, 
+                                 command=lambda: self.wrap('park'))
+        self.block   = tk.Button(self, fg='black', text='block', width=width, 
+                                 command=lambda: self.wrap('block'))
+
+        self.goto    = tk.Button(self, fg='black', text='goto', width=width, 
+                                 command=lambda: self.wrap('restore'))
+        self.gval    = IntegerEntry(self, 1100., None, True, width=width)
+        self.reset   = tk.Button(self, fg='black', text='reset', width=width, 
+                                 command=lambda: self.wrap('reset'))
+
+        self.enable  = tk.Button(self, fg='black', text='enable', width=width, 
+                                 command=lambda: self.wrap('enable'))
+        self.disable = tk.Button(self, fg='black', text='disable', width=width, 
+                                 command=lambda: self.wrap('disable'))
+        self.restore = tk.Button(self, fg='black', text='restore', width=width, 
+                                 command=lambda: self.wrap('restore'))
+
+        self.home.grid(row=0,column=0)
+        self.park.grid(row=0,column=1)
+        self.block.grid(row=0,column=2)
+
+        self.goto.grid(row=1,column=0)
+        self.gval.grid(row=1,column=1)
+        self.reset.grid(row=1,column=2)
+
+        self.enable.grid(row=2,column=0)
+        self.disable.grid(row=2,column=1)
+        self.restore.grid(row=2,column=2)
+
         self.where   = 'UNDEF'
         self.running = False
         self.share   = share
