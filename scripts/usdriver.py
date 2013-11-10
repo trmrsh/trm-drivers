@@ -90,6 +90,7 @@ class GUI(tk.Tk):
 
         # Astronomical information frame
         astro = drvs.AstroFrame(self, share)
+        share.update({'astro' : astro})
 
         # Sub-frame to select between setup, observe, focal plane slide
         switch = drvs.Switch(topLhsFrame, share)
@@ -133,6 +134,10 @@ class GUI(tk.Tk):
         settingsMenu.add_checkbutton(
             label='Confirm target', 
             var=drvs.Boolean('confirm_on_change',cpars))
+
+        settingsMenu.add_checkbutton(
+            label='Access TCS', 
+            var=drvs.Boolean('access_tcs',cpars))
 
         # Add to menubar
         menubar.add_cascade(label='Settings', menu=settingsMenu)
