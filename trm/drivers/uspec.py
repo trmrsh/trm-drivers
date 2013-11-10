@@ -115,10 +115,10 @@ class InstPars(tk.LabelFrame):
         # Exposure delay
         elevel = share['cpars']['expert_level']
         if elevel == 0:
-            self.expose = drvs.Expose(lhs, 0.0007, 0.0007, 1200., 
+            self.expose = drvs.Expose(lhs, 0.0007, 0.0007, 1677.7207, 
                                       self.check, width=7)
         else:
-            self.expose = drvs.Expose(lhs, 0., 0., 1200., self.check, width=7)
+            self.expose = drvs.Expose(lhs, 0., 0., 1677.7207, self.check, width=7)
         self.expose.grid(row=5,column=1,pady=2,sticky=tk.W)
 
         # Number of exposures
@@ -128,15 +128,15 @@ class InstPars(tk.LabelFrame):
         # Right-hand side: the window parameters
         rhs = tk.Frame(self)
 
-        # window mode frame
+        # window mode frame (initially full frame)
         xs    = (1,101,201,301)
         xsmin = (1,1,1,1)
         xsmax = (1056,1056,1056,1056)
         ys    = (1,101,201,301)
         ysmin = (1,1,1,1)
         ysmax = (1072,1072,1072,1072)
-        nx    = (100,100,100,100)
-        ny    = (100,100,100,100)
+        nx    = (1056,100,100,100)
+        ny    = (1072,100,100,100)
         xbfac = (1,2,3,4,5,6,8)
         ybfac = (1,2,3,4,5,6,8)
         self.wframe = drvs.Windows(rhs, xs, xsmin, xsmax, ys, ysmin, ysmax, 
@@ -602,7 +602,7 @@ class RunPars(tk.LabelFrame):
             msg += 'No data type has been defined\n'
 
         if self.target.ok():
-            self.target.entry.config(bg=drvs.COL['text_bg'])
+            self.target.entry.config(bg=drvs.COL['main'])
         else:
             self.target.entry.config(bg=drvs.COL['error'])
             ok = False
@@ -612,21 +612,21 @@ class RunPars(tk.LabelFrame):
                 dtype == 'science' or dtype == 'technical':
 
             if self.progid.ok():
-                self.progid.config(bg=drvs.COL['text_bg'])
+                self.progid.config(bg=drvs.COL['main'])
             else:
                 self.progid.config(bg=drvs.COL['error'])
                 ok   = False
                 msg += 'Programme ID field cannot be blank\n'
 
             if self.pi.ok():
-                self.pi.config(bg=drvs.COL['text_bg'])
+                self.pi.config(bg=drvs.COL['main'])
             else:
                 self.pi.config(bg=drvs.COL['error'])
                 ok   = False
                 msg += 'Principal Investigator field cannot be blank\n'
 
         if self.observers.ok():
-            self.observers.config(bg=drvs.COL['text_bg'])
+            self.observers.config(bg=drvs.COL['main'])
         else:
             self.observers.config(bg=drvs.COL['error'])
             ok   = False
@@ -729,10 +729,10 @@ def createXML(post, cpars, ipars, rpars, clog, rlog):
     # Load up enabled windows, null disabled windows
     nw = 0
     for xs, ys, nx, ny in zip(w.xs,w.ys,w.nx,w.ny):
-        pdict['X' + str(nw+1) + '_START']['value'] = str(xs)
-        pdict['Y' + str(nw+1) + '_START']['value'] = str(ys)
-        pdict['X' + str(nw+1) + '_SIZE']['value']  = str(nx)
-        pdict['Y' + str(nw+1) + '_SIZE']['value']  = str(ny)
+        pdict['X' + str(nw+1) + '_START']['value'] = str(xs.value())
+        pdict['Y' + str(nw+1) + '_START']['value'] = str(ys.value())
+        pdict['X' + str(nw+1) + '_SIZE']['value']  = str(nx.value())
+        pdict['Y' + str(nw+1) + '_SIZE']['value']  = str(ny.value())
         nw += 1
 
     for nw in xrange(nwin,4):
@@ -894,14 +894,17 @@ class Load(drvs.ActButton):
         for param in cconfig.findall('set_parameter'):
             pdict[param.attrib['ref']] = param.attrib['value']
 
+        print(pdict)
+
         # Set them. 
         ipars = self.share['instpars']
+        w = ipars.wframe
 
         # X-binning factor
-        ipars.xbin.set(pdict['X_BIN'])
+        w.xbin.set(pdict['X_BIN'])
 
         # Y-binning factor
-        ipars.ybin.set(pdict['Y_BIN'])
+        w.ybin.set(pdict['Y_BIN'])
 
         # Number of exposures
         ipars.number.set(pdict['NUM_EXPS'] if \
@@ -920,13 +923,13 @@ class Load(drvs.ActButton):
         ipars.clear.set(pdict['EN_CLR'])
 
         # Dwell
-        ipars.expose.set(pdict['DWELL'])
+        ipars.expose.set(str(float(pdict['DWELL'])/10000.))
 
         # Readout speed
         speed = pdict['SPEED']
-        ipars.readout.set('Slow' if \
-                                 speed == '0' else 'Medium' if speed == '1' \
-                                 else 'Fast') 
+        ipars.readSpeed.set('Slow' if \
+                                speed == '0' else 'Medium' if speed == '1' \
+                                else 'Fast') 
 
         # Load up windows
         nwin = 0
@@ -937,16 +940,17 @@ class Load(drvs.ActButton):
             ny = 'Y' + str(nw+1) + '_SIZE'
             if xs in pdict and ys in pdict and nx in pdict and ny in pdict \
                     and pdict[nx] != '0' and pdict[ny] != 0:
-                self.wframe.xs[nw].set(pdict[xs])
-                self.wframe.ys[nw].set(pdict[ys])
-                self.wframe.nx[nw].set(pdict[nx])
-                self.wframe.ny[nw].set(pdict[ny])
+                print(pdict[xs],pdict[ys],pdict[nx],pdict[ny])
+                w.xs[nw].set(pdict[xs])
+                w.ys[nw].set(pdict[ys])
+                w.nx[nw].set(pdict[nx])
+                w.ny[nw].set(pdict[ny])
                 nwin += 1
             else:
                 break
 
         # Set the number of windows
-        ipars.wframe.nwin.set(nwin)
+        w.nwin.set(nwin)
 
         # User parameters ...
 
@@ -1207,7 +1211,7 @@ class CountsFrame(tk.LabelFrame):
             lframe, 1.0, 0.2, 20., self.checkUpdate, True, True, width=5)
         self.airmass   = drvs.RangedFloat(
             lframe, 1.5, 1.0, 5.0, self.checkUpdate, True, width=5)
-        self.moon      = drvs.Radio(lframe, ('d', 'g', 'b'),  self.checkUpdate)
+        self.moon      = drvs.Radio(lframe, ('d', 'g', 'b'),  3, self.checkUpdate)
 
         # results
         self.cadence   = tk.Label(rframe,text='UNDEF',width=10,anchor=tk.W)

@@ -28,6 +28,9 @@ import json
 # thirparty
 import ephem
 
+# mine
+import tcs
+
 # Zeropoints (days) of MJD, unix time and ephem,
 # number of seconds in a day
 MJD0  = datetime.date(1858,11,17).toordinal()
@@ -43,7 +46,6 @@ DAY   = 86400.
 # Colours
 COL = {\
     'main' : '#d0d0ff',     # Colour for the surrounds
-    'text_bg' : '#c0c0f0',  # Text background
     'text' : '#000050',     # Text colour
     'debug' : '#a0a0ff',    # Text background for debug messages 
     'warn' : '#f0c050',     # Text background for warnings
@@ -143,7 +145,8 @@ def loadCpars(fp):
         'HTTP_PATH_CONFIG' : 'string', 'HTTP_SEARCH_ATTR_NAME' : 'string', 
         'INSTRUMENT_APP' : 'string', 'POWER_ON' : 'string', 
         'FOCAL_PLANE_SLIDE' : 'string', 'TELINS_NAME' : 'string',
-        'REQUIRE_RUN_PARAMS' : 'boolean', 'ACCESS_TCS' : 'boolean'}
+        'REQUIRE_RUN_PARAMS' : 'boolean', 'ACCESS_TCS' : 'boolean',
+        'HTTP_FILE_SERVER' : 'string'}
 
     for key, value in SINGLE_ITEMS.iteritems():
         if value == 'boolean':
@@ -192,7 +195,8 @@ def loadCpars(fp):
     ids    = [x.strip() for x in parser.get('All','TEMPLATE_IDS').split(';')]
     if len(pairs) != len(labels) or \
             len(apps) != len(labels) or len(ids) != len(labels):
-        print('TEMPLATE_LABELS, TEMPLATE_PAIRS, TEMPLATE_APPS and TEMPLATE_IDS must all')
+        print('TEMPLATE_LABELS, TEMPLATE_PAIRS,' +
+              ' TEMPLATE_APPS and TEMPLATE_IDS must all')
         print('have the same number of items.')
         print('Please fix the configuration file = ' + fp.name)
         exit(1)
@@ -1114,7 +1118,7 @@ class TextEntry (tk.Entry):
         if callback is not None:
             self.val.trace('w', callback)
         tk.Entry.__init__(self, master, textvariable=self.val, \
-                              fg=COL['text'], bg=COL['text_bg'], width=width)
+                              fg=COL['text'], bg=COL['main'], width=width)
 
         # Control input behaviour.
         self.bind('<Enter>', lambda e : self.focus())
@@ -1414,25 +1418,22 @@ class Start(ActButton):
             o['cpars'], o['instpars'], o['runpars'], o['clog'], o['rlog'], o['info']
 
         if cpars['access_tcs']:
-            try:
-                # TNT TCS access
-                url = 'http://192.168.20.190/TCSDataSharing/DataRequest.asmx/GetTelescopeData'
-                req = urllib2.Request(url,data="",headers={"content-type":"application/json"})
-                response = urllib2.urlopen(req,timeout=5)
-                string   = response.read()
-                jsonData = json.loads(string)
-                listData = eval(jsonData['d'])[0]
-                ignore,ra,dec,posang,focus = listData
-                gotPos = True
-            except Exception, err:
-                print(err)
+            if cpars['telins_name'] == 'TNO-USPEC':
+                try:
+                    ra,dec,posang,focus = tcs.getTntTcs()
+                    gotPos = True
+                except Exception, err:
+                    print(err)
+                    if not tkMessageBox.askokcancel(
+                        'Could not get RA, Dec from telescope.\n' + 'Continue?'):
+                        clog.log.warn('Start operation cancelled\n')
+                    gotPos = False
+            else:
                 if not tkMessageBox.askokcancel(
+                    'No TCS routine for telescope/instrument = ' + cpars['telins_name'] + '\n' +
                     'Could not get RA, Dec from telescope.\n' + 'Continue?'):
                     clog.log.warn('Start operation cancelled\n')
-                    return False
                 gotPos = False
-        else:
-            gotPos = False
 
 
         # Couple of safety checks
@@ -1550,7 +1551,7 @@ class Target(tk.Frame):
         self.val.trace('w', self.modver)
         self.entry  = tk.Entry(
             self, textvariable=self.val, fg=COL['text'], 
-            bg=COL['text_bg'], width=25)
+            bg=COL['main'], width=25)
         self.entry.bind('<Enter>', lambda e : self.entry.focus())
 
         # Verification button which accesses simbad to see if 
@@ -2129,7 +2130,6 @@ class PowerOff(ActButton):
             clog.log.warn('Power off failed\n')
             return False
 
-
 class Initialise(ActButton):
     """
     Class defining the 'Initialise' button's operation
@@ -2635,68 +2635,209 @@ class InfoFrame(tk.LabelFrame):
     Information frame: run number, exposure time, etc.
     """
     def __init__(self, master, share):
-        tk.LabelFrame.__init__(self, master, text='Run status', padx=4, pady=4)
+        tk.LabelFrame.__init__(self, master, 
+                               text='Run & Tel status', padx=4, pady=4)
 
-        run     = CurrentRun(self, share)
-        frame   = tk.Label(self,text='UNDEF') 
-        timer   = Timer(self)
-        cadence = tk.Label(self,text='UNDEF') 
-        duty    = tk.Label(self,text='UNDEF') 
-        filt    = tk.Label(self,text='UNDEF ') 
-        ra      = tk.Label(self,text='UNDEF ') 
-        dec     = tk.Label(self,text='UNDEF  ') 
-        alt     = tk.Label(self,text='UNDEF ') 
-        az      = tk.Label(self,text='UNDEF ') 
-        ha      = tk.Label(self,text='UNDEF ') 
-        pa      = tk.Label(self,text='UNDEF ') 
-        mdist   = tk.Label(self,text='UNDEF ') 
-        fpslide = tk.Label(self,text='UNDEF ') 
+        self.run     = CurrentRun(self, share)
+        self.frame   = tk.Label(self,text='UNDEF') 
+        self.timer   = Timer(self)
+        self.cadence = tk.Label(self,text='UNDEF') 
+        self.duty    = tk.Label(self,text='UNDEF') 
+        self.filt    = tk.Label(self,text='UNDEF ') 
+        self.ra      = tk.Label(self,text='UNDEF ') 
+        self.dec     = tk.Label(self,text='UNDEF ') 
+        self.alt     = tk.Label(self,text='UNDEF ') 
+        self.az      = tk.Label(self,text='UNDEF ') 
+        self.airmass = tk.Label(self,text='UNDEF ') 
+        self.ha      = tk.Label(self,text='UNDEF ') 
+        self.pa      = tk.Label(self,text='UNDEF ') 
+        self.mdist   = tk.Label(self,text='UNDEF ') 
+        self.fpslide = tk.Label(self,text='UNDEF ') 
 
         # left-hand side
         tk.Label(self,text='Run:').grid(row=0,column=0,padx=5,sticky=tk.W)
-        run.grid(row=0,column=1,padx=5,sticky=tk.W)
+        self.run.grid(row=0,column=1,padx=5,sticky=tk.W)
 
         tk.Label(self,text='Frame:').grid(row=1,column=0,padx=5,sticky=tk.W)
-        frame.grid(row=1,column=1,padx=5,sticky=tk.W)
+        self.frame.grid(row=1,column=1,padx=5,sticky=tk.W)
 
         tk.Label(self,text='Exposure:').grid(row=2,column=0,padx=5,sticky=tk.W)
-        timer.grid(row=2,column=1,padx=5,sticky=tk.W)
+        self.timer.grid(row=2,column=1,padx=5,sticky=tk.W)
 
         tk.Label(self,text='Filter:').grid(row=3,column=0,padx=5,sticky=tk.W)
-        filt.grid(row=3,column=1,padx=5,sticky=tk.W)
+        self.filt.grid(row=3,column=1,padx=5,sticky=tk.W)
 
         tk.Label(self,text='Cadence:').grid(row=4,column=0,padx=5,sticky=tk.W)
-        cadence.grid(row=4,column=1,padx=5,sticky=tk.W)
+        self.cadence.grid(row=4,column=1,padx=5,sticky=tk.W)
 
         tk.Label(self,text='Duty cycle:').grid(row=5,column=0,padx=5,
                                                sticky=tk.W)
-        duty.grid(row=5,column=1,padx=5,sticky=tk.W)
+        self.duty.grid(row=5,column=1,padx=5,sticky=tk.W)
 
-        # right-hand side
+        # middle
         tk.Label(self,text='RA:').grid(row=0,column=3,padx=5,sticky=tk.W)
-        ra.grid(row=0,column=4,padx=5,sticky=tk.W)
+        self.ra.grid(row=0,column=4,padx=5,sticky=tk.W)
 
         tk.Label(self,text='Dec:').grid(row=1,column=3,padx=5,sticky=tk.W)
-        dec.grid(row=1,column=4,padx=5,sticky=tk.W)
+        self.dec.grid(row=1,column=4,padx=5,sticky=tk.W)
 
-        # right-hand side
-        tk.Label(self,text='PA:').grid(row=2,column=3,padx=5,sticky=tk.W)
-        pa.grid(row=2,column=4,padx=5,sticky=tk.W)
+        tk.Label(self,text='Alt:').grid(row=2,column=3,padx=5,sticky=tk.W)
+        self.alt.grid(row=2,column=4,padx=5,sticky=tk.W)
 
-        tk.Label(self,text='Alt:').grid(row=3,column=3,padx=5,sticky=tk.W)
-        alt.grid(row=3,column=4,padx=5,sticky=tk.W)
+        tk.Label(self,text='Az:').grid(row=3,column=3,padx=5,sticky=tk.W)
+        self.az.grid(row=3,column=4,padx=5,sticky=tk.W)
 
-        tk.Label(self,text='Az:').grid(row=4,column=3,padx=5,sticky=tk.W)
-        az.grid(row=4,column=4,padx=5,sticky=tk.W)
+        tk.Label(self,text='Airm:').grid(row=4,column=3,padx=5,sticky=tk.W)
+        self.airmass.grid(row=4,column=4,padx=5,sticky=tk.W)
 
         tk.Label(self,text='HA:').grid(row=5,column=3,padx=5,sticky=tk.W)
-        ha.grid(row=5,column=4,padx=5,sticky=tk.W)
+        self.ha.grid(row=5,column=4,padx=5,sticky=tk.W)
 
-        tk.Label(self,text='Mdist:').grid(row=0,column=6,padx=5,sticky=tk.W)
-        mdist.grid(row=0,column=7,padx=5,sticky=tk.W)
+        # right-hand side
+        tk.Label(self,text='PA:').grid(row=0,column=6,padx=5,sticky=tk.W)
+        self.pa.grid(row=0,column=7,padx=5,sticky=tk.W)
 
-        tk.Label(self,text='FP slide:').grid(row=1,column=6,padx=5,sticky=tk.W)
-        fpslide.grid(row=1,column=7,padx=5,sticky=tk.W)
+        tk.Label(self,text='Mdist:').grid(row=1,column=6,padx=5,sticky=tk.W)
+        self.mdist.grid(row=1,column=7,padx=5,sticky=tk.W)
+
+        tk.Label(self,text='FP slide:').grid(row=2,column=6,padx=5,sticky=tk.W)
+        self.fpslide.grid(row=2,column=7,padx=5,sticky=tk.W)
+
+        self.share = share
+
+        # these are used to judge whether we are tracking or not
+        self.ra_old   = 0.
+        self.dec_old  = 0.
+        self.pasky_old   = 0.
+        self.tracking  = False
+        
+        # start
+        self.update()
+
+    def update(self):
+        """
+        Updates run & tel status window. Runs once every
+        2 seconds.
+        """
+
+        if 'astro' not in self.share:
+            # trap missing astro definition
+            self.after(100, self.update)
+
+        try:
+            cpars, clog, astro = self.share['cpars'], self.share['clog'], self.share['astro']
+
+            if cpars['access_tcs']:
+                if cpars['telins_name'] == 'TNO-USPEC':
+                    try:
+                        ra,dec,pa,focus = tcs.getTntTcs()
+
+                        self.ra.configure(text=d2hms(math.degrees(ra)/15., 1, False))
+                        self.dec.configure(text=d2hms(math.degrees(dec), 0, True))
+
+                        # 5.e-5 rad limit to avoid spurious warning
+                        if abs(ra-self.ra_old) > 5.e-5 or abs(dec-self.dec_old) > 5.e-5:
+                            self.tracking = False
+                            self.ra.configure(bg=COL['warn'])
+                            self.dec.configure(bg=COL['warn'])
+                        else:
+                            self.tracking = True
+                            self.ra.configure(bg=COL['main'])
+                            self.dec.configure(bg=COL['main'])
+                        self.ra_old  = ra
+                        self.dec_old = dec
+                        self.pa_old  = pa
+
+                        # create a Body for the target, calculate most of the stuff
+                        # that we don't get from the telescope
+                        star = ephem.FixedBody()
+                        star._ra  = ra
+                        star._dec = dec
+                        star.compute(astro.obs)
+
+                        lst = astro.obs.sidereal_time()
+                        ha = math.degrees(lst-ra)/15.
+                        if ha > 12.:
+                            ha -= 12.
+                        elif ha < -12.:
+                            ha += 12.
+                        self.ha.configure(text=d2hms(ha, 0, True))
+
+                        dalt = math.degrees(star.alt)
+                        daz  = math.degrees(star.az)
+                        self.alt.configure(text='{0:<4.1f}'.format(dalt))
+                        self.az.configure(text='{0:<5.1f}'.format(daz))
+                        
+                        # warn about the TV mast. Basically checks whether
+                        # alt and az lie in roughly triangular shape 
+                        # presented by the mast. First move azimuth 5 deg closer 
+                        # to the mast to give a bit of warning.
+                        if daz > 33.5:
+                            daz = min(33.5,daz-5.)
+                        else:
+                            daz = max(33.5,daz+5.)
+
+                        if daz > 25.5 and daz < 50.0 and dalt < 73.5 \
+                                and \
+                                ((daz < 33.5 and \
+                                      dalt < 73.5-(33.5-daz)/(33.5-25.5)*(73.5-21.5)) or \
+                                     (daz > 33.5 and \
+                                          dalt < 73.5-(daz-33.5)/(50.0-33.5)*(73.5-21.5))):
+                            self.alt.configure(bg=COL['warn'])
+                            self.az.configure(bg=COL['warn'])
+                        else:
+                            self.alt.configure(bg=COL['main'])
+                            self.az.configure(bg=COL['main'])
+
+                        # set airmass
+                        self.airmass.configure(text='{0:<4.2f}'.format(1./math.sin(star.alt)))
+
+                        # distance to the moon. Warn is < 20 degrees from it.
+                        md = math.degrees(ephem.separation(astro.moon,star))
+                        self.mdist.configure(text='{0:<7.2f}'.format(md))
+                        if md < 20.:
+                            self.mdist.configure(bg=COL['warn'])
+                        else:
+                            self.mdist.configure(bg=COL['main'])
+
+                        # calculate cosine of angle between vertical and celestial North
+                        cpan = (math.sin(astro.obs.lat)-math.sin(star._dec)*math.sin(star.alt))/\
+                            (math.cos(star._dec)*math.cos(star.alt))
+                        pan = math.acos(cpan)
+
+                        # the angle from the telescope does not seem to be the angle
+                        # one would expect; it changes at too high and a variable rate. 
+                        # The 0.93 comes from a calibration I took, but I know it does 
+                        # not work -- this must be changed ??
+                        pasky = math.degrees(0.92*pa-pan)+209.7
+                        while pasky < 0.:
+                            pasky += 360.
+                        self.pa.configure(text='{0:<6.2f}'.format(pasky))
+                        if abs(pasky-self.pasky_old) > 2.0 and abs(pasky-360.-self.pasky_old) > 2.0:
+                            self.pa.configure(bg=COL['warn'])
+                        else:
+                            self.pa.configure(bg=COL['main'])
+                        self.pasky_old = pasky
+
+                    except Exception, err:
+                        self.ra.configure(text='UNDEF')
+                        self.dec.configure(text='UNDEF')
+                        self.pa.configure(text='UNDEF')
+                        self.ha.configure(text='UNDEF')
+                        self.alt.configure(text='UNDEF')
+                        self.az.configure(text='UNDEF')
+                        self.airmass.configure(text='UNDEF')
+                        self.mdist.configure(text='UNDEF')
+                        print(err)
+
+            # get run number (set by the 'Start' button')
+            # get frame number (need FileServer to be running
+            #url = cpars['http_file_server'] + run + '?action=get_num_frames'
+
+        except Exception, err:
+            print(err)
+
+        self.after(2000, self.update)
 
 class AstroFrame(tk.LabelFrame):
     """
@@ -2780,11 +2921,12 @@ class AstroFrame(tk.LabelFrame):
         clog.log.info('Latitude   = ' + tins['latitude'] + ' N\n')
         clog.log.info('Elevation  = ' + str(tins['elevation']) + ' m\n')
 
-        # parameters used to reduce re-calculation of sun rise etc.
+        # parameters used to reduce re-calculation of sun rise etc, and
+        # to provide info for other widgets
         self.lastRiset = 0
         self.lastAstro = 0
         self.counter   = 0
-
+        
         # start
         self.update()
 
@@ -3119,11 +3261,11 @@ class WinPairs (tk.Frame):
         for xslw, xsrw, ysw, nxw, nyw in \
                 zip(self.xsl[:npair], self.xsr[:npair], self.ys[:npair], 
                     self.nx[:npair], self.ny[:npair]):
-            xslw.config(bg=COL['text_bg'])
-            xsrw.config(bg=COL['text_bg'])
-            ysw.config(bg=COL['text_bg'])
-            nxw.config(bg=COL['text_bg'])
-            nyw.config(bg=COL['text_bg'])
+            xslw.config(bg=COL['main'])
+            xsrw.config(bg=COL['main'])
+            ysw.config(bg=COL['main'])
+            nxw.config(bg=COL['main'])
+            nyw.config(bg=COL['main'])
             status = status if xslw.ok() else False
             status = status if xsrw.ok() else False
             status = status if ysw.ok() else False
@@ -3466,10 +3608,10 @@ class Windows (tk.Frame):
                 zip(self.xs[:nwin], self.ys[:nwin], 
                     self.nx[:nwin], self.ny[:nwin]):
 
-            xsw.config(bg=COL['text_bg'])
-            ysw.config(bg=COL['text_bg'])
-            nxw.config(bg=COL['text_bg'])
-            nyw.config(bg=COL['text_bg'])
+            xsw.config(bg=COL['main'])
+            ysw.config(bg=COL['main'])
+            nxw.config(bg=COL['main'])
+            nyw.config(bg=COL['main'])
             status = status if xsw.ok() else False
             status = status if ysw.ok() else False
             status = status if nxw.ok() else False
@@ -3623,7 +3765,7 @@ class Windows (tk.Frame):
             nx.enable()
             ny.enable()
 
-        for label, xsl, xsr, ys, nx, ny in \
+        for label, xs, ys, nx, ny in \
                 zip(self.label[nwin:], self.xs[nwin:], self.ys[nwin:], 
                     self.nx[nwin:], self.ny[nwin:]):
             label.config(state='disable')
@@ -3646,6 +3788,43 @@ class Windows (tk.Frame):
             yield (self.xs[n].value(),self.ys[n].value(),
                    self.nx[n].value(),self.ny[n].value())
             n += 1
+
+def d2hms(d, decp, sign):
+    """
+    Converts a decimal to HH:MM:SS.SS format. Also
+    appropriate for dd:mm:ss
+
+    d    :  decimal value
+    dp   :  number of decimal places for seconds
+    sign :  True to add a + sign for positive d
+    """
+    dp = abs(d)
+    h, fh = divmod(dp,1)
+    m, fm = divmod(60.*fh,1)
+    s = 60.*fm
+    h  = int(h) if d >= 0. else -int(h)
+    m  = int(m)
+    ns = int(round(s))
+    form = '{0:'
+    if sign:
+        form += '+03d'
+    else:
+        form += '02d'
+    form += '}:{1:02d}:{2:0'
+    if decp == 0:
+        form += '2d}'
+        if ns == 60:
+            m += 1
+            ns = 0
+            if m == 60:
+                h += 1
+                m  = 0
+                if h == 24:
+                    h = 0
+        return form.format(h,m,ns)
+    else:
+        form += str(3+decp) + '.' + str(decp) + 'f}'
+        return form.format(h,m,s)
 
 class DriverError(Exception):
     pass
