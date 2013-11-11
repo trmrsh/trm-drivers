@@ -1129,6 +1129,12 @@ class TextEntry (tk.Entry):
         """
         return self.val.get()
 
+    def set(self, text):
+        """
+        Returns value.
+        """
+        return self.val.set(text)
+
     def ok(self):
         if self.value() == '' or self.value().isspace():
             return False
@@ -1570,6 +1576,12 @@ class Target(tk.Frame):
         Returns value.
         """
         return self.val.get()
+
+    def set(self, text):
+        """
+        Sets value.
+        """
+        return self.val.set(text)
 
     def ok(self):
         if self.val.get() == '' or self.val.get().isspace():

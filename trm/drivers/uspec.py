@@ -86,8 +86,9 @@ class InstPars(tk.LabelFrame):
         tk.Label(lhs, text='Num. exposures  ').grid(row=6,column=0, sticky=tk.W)
 
         # Application (mode)
-        self.appLab = drvs.Radio(lhs, ('Wins', 'Drift'), 2, self.check, ('Windows', 'Drift'))
-        self.appLab.grid(row=0,column=1,sticky=tk.W)
+        self.app = drvs.Radio(lhs, ('Wins', 'Drift'), 2, self.check, 
+                                 ('Windows', 'Drift'))
+        self.app.grid(row=0,column=1,sticky=tk.W)
 
         # Clear enabled
         self.clear = drvs.OnOff(lhs, True, self.check)
@@ -99,7 +100,8 @@ class InstPars(tk.LabelFrame):
         self.avalanche.pack(side=tk.LEFT)
         self.avgainLabel = tk.Label(aframe, text='gain ')
         self.avgainLabel.pack(side=tk.LEFT)
-        self.avgain = drvs.RangedInt(aframe, 0, 0, 9, self.check, False, width=2)
+        self.avgain = drvs.RangedInt(aframe, 0, 0, 9, self.check, 
+                                     False, width=2)
         self.avgain.pack(side=tk.LEFT)
         aframe.grid(row=2,column=1,pady=2,sticky=tk.W)
 
@@ -118,7 +120,8 @@ class InstPars(tk.LabelFrame):
             self.expose = drvs.Expose(lhs, 0.0007, 0.0007, 1677.7207, 
                                       self.check, width=7)
         else:
-            self.expose = drvs.Expose(lhs, 0., 0., 1677.7207, self.check, width=7)
+            self.expose = drvs.Expose(lhs, 0., 0., 1677.7207, 
+                                      self.check, width=7)
         self.expose.grid(row=5,column=1,pady=2,sticky=tk.W)
 
         # Number of exposures
@@ -176,13 +179,13 @@ class InstPars(tk.LabelFrame):
         """
         Returns True if we are in drift mode
         """
-        if self.appLab.value() == 'Drift':
+        if self.app.value() == 'Drift':
             return True
-        elif self.appLab.value() == 'Windows':
+        elif self.app.value() == 'Windows':
             return False
         else:
             raise UspecError('uspec.InstPars.isDrift: application = ' + \
-                                 self.appLab.value() + ' not recognised.')
+                                 self.app.value() + ' not recognised.')
 
     def check(self, *args):
         """
@@ -268,7 +271,7 @@ class InstPars(tk.LabelFrame):
         """
         Freeze all settings so that they can't be altered
         """
-        self.appLab.disable()
+        self.app.disable()
         self.clear.disable()
         self.avalanche.disable()
         self.avgain.disable()
@@ -285,7 +288,7 @@ class InstPars(tk.LabelFrame):
         """
         Reverse of freeze
         """
-        self.appLab.enable()
+        self.app.enable()
         self.clear.enable()
         self.avalanche.enable()
         self.readSpeed.enable()
@@ -310,13 +313,13 @@ class InstPars(tk.LabelFrame):
         try:
             xbin = self.wframe.xbin.value()
             ybin = self.wframe.ybin.value()
-            if self.appLab.value() == 'Windows':
+            if self.app.value() == 'Windows':
                 nwin = self.wframe.nwin.value()
                 ret  = str(xbin) + ' ' + str(ybin) + ' ' + str(nwin) + '\r\n'
                 for xs, ys, nx, ny in self.wframe:
                     ret   += str(xs) + ' ' + str(ys) + ' ' + str(nx) + ' ' + \
                         str(ny) + '\r\n'
-            elif self.appLab.value() == 'Drift':
+            elif self.app.value() == 'Drift':
                 nwin = 2*self.wframe.npair.value()
                 ret  = str(xbin) + ' ' + str(ybin) + ' ' + str(nwin) + '\r\n'
                 for xsl, xsr, ys, nx, ny in self.pframe:
@@ -348,7 +351,7 @@ class InstPars(tk.LabelFrame):
         HCLOCK  = HCLOCK_NORM if lnormal else HCLOCK_AV
 		
         # drift mode y/n?
-        isDriftMode = self.appLab.value() == 'Drift'
+        isDriftMode = self.app.value() == 'Drift'
 
         # Set the readout speed
         readSpeed = self.readSpeed.value()
@@ -526,6 +529,10 @@ class RunPars(tk.LabelFrame):
             row=row,column=column, sticky=tk.W)
 
         row += 1
+        tk.Label(self, text='Filter').grid(
+            row=row,column=column, sticky=tk.W)
+
+        row += 1
         tk.Label(self, text='Programme ID').grid(
             row=row,column=column, sticky=tk.W)
             
@@ -555,6 +562,12 @@ class RunPars(tk.LabelFrame):
         column += 1
         self.target = drvs.Target(self,share,self.check)
         self.target.grid(row=row, column=column, sticky=tk.W)
+
+        # filter
+        row += 1
+        self.filter = drvs.Radio(self, share['cpars']['active_filter_names'], 6)
+        self.filter.set('undef') 
+        self.filter.grid(row=row,column=column,sticky=tk.W)
 
         # programme ID
         row += 1
@@ -657,16 +670,16 @@ def createXML(post, cpars, ipars, rpars, clog, rlog):
     """
 
     # identify the template
-    appLab = ipars.appLab.value()
+    app = ipars.app.value()
     if cpars['debug']:
-        print('DEBUG: createXML: application = ' + appLab)
+        print('DEBUG: createXML: application = ' + app)
         print('DEBUG: createXML: application vals = ' + \
-                  str(cpars['templates'][appLab]))
+                  str(cpars['templates'][app]))
 
     if cpars['template_from_server']:
         # get template from server
         url = cpars['http_camera_server'] + cpars['http_path_get'] + '?' + \
-            cpars['http_search_attr_name'] + '='  + cpars['templates'][appLab]
+            cpars['http_search_attr_name'] + '='  + cpars['templates'][app]
         if cpars['debug']:
             print ('DEBUG: url = ' + url)
         sxml = urllib2.urlopen(url).read()
@@ -676,7 +689,7 @@ def createXML(post, cpars, ipars, rpars, clog, rlog):
         if cpars['debug']:
             print ('DEBUG: directory = ' + cpars['template_directory'])
         lfile = os.path.join(cpars['template_directory'], 
-                             cpars['templates'][appLab]['app'])
+                             cpars['templates'][app]['app'])
         if cpars['debug']:
             print ('DEBUG: local file = ' + lfile)
         tree = ET.parse(lfile)
@@ -690,15 +703,6 @@ def createXML(post, cpars, ipars, rpars, clog, rlog):
 
     # Set them. This is designed so that missing 
     # parameters will cause exceptions to be raised.
-
-    # shorthand for the windows
-    w = ipars.wframe
-
-    # X-binning factor
-    pdict['X_BIN']['value'] = str(w.xbin.value())
-
-    # Y-binning factor
-    pdict['Y_BIN']['value'] = str(w.ybin.value())
 
     # Number of exposures
     pdict['NUM_EXPS']['value'] = '-1' if ipars.number.value() == 0 \
@@ -723,23 +727,88 @@ def createXML(post, cpars, ipars, rpars, clog, rlog):
     pdict['SPEED']['value'] = '0' if ipars.readSpeed.value() == 'Slow' \
         else '1' if ipars.readSpeed.value() == 'Medium' else '2'
 
-    # Number of windows -- needed to set output parameters correctly
-    nwin  = int(w.nwin.value())
+    if app == 'Windows':
+        w = ipars.wframe
 
-    # Load up enabled windows, null disabled windows
-    nw = 0
-    for xs, ys, nx, ny in zip(w.xs,w.ys,w.nx,w.ny):
-        pdict['X' + str(nw+1) + '_START']['value'] = str(xs.value())
-        pdict['Y' + str(nw+1) + '_START']['value'] = str(ys.value())
-        pdict['X' + str(nw+1) + '_SIZE']['value']  = str(nx.value())
-        pdict['Y' + str(nw+1) + '_SIZE']['value']  = str(ny.value())
-        nw += 1
+        # Number of windows -- needed to set output parameters correctly
+        nwin  = w.nwin.value()
 
-    for nw in xrange(nwin,4):
-        pdict['X' + str(nw+1) + '_START']['value'] = '1'
-        pdict['Y' + str(nw+1) + '_START']['value'] = '1'
-        pdict['X' + str(nw+1) + '_SIZE']['value']  = '0'
-        pdict['Y' + str(nw+1) + '_SIZE']['value']  = '0'
+        xbin, ybin = w.xbin.value(), w.ybin.value()
+
+        # X-binning factor
+        pdict['X_BIN']['value'] = str(xbin)
+
+        # Y-binning factor
+        pdict['Y_BIN']['value'] = str(ybin)
+
+        # Load up enabled windows, null disabled windows
+        npix = 0
+        for nw in xrange(nwin):
+            xs, ys, nx, ny = w.xs[nw].value(), w.ys[nw].value(), w.nx[nw].value(), w.ny[nw].value()
+
+            # re-jig so that user always refers to same part of
+            # the CCD regardless of the output being used. 'Derek coords'
+            xs = xs + 16 if ipars.avalanche() == 'N' else 1074 - xs - nx
+
+            pdict['X' + str(nw+1) + '_START']['value'] = str(xs)
+            pdict['Y' + str(nw+1) + '_START']['value'] = str(ys)
+            pdict['X' + str(nw+1) + '_SIZE']['value']  = str(nx // xbin)
+            pdict['Y' + str(nw+1) + '_SIZE']['value']  = str(ny // ybin)
+            npix += (nx // xbin)*(ny // ybin)
+ 
+        for nw in xrange(nwin,4):
+            pdict['X' + str(nw+1) + '_START']['value'] = '1'
+            pdict['Y' + str(nw+1) + '_START']['value'] = '1'
+            pdict['X' + str(nw+1) + '_SIZE']['value']  = '0'
+            pdict['Y' + str(nw+1) + '_SIZE']['value']  = '0'
+
+    else:
+
+        p = ipars.pframe
+
+        # Number of windows -- needed to set output parameters correctly
+        # although WinPairs supports multiple pairs, only one is allowed
+        # in drift mode.
+        npair = p.npair.value()
+        if npair != 1:
+            clog.log.warn('Only one pair of drift mode windows supported.')
+            raise Exception()
+
+        xbin, ybin = p.xbin.value(), p.ybin.value()
+
+        # X-binning factor
+        pdict['X_BIN']['value'] = str(xbin)
+
+        # Y-binning factor
+        pdict['Y_BIN']['value'] = str(ybin)
+
+        xsl, xsr, ys, nx, ny = p.xsl[0].value(), p.xsr[0].value(), \
+            p.ys[0].value(), p.nx[0].value(), p.ny[0].value()
+
+        # re-jig so that user always refers to same part of
+        # the CCD regardless of the output being used. 'Derek coords'
+        if ipars.avalanche() == 'N':
+            xsl += 16
+            xsr += 16
+        else:
+            xsl = 1074 - xsl - nx
+            xsr = 1074 - xsr - nx
+
+        if xsl > xsr:
+            xsr, xsl = xsl, xsr
+
+        # note we make X dimensions same for each window 
+        # although this is not strictly required
+        pdict['X1_START']['value'] = str(xsl)
+        pdict['X2_START']['value'] = str(xsr)
+        pdict['X1_SIZE']['value']  = str(nx // xbin)
+        pdict['X2_SIZE']['value']  = str(nx // xbin)
+        pdict['Y1_START']['value'] = str(ys)
+        pdict['Y1_SIZE']['value']  = str(ny // ybin)
+        npix = 2.*(nx // xbin)*(ny // ybin)
+         
+    pdict['X_SIZE']['value']  = str(npix)
+    pdict['Y_SIZE']['value']  = '1'
 
     # Load the user parameters
     uconfig    = root.find('user')
@@ -786,6 +855,7 @@ def createXML(post, cpars, ipars, rpars, clog, rlog):
             revision      = ET.SubElement(uconfig, 'revision')
             revision.text = str(createXML.revision)
 
+    # finally return with the XML
     return root
 
 class Post(drvs.ActButton):
@@ -888,6 +958,9 @@ class Load(drvs.ActButton):
         tree = ET.parse(fname)
         root = tree.getroot()
 
+        # find application
+        app = 'Windows' if root.attrib['id'] == 'ccd201_winbin_app' else 'Drift'
+
         # find parameters
         cconfig = root.find('configure_camera')
         pdict = {}
@@ -896,15 +969,10 @@ class Load(drvs.ActButton):
 
         print(pdict)
 
+        xbin, ybin = int(pdict['X_BIN']), int(pdict['Y_BIN'])
+
         # Set them. 
-        ipars = self.share['instpars']
-        w = ipars.wframe
-
-        # X-binning factor
-        w.xbin.set(pdict['X_BIN'])
-
-        # Y-binning factor
-        w.ybin.set(pdict['Y_BIN'])
+        ipars, rpars = self.share['instpars'], self.share['runpars']
 
         # Number of exposures
         ipars.number.set(pdict['NUM_EXPS'] if \
@@ -930,29 +998,111 @@ class Load(drvs.ActButton):
         ipars.readSpeed.set('Slow' if \
                                 speed == '0' else 'Medium' if speed == '1' \
                                 else 'Fast') 
+        
+        if app == 'Windows':
+            # now for the windows which come in two flavours
+            ipars.app.set('Windows')
+            w = ipars.wframe
 
-        # Load up windows
-        nwin = 0
-        for nw in xrange(4):
-            xs = 'X' + str(nw+1) + '_START'
-            ys = 'X' + str(nw+1) + '_START'
-            nx = 'X' + str(nw+1) + '_SIZE'
-            ny = 'Y' + str(nw+1) + '_SIZE'
-            if xs in pdict and ys in pdict and nx in pdict and ny in pdict \
-                    and pdict[nx] != '0' and pdict[ny] != 0:
-                print(pdict[xs],pdict[ys],pdict[nx],pdict[ny])
-                w.xs[nw].set(pdict[xs])
-                w.ys[nw].set(pdict[ys])
-                w.nx[nw].set(pdict[nx])
-                w.ny[nw].set(pdict[ny])
-                nwin += 1
+            # X-binning factor
+            w.xbin.set(xbin)
+
+            # Y-binning factor
+            w.ybin.set(ybin)
+
+            # Load up windows
+            nwin = 0
+            for nw in xrange(4):
+                xs = 'X' + str(nw+1) + '_START'
+                ys = 'X' + str(nw+1) + '_START'
+                nx = 'X' + str(nw+1) + '_SIZE'
+                ny = 'Y' + str(nw+1) + '_SIZE'
+                if xs in pdict and ys in pdict and nx in pdict and ny in pdict \
+                        and pdict[nx] != '0' and pdict[ny] != 0:
+                    xsv, ysv, nxv, nyv = int(pdict[xs]),int(pdict[ys]),int(pdict[nx]),int(pdict[ny])
+                    nxv *= xbin
+                    nyv *= ybin
+
+                    nchop = max(0,17-xsv)
+                    if nchop % xbin != 0:
+                        nchop = xbin * (nchop // xbin + 1)
+
+                    if ipars.avalanche():
+                        xsv  = max(1, 1074 - xsv - nxv)
+                    else:
+                        xsv  = max(1, xsv + nchop - 16)
+                    nxv -= nchop
+                        
+                    print(xsv,ysv,nxv,nyv)
+                    w.xs[nw].set(xsv)
+                    w.ys[nw].set(ysv)
+                    w.nx[nw].set(nxv)
+                    w.ny[nw].set(nyv)
+                    nwin += 1
+                else:
+                    break
+
+            # Set the number of windows
+            w.nwin.set(nwin)
+
+        else:
+            # now for drift mode
+            ipars.app.set('Drift')
+            p = ipars.pframe
+
+            # X-binning factor
+            p.xbin.set(xbin)
+
+            # Y-binning factor
+            p.ybin.set(ybin)
+
+            # Load up window pair values
+            xslv, xsrv, ysv, nxv, nyv = int(pdict['X1_START']),int(pdict['X2_START']),\
+                int(pdict['Y1_START']),int(pdict['X1_SIZE']),int(pdict['Y1_SIZE'])
+
+            nxv *= xbin
+            nyv *= ybin
+
+            nchop = max(0,17-xslv)
+            if nchop % xbin != 0:
+                nchop = xbin * (nchop // xbin + 1)
+
+            if ipars.avalanche():
+                xslv = max(1,1074-xslv-nxv)
+                xsrv = max(1,1074-xsrv-nxv)
             else:
-                break
+                xslv = max(1,xslv+nchop-16)
+                xsrv = max(1,xsrv+nchop-16)
 
-        # Set the number of windows
-        w.nwin.set(nwin)
+            nxv -= nchop
+            if xslv > xsrv:
+                xsrv, xslv = xslv, xsrv
 
-        # User parameters ...
+            # finally set the values
+            p.xsl[0].set(xslv)
+            p.xsr[0].set(xsrv)
+            p.ys[0].set(ysv)
+            p.nx[0].set(nxv)
+            p.ny[0].set(nyv)
+            p.npair.set(1)
+
+        # User parameters, set the values in the
+        # RunPars widget
+        user  = root.find('user')
+
+        def getUser(user, param):
+           val = user.find(param)
+           if val is None or val.text is None:
+               return ''
+           else:
+               return val.text
+
+        rpars.target.set(getUser(user,'target'))
+        rpars.progid.set(getUser(user,'ID'))
+        rpars.pi.set(getUser(user,'PI'))
+        rpars.observers.set(getUser(user,'Observers'))
+        rpars.comment.set(getUser(user,'comment'))
+        rpars.dtype.set(getUser(user,'dtype'))
 
         return True
 
