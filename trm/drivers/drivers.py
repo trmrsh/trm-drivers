@@ -2524,7 +2524,7 @@ class CurrentRun(tk.Label):
 
     def run(self):
         """
-        Runs the run number cheker, once per second.
+        Runs the run number checker, once per second.
         """
         o = self.share
         cpars = o['cpars']
@@ -2651,6 +2651,7 @@ class InfoFrame(tk.LabelFrame):
         self.airmass = tk.Label(self,text='UNDEF ') 
         self.ha      = tk.Label(self,text='UNDEF ') 
         self.pa      = tk.Label(self,text='UNDEF ') 
+        self.focus   = tk.Label(self,text='UNDEF ') 
         self.mdist   = tk.Label(self,text='UNDEF ') 
         self.fpslide = tk.Label(self,text='UNDEF ') 
 
@@ -2697,18 +2698,21 @@ class InfoFrame(tk.LabelFrame):
         tk.Label(self,text='PA:').grid(row=0,column=6,padx=5,sticky=tk.W)
         self.pa.grid(row=0,column=7,padx=5,sticky=tk.W)
 
-        tk.Label(self,text='Mdist:').grid(row=1,column=6,padx=5,sticky=tk.W)
-        self.mdist.grid(row=1,column=7,padx=5,sticky=tk.W)
+        tk.Label(self,text='Focus:').grid(row=1,column=6,padx=5,sticky=tk.W)
+        self.focus.grid(row=1,column=7,padx=5,sticky=tk.W)
 
-        tk.Label(self,text='FP slide:').grid(row=2,column=6,padx=5,sticky=tk.W)
-        self.fpslide.grid(row=2,column=7,padx=5,sticky=tk.W)
+        tk.Label(self,text='Mdist:').grid(row=2,column=6,padx=5,sticky=tk.W)
+        self.mdist.grid(row=2,column=7,padx=5,sticky=tk.W)
+
+        tk.Label(self,text='FP slide:').grid(row=3,column=6,padx=5,sticky=tk.W)
+        self.fpslide.grid(row=3,column=7,padx=5,sticky=tk.W)
 
         self.share = share
 
         # these are used to judge whether we are tracking or not
-        self.ra_old   = 0.
-        self.dec_old  = 0.
-        self.pasky_old   = 0.
+        self.ra_old    = 0.
+        self.dec_old   = 0.
+        self.pa_old    = 0.
         self.tracking  = False
         
         # start
@@ -2716,127 +2720,128 @@ class InfoFrame(tk.LabelFrame):
 
     def update(self):
         """
-        Updates run & tel status window. Runs once every
-        2 seconds.
+        Updates run & tel status window. Runs 
+        once every 10 seconds.
         """
 
         if 'astro' not in self.share:
-            # trap missing astro definition
             self.after(100, self.update)
+            return
 
-        try:
-            cpars, clog, astro = self.share['cpars'], self.share['clog'], self.share['astro']
+        cpars, clog, astro = self.share['cpars'], self.share['clog'], self.share['astro']
 
-            if cpars['access_tcs']:
-                if cpars['telins_name'] == 'TNO-USPEC':
-                    try:
-                        ra,dec,pa,focus = tcs.getTntTcs()
+        if cpars['access_tcs']:
+            if cpars['telins_name'] == 'TNO-USPEC':
+                try:
+                    # Poll TCS for ra,dec etc.
+                    ra,dec,pa,focus,tflag = tcs.getTntTcs()
 
-                        self.ra.configure(text=d2hms(math.degrees(ra)/15., 1, False))
-                        self.dec.configure(text=d2hms(math.degrees(dec), 0, True))
+                    self.ra.configure(text=d2hms(math.degrees(ra)/15., 1, False))
+                    self.dec.configure(text=d2hms(math.degrees(dec), 0, True))
+                    padeg = math.degrees(pa)
+                    while padeg < 0.:
+                        padeg += 360.
+                    while padeg > 360.:
+                        padeg -= 360.
+                    self.pa.configure(text='{0:6.2f}'.format(padeg))
 
-                        # 5.e-5 rad limit to avoid spurious warning
-                        if abs(ra-self.ra_old) > 5.e-5 or abs(dec-self.dec_old) > 5.e-5:
-                            self.tracking = False
-                            self.ra.configure(bg=COL['warn'])
-                            self.dec.configure(bg=COL['warn'])
-                        else:
-                            self.tracking = True
-                            self.ra.configure(bg=COL['main'])
-                            self.dec.configure(bg=COL['main'])
-                        self.ra_old  = ra
-                        self.dec_old = dec
-                        self.pa_old  = pa
-
-                        # create a Body for the target, calculate most of the stuff
-                        # that we don't get from the telescope
-                        star = ephem.FixedBody()
-                        star._ra  = ra
-                        star._dec = dec
-                        star.compute(astro.obs)
-
-                        lst = astro.obs.sidereal_time()
-                        ha = math.degrees(lst-ra)/15.
-                        if ha > 12.:
-                            ha -= 12.
-                        elif ha < -12.:
-                            ha += 12.
-                        self.ha.configure(text=d2hms(ha, 0, True))
-
-                        dalt = math.degrees(star.alt)
-                        daz  = math.degrees(star.az)
-                        self.alt.configure(text='{0:<4.1f}'.format(dalt))
-                        self.az.configure(text='{0:<5.1f}'.format(daz))
+                    # check for significant changes in position to flag tracking failures
+                    if abs(ra-self.ra_old) < 1.e-5 and abs(dec-self.dec_old) < 1.e-5 and tflag:
+                        self.tracking = True
+                        self.ra.configure(bg=COL['main'])
+                        self.dec.configure(bg=COL['main'])
+                    else:
+                        self.tracking = False
+                        self.ra.configure(bg=COL['warn'])
+                        self.dec.configure(bg=COL['warn'])
                         
-                        # warn about the TV mast. Basically checks whether
-                        # alt and az lie in roughly triangular shape 
-                        # presented by the mast. First move azimuth 5 deg closer 
-                        # to the mast to give a bit of warning.
-                        if daz > 33.5:
-                            daz = min(33.5,daz-5.)
-                        else:
-                            daz = max(33.5,daz+5.)
+                    # check for changing sky PA
+                    if abs(pa-self.pa_old) > 1.e-3 and abs(pa-self.pa_old-2.*math.pi) > 1.e-3 and \
+                            abs(pa-self.pa_old+2.*math.pi) > 1.e-3:
+                        self.pa.configure(bg=COL['warn'])
+                    else:
+                        self.pa.configure(bg=COL['main'])
 
-                        if daz > 25.5 and daz < 50.0 and dalt < 73.5 \
-                                and \
-                                ((daz < 33.5 and \
-                                      dalt < 73.5-(33.5-daz)/(33.5-25.5)*(73.5-21.5)) or \
-                                     (daz > 33.5 and \
-                                          dalt < 73.5-(daz-33.5)/(50.0-33.5)*(73.5-21.5))):
-                            self.alt.configure(bg=COL['warn'])
-                            self.az.configure(bg=COL['warn'])
-                        else:
-                            self.alt.configure(bg=COL['main'])
-                            self.az.configure(bg=COL['main'])
+                    # store current values for comparison with next
+                    self.ra_old  = ra
+                    self.dec_old = dec
+                    self.pa_old  = pa
 
-                        # set airmass
-                        self.airmass.configure(text='{0:<4.2f}'.format(1./math.sin(star.alt)))
+                    self.focus.configure(text='{0:+5.2f}'.format(focus))
 
-                        # distance to the moon. Warn is < 20 degrees from it.
-                        md = math.degrees(ephem.separation(astro.moon,star))
-                        self.mdist.configure(text='{0:<7.2f}'.format(md))
-                        if md < 20.:
-                            self.mdist.configure(bg=COL['warn'])
-                        else:
-                            self.mdist.configure(bg=COL['main'])
+                    # create a Body for the target, calculate most of the stuff
+                    # that we don't get from the telescope
+                    star = ephem.FixedBody()
+                    star._ra  = ra
+                    star._dec = dec
+                    star.compute(astro.obs)
 
-                        # calculate cosine of angle between vertical and celestial North
-                        cpan = (math.sin(astro.obs.lat)-math.sin(star._dec)*math.sin(star.alt))/\
-                            (math.cos(star._dec)*math.cos(star.alt))
-                        pan = math.acos(cpan)
+                    lst = astro.obs.sidereal_time()
+                    ha = math.degrees(lst-ra)/15.
+                    if ha > 12.:
+                        ha -= 12.
+                    elif ha < -12.:
+                        ha += 12.
+                    self.ha.configure(text=d2hms(ha, 0, True))
 
-                        # the angle from the telescope does not seem to be the angle
-                        # one would expect; it changes at too high and a variable rate. 
-                        # The 0.93 comes from a calibration I took, but I know it does 
-                        # not work -- this must be changed ??
-                        pasky = math.degrees(0.92*pa-pan)+209.7
-                        while pasky < 0.:
-                            pasky += 360.
-                        self.pa.configure(text='{0:<6.2f}'.format(pasky))
-                        if abs(pasky-self.pasky_old) > 2.0 and abs(pasky-360.-self.pasky_old) > 2.0:
-                            self.pa.configure(bg=COL['warn'])
-                        else:
-                            self.pa.configure(bg=COL['main'])
-                        self.pasky_old = pasky
+                    dalt = math.degrees(star.alt)
+                    daz  = math.degrees(star.az)
+                    self.alt.configure(text='{0:<4.1f}'.format(dalt))
+                    self.az.configure(text='{0:<5.1f}'.format(daz))
+                        
+                    # warn about the TV mast. Basically checks whether
+                    # alt and az lie in roughly triangular shape 
+                    # presented by the mast. First move azimuth 5 deg closer 
+                    # to the mast to give a bit of warning.
+                    if daz > 33.5:
+                        daz = min(33.5,daz-5.)
+                    else:
+                        daz = max(33.5,daz+5.)
 
-                    except Exception, err:
-                        self.ra.configure(text='UNDEF')
-                        self.dec.configure(text='UNDEF')
-                        self.pa.configure(text='UNDEF')
-                        self.ha.configure(text='UNDEF')
-                        self.alt.configure(text='UNDEF')
-                        self.az.configure(text='UNDEF')
-                        self.airmass.configure(text='UNDEF')
-                        self.mdist.configure(text='UNDEF')
-                        print(err)
+                    if daz > 25.5 and daz < 50.0 and dalt < 73.5 \
+                            and \
+                            ((daz < 33.5 and \
+                                  dalt < 73.5-(33.5-daz)/(33.5-25.5)*(73.5-21.5)) or \
+                                 (daz > 33.5 and \
+                                      dalt < 73.5-(daz-33.5)/(50.0-33.5)*(73.5-21.5))):
+                        self.alt.configure(bg=COL['warn'])
+                        self.az.configure(bg=COL['warn'])
+                    else:
+                        self.alt.configure(bg=COL['main'])
+                        self.az.configure(bg=COL['main'])
 
-            # get run number (set by the 'Start' button')
-            # get frame number (need FileServer to be running
-            #url = cpars['http_file_server'] + run + '?action=get_num_frames'
+                    # set airmass
+                    self.airmass.configure(text='{0:<4.2f}'.format(1./math.sin(star.alt)))
 
-        except Exception, err:
-            print(err)
+                    # distance to the moon. Warn if < 20 degrees from it.
+                    md = math.degrees(ephem.separation(astro.moon,star))
+                    self.mdist.configure(text='{0:<7.2f}'.format(md))
+                    if md < 20.:
+                        self.mdist.configure(bg=COL['warn'])
+                    else:
+                        self.mdist.configure(bg=COL['main'])
 
+                    # calculate cosine of angle between vertical and celestial North
+                    # cpan = (math.sin(astro.obs.lat)-math.sin(star._dec)*math.sin(star.alt))/
+                    # (math.cos(star._dec)*math.cos(star.alt))
+                    # pan = math.acos(cpan)
+
+                except Exception, err:
+                    self.ra.configure(text='UNDEF')
+                    self.dec.configure(text='UNDEF')
+                    self.pa.configure(text='UNDEF')
+                    self.ha.configure(text='UNDEF')
+                    self.alt.configure(text='UNDEF')
+                    self.az.configure(text='UNDEF')
+                    self.airmass.configure(text='UNDEF')
+                    self.mdist.configure(text='UNDEF')
+                    print(err)
+
+        # get run number (set by the 'Start' button')
+        # get frame number (need FileServer to be running
+        # url = cpars['http_file_server'] + run + '?action=get_num_frames'
+        
+        # run every 2 seconds
         self.after(2000, self.update)
 
 class AstroFrame(tk.LabelFrame):
