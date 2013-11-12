@@ -11,7 +11,7 @@ import xml.etree.ElementTree as ET
 import os
 import drivers as drvs
 import filterwheel as fwheel
-import math as m
+import math
 
 # Timing, gain, noise parameters lifted from java usdriver
 VCLOCK           =  14.4e-6  # vertical clocking time 
@@ -367,7 +367,8 @@ class InstPars(tk.LabelFrame):
                                  + readSpeed + ' not recognised.')
 
         # clear chip on/off?
-        lclear = not isDriftMode and self.clear 
+        lclear = not isDriftMode and self.clear() 
+        print('clear =',lclear,self.clear(),isDriftMode)
 
         # get exposure delay
         expose = self.expose.value()
@@ -510,6 +511,7 @@ class InstPars(tk.LabelFrame):
         expTime   = expose_delay if lclear else cycleTime - frame_transfer
         deadTime  = cycleTime - expTime
         dutyCycle = 100.0*expTime/cycleTime
+        print(dutyCycle, expTime, cycleTime, frameRate, frame_transfer)
 
         return (expTime, deadTime, cycleTime, dutyCycle, frameRate)
 
@@ -517,7 +519,8 @@ class RunPars(tk.LabelFrame):
     """
     Run parameters
     """
-    DTYPES = ('acquisition','science','bias','flat','dark','technical')
+    DTYPES = ('data', 'acquire', 'bias', 'flat', 'dark', 'tech')
+    DVALS  = ('data', 'data caution', 'bias', 'flat', 'dark', 'technical')
         
     def __init__(self, master, share):
         tk.LabelFrame.__init__(self, master, text='Run parameters', 
@@ -591,7 +594,7 @@ class RunPars(tk.LabelFrame):
 
         # data type
         row += 1
-        self.dtype = drvs.Radio(self, RunPars.DTYPES, 3)
+        self.dtype = drvs.Radio(self, RunPars.DTYPES, 3, values=RunPars.DVALS)
         self.dtype.set('undef') 
         self.dtype.grid(row=row,column=column,sticky=tk.W)
 
@@ -610,7 +613,7 @@ class RunPars(tk.LabelFrame):
         ok  = True
         msg = ''
         dtype = self.dtype.value()
-        if dtype not in RunPars.DTYPES:
+        if dtype not in RunPars.DVALS:
             ok = False
             msg += 'No data type has been defined\n'
 
@@ -621,8 +624,8 @@ class RunPars(tk.LabelFrame):
             ok = False
             msg += 'Target name field cannot be blank\n'
 
-        if dtype == 'acquisition' or \
-                dtype == 'science' or dtype == 'technical':
+        if dtype == 'data caution' or \
+                dtype == 'data' or dtype == 'technical':
 
             if self.progid.ok():
                 self.progid.config(bg=drvs.COL['main'])
@@ -717,9 +720,6 @@ def createXML(post, cpars, ipars, rpars, clog, rlog):
     # Avalanche gain
     pdict['HV_GAIN']['value'] = str(ipars.avgain.value())
 
-    # Clear or not
-    pdict['EN_CLR']['value'] = str(ipars.clear())
-
     # Dwell
     pdict['DWELL']['value'] = str(ipars.expose.ivalue())
 
@@ -728,6 +728,9 @@ def createXML(post, cpars, ipars, rpars, clog, rlog):
         else '1' if ipars.readSpeed.value() == 'Medium' else '2'
 
     if app == 'Windows':
+        # Clear or not
+        pdict['EN_CLR']['value'] = str(ipars.clear())
+
         w = ipars.wframe
 
         # Number of windows -- needed to set output parameters correctly
@@ -744,12 +747,12 @@ def createXML(post, cpars, ipars, rpars, clog, rlog):
         # Load up enabled windows, null disabled windows
         npix = 0
         for nw in xrange(nwin):
-            xs, ys, nx, ny = w.xs[nw].value(), w.ys[nw].value(), w.nx[nw].value(), w.ny[nw].value()
+            xs, ys, nx, ny = w.xs[nw].value(), w.ys[nw].value(), \
+                w.nx[nw].value(), w.ny[nw].value()
 
             # re-jig so that user always refers to same part of
             # the CCD regardless of the output being used. 'Derek coords'
-            xs = xs + 16 if ipars.avalanche() == 'N' else 1074 - xs - nx
-
+            xs = 1074 - xs - nx if ipars.avalanche() else xs + 16
             pdict['X' + str(nw+1) + '_START']['value'] = str(xs)
             pdict['Y' + str(nw+1) + '_START']['value'] = str(ys)
             pdict['X' + str(nw+1) + '_SIZE']['value']  = str(nx // xbin)
@@ -787,12 +790,12 @@ def createXML(post, cpars, ipars, rpars, clog, rlog):
 
         # re-jig so that user always refers to same part of
         # the CCD regardless of the output being used. 'Derek coords'
-        if ipars.avalanche() == 'N':
-            xsl += 16
-            xsr += 16
-        else:
+        if ipars.avalanche():
             xsl = 1074 - xsl - nx
             xsr = 1074 - xsr - nx
+        else:
+            xsl += 16
+            xsr += 16
 
         if xsl > xsr:
             xsr, xsl = xsl, xsr
@@ -987,9 +990,6 @@ class Load(drvs.ActButton):
         # Avalanche gain
         ipars.avgain.set(pdict['HV_GAIN'])
 
-        # Clear or not
-        ipars.clear.set(pdict['EN_CLR'])
-
         # Dwell
         ipars.expose.set(str(float(pdict['DWELL'])/10000.))
 
@@ -1000,6 +1000,9 @@ class Load(drvs.ActButton):
                                 else 'Fast') 
         
         if app == 'Windows':
+            # Clear or not
+            ipars.clear.set(pdict['EN_CLR'])
+
             # now for the windows which come in two flavours
             ipars.app.set('Windows')
             w = ipars.wframe
@@ -1014,7 +1017,7 @@ class Load(drvs.ActButton):
             nwin = 0
             for nw in xrange(4):
                 xs = 'X' + str(nw+1) + '_START'
-                ys = 'X' + str(nw+1) + '_START'
+                ys = 'Y' + str(nw+1) + '_START'
                 nx = 'X' + str(nw+1) + '_SIZE'
                 ny = 'Y' + str(nw+1) + '_SIZE'
                 if xs in pdict and ys in pdict and nx in pdict and ny in pdict \
@@ -1046,6 +1049,8 @@ class Load(drvs.ActButton):
             w.nwin.set(nwin)
 
         else:
+            ipars.clear.set(0)
+
             # now for drift mode
             ipars.app.set('Drift')
             p = ipars.pframe
@@ -1102,7 +1107,8 @@ class Load(drvs.ActButton):
         rpars.pi.set(getUser(user,'PI'))
         rpars.observers.set(getUser(user,'Observers'))
         rpars.comment.set(getUser(user,'comment'))
-        rpars.dtype.set(getUser(user,'dtype'))
+#        rpars.dtype.set(getUser(user,'dtype'))
+        rpars.dtype.set(getUser(user,'flags'))
 
         return True
 
@@ -1161,76 +1167,6 @@ class Save(drvs.ActButton):
         else:
             return False
 
-class Filter(drvs.ActButton):
-    """
-    Class defining the 'Filter' button's operation. This saves the
-    current configuration to disk.
-    """
-
-    def __init__(self, master, width, share):
-        """
-        master  : containing widget
-        width   : width of button
-        share   : dictionary of other objects. Must have 'cpars' the 
-                  configuration parameters, 'instpars' the instrument 
-                  setup parameters (windows etc), and 'runpars' the 
-                  run parameters (target name etc), 'clog' and 'rlog'
-        """
-        drvs.ActButton.__init__(self, master, width, share, text='Filter')
-        self.filter = 'undef'
-        self.nroot  = None
-        self.fwheel = fwheel.FilterWheel()
-
-    def act(self):
-        """
-        Carries out the action associated with the Save button
-        """
-
-        o = self.share
-        cpars, ipars, rpars, clog, rlog = \
-            o['cpars'], o['instpars'], o['runpars'], o['clog'], o['rlog']
-
-        print(self.nroot)
-        if not self.nroot:
-            self.nroot  = tk.Toplevel()
-            self.nroot.title('Filter selector')
-            self.nroot.protocol('WM_DELETE_WINDOW', self._nrootDestroy)
-            self.flabel = tk.Label(self.nroot,text='Choose the filter:')
-            self.flabel.pack()
-            self.selector = \
-                drvs.Radio(self.nroot, cpars['active_filter_names'], 6, self._setFilter)
-            self.selector.set(self.filter)
-            self.selector.pack()
-        return True
-
-    def _nrootDestroy(self):
-        self.nroot.destroy()
-        self.nroot = None
-
-    def _setFilter(self, *args):
-
-        try:
-            # work out index we are trying to set to
-            cpars = self.share['cpars']
-            fname = self.selector.value()
-            if fname not in cpars['active_filter_names']:
-                raise UspecError('Filter.set: fname = ' + fname + 
-                                 ' not recognised.')
-            findex = cpars['active_filter_names'].index(fname)+1
-
-            # finally try to set the wheel
-            if not self.fwheel.connected:
-                self.fwheel.connect()
-
-            if not self.fwheel.initialised:
-                self.fwheel.initialise()
-
-            self.fwheel.goto(findex)
-            self.filter = fname
-        except Exception, err:
-            print(err)
-            self.selector.set('undef')
-
 class Unfreeze(drvs.ActButton):
     """
     Class defining the 'Unfreeze' button's operation. 
@@ -1282,7 +1218,6 @@ class Observe(tk.LabelFrame):
         self.post     = Post(self, width, share)
         self.start    = drvs.Start(self, width, share)
         self.stop     = drvs.Stop(self, width, share)
-        self.filter   = Filter(self, width, share)
 
         # pass all buttons to each other
         share['Load']     = self.load
@@ -1291,7 +1226,6 @@ class Observe(tk.LabelFrame):
         share['Post']     = self.post
         share['Start']    = self.start
         share['Stop']     = self.stop
-        share['Filter']   = self.filter
 
         self.share = share
 
@@ -1302,7 +1236,6 @@ class Observe(tk.LabelFrame):
         self.post.grid(row=0,column=1)
         self.start.grid(row=1,column=1)
         self.stop.grid(row=2,column=1)
-        self.filter.grid(row=3,column=0)
 
         # Define initial status
         self.post.disable()
@@ -1475,6 +1408,7 @@ class CountsFrame(tk.LabelFrame):
         ipars = self.share['instpars']
 
         expTime, deadTime, cycleTime, dutyCycle, frameRate = ipars.timing()
+
         total, peak, peakSat, peakWarn, ston, ston3 = \
             self.counts(expTime, cycleTime)
 
@@ -1505,7 +1439,7 @@ class CountsFrame(tk.LabelFrame):
         self.ston.config(text='{0:.1f}'.format(ston))
         self.ston3.config(text='{0:.1f}'.format(ston3))
 
-    def counts(self, expTime, cycleTime, ap_scale=1.6):
+    def counts(self, expTime, cycleTime, ap_scale=1.6, ndiv=5):
         """
         Computes counts per pixel, total counts, sky counts
         etc given current magnitude, seeing etc. You should
@@ -1547,8 +1481,10 @@ class CountsFrame(tk.LabelFrame):
                 'drivers.CountsFrame.counts: readout speed = ' 
                 + readSpeed + ' not recognised.')
 
-        xbin   = ipars.wframe.xbin.value()	
-        ybin   = ipars.wframe.ybin.value()	
+        if ipars.app == 'Windows':
+            xbin, ybin = ipars.wframe.xbin.value(), ipars.wframe.ybin.value()
+        else:
+            xbin, ybin = ipars.pframe.xbin.value(), ipars.pframe.ybin.value()
 
         # calculate SN info. 
         zero, sky, skyTot, gain, read, darkTot = 0., 0., 0., 0., 0., 0.
@@ -1581,17 +1517,38 @@ class CountsFrame(tk.LabelFrame):
 
         # calculate expected electrons 
         total   = 10.**((zero-mag-airmass*drvs.EXTINCTION[filtnam])/2.5)*expTime
-        peak    = total*xbin*ybin*(plateScale/(seeing/2.3548))**2/(2.*m.pi)
+
+        # compute fraction that fall in central pixel 
+        # assuming target exactly at its centre. Do this
+        # by splitting each pixel of the central (potentially
+        # binned) pixel into ndiv * ndiv points at
+        # which the seeing profile is added. sigma is the
+        # RMS seeing in terms of pixels.
+        sigma = seeing/2.3548/plateScale
+        print(seeing,plateScale,sigma)
+        sum = 0.
+        for iyp in range(ybin):
+            yoff = -ybin/2.+iyp
+            for ixp in range(xbin):
+                xoff = -xbin/2.+ixp
+                for iys in range(ndiv):
+                    y = (yoff + (iys+0.5)/ndiv)/sigma
+                    for ixs in range(ndiv):
+                        x = (xoff + (ixs+0.5)/ndiv)/sigma
+                        sum += math.exp(-(x*x+y*y)/2.)
+        peak = total*sum/(2.*math.pi*sigma**2*ndiv**2)
+
+#        peak    = total*xbin*ybin*(plateScale/(seeing/2.3548))**2/(2.*math.pi)
 
         # Work out fraction of flux in aperture with radius AP_SCALE*seeing
-        correct = 1. - m.exp(-(2.3548*ap_scale)**2/2.)
+        correct = 1. - math.exp(-(2.3548*ap_scale)**2/2.)
 		    
         # expected sky e- per arcsec
         skyPerArcsec = 10.**((zero-sky)/2.5)*expTime
         skyPerPixel  = skyPerArcsec*plateScale**2*xbin*ybin
-        narcsec      = m.pi*(ap_scale*seeing)**2
+        narcsec      = math.pi*(ap_scale*seeing)**2
         skyTot       = skyPerArcsec*narcsec
-        npix         = m.pi*(ap_scale*seeing/plateScale)**2/xbin/ybin
+        npix         = math.pi*(ap_scale*seeing/plateScale)**2/xbin/ybin
                 
         signal       = correct*total # in electrons
         darkTot      = npix*DARK_E*expTime  # in electrons
@@ -1600,14 +1557,14 @@ class CountsFrame(tk.LabelFrame):
 
         # noise, in electrons
         if lnormal:
-            noise = m.sqrt(readTot + darkTot + skyTot + signal + cic) 
+            noise = math.sqrt(readTot + darkTot + skyTot + signal + cic) 
         else:
             # assume high gain observations in proportional mode
-            noise = m.sqrt(readTot/AVALANCHE_GAIN_9**2 + 
+            noise = math.sqrt(readTot/AVALANCHE_GAIN_9**2 + 
                            2.0*(darkTot + skyTot + signal) + cic)
 		    
         # Now compute signal-to-noise in 3 hour seconds run
-        signalToNoise3 = signal/noise*m.sqrt(3*3600./cycleTime);
+        signalToNoise3 = signal/noise*math.sqrt(3*3600./cycleTime);
 
         # if using the avalanche mode, check that the signal level 
         # is safe. A single electron entering the avalanche register 

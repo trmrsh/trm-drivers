@@ -12,11 +12,16 @@ def getTntTcs():
     Accesses TCS on TNT. Returns (ra,dec,posang,focus,tflag)
     where::
     
-      ra     : RA, radians
-      dec    : Declination, radians
-      posang : position angle, radians
+      ra     : RA, degrees
+      dec    : Declination, degrees
+      posang : position angle, degrees
       focus  : focus, mm
-      tflag  : True if tracking
+      tflag  : True if 'Tracking', but note that it can come back
+               with True when 'Tracking' in Alt/Az mode so one needs
+               to check for constant Ra, Dec as well outside this
+               routine.
+      engpa  : PA, degrees, related to instrument position. Not quite
+               sure what it refers to but it runs from -220 to 250 deg.
     """
 
     # TNT TCS access
@@ -29,15 +34,17 @@ def getTntTcs():
     jsonData = json.loads(string)
 
     listData = eval(jsonData['d'])[0]
-    #    print(listData)
+    # print(listData)
     # integer, ra, dec, pa on sky [all radians], focus in m
-    # string set to 'Tracking', 'Slewing' etc
-    ignore,ra,dec,pa,focus,tracking = listData
+    # string set to 'Tracking', 'Slewing' etc, engineering pa
+    # for judging rotator limit issues
+    ignore,ra,dec,pa,focus,tracking,engpa = listData
 
     # 270 is an experimental offset which could be refined ??
-    ra     = float(ra)
-    dec    = float(dec)
-    pa     = float(pa)+math.radians(270.)
+    ra     = math.degrees(float(ra))
+    dec    = math.degrees(float(dec))
+    pa     = math.degrees(float(pa))+270.
     focus  = 1000.*float(focus)
+    engpa  = math.degrees(float(engpa))
 
-    return (ra,dec,pa,focus,tracking == 'Tracking')
+    return (ra,dec,pa,focus,tracking == 'Tracking',engpa)

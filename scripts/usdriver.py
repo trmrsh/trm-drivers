@@ -16,11 +16,13 @@ command.
 import argparse, os
 import Tkinter as tk
 import tkFont
-import trm.drivers as drvs
-import trm.drivers.uspec as uspec
 import logging
 import Queue
 import threading
+
+import trm.drivers as drvs
+import trm.drivers.uspec as uspec
+import trm.drivers.filterwheel as filterwheel
 
 class GUI(tk.Tk):
     """
@@ -68,7 +70,8 @@ class GUI(tk.Tk):
 
         print('created info')
 
-        # Container frame for switch options, observe, focal plane slide and setup widgets
+        # Container frame for switch options, observe, focal plane slide and
+        # setup widgets
         topLhsFrame = tk.Frame(self)
 
         # Focal plane slide frame
@@ -142,6 +145,31 @@ class GUI(tk.Tk):
         # Add to menubar
         menubar.add_cascade(label='Settings', menu=settingsMenu)
 
+        # Filter selector. First create a FilterWheel
+        wheel = filterwheel.FilterWheel()
+
+        class SetFilter(object):
+            """
+            Callable object to define the command for
+            the Filters on the menu.
+            """
+            def __init__(self, wheel, share):
+                self.wheel = wheel
+                self.share = share
+                self.wc    = None
+
+            def __call__(self):
+                if self.wc is None:
+                    self.wc = \
+						filterwheel.WheelController(self.wheel, self.share)
+                else:
+                    clog = self.share['clog']
+                    clog.log.info('There is already a wheel control window')
+
+        # create the SetFilter attach to the Filters label
+        setfilt = SetFilter(wheel, share)
+        menubar.add_command(label='Filters', command=setfilt)
+
         # Stick the menubar in place
         self.config(menu=menubar)
 
@@ -161,7 +189,8 @@ class GUI(tk.Tk):
                 t = threading.Thread(target=self.startRtplotServer, args=[q,])
                 t.daemon = True
                 t.start()
-                print('rtplot server started on port',cpars['rtplot_server_port'])
+                print('rtplot server started on port',
+					  cpars['rtplot_server_port'])
             except Exception as e:
                 print('Problem trying to start rtplot server:', e)
         else:
@@ -173,7 +202,8 @@ class GUI(tk.Tk):
         It is at this point that we pass the window parameters
         to the server.
         """
-        self.server = drvs.RtplotServer(self.instpars, self.cpars['rtplot_server_port'])
+        self.server = drvs.RtplotServer(self.instpars, 
+										self.cpars['rtplot_server_port'])
         self.server.run()
 
 

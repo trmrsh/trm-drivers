@@ -63,7 +63,7 @@ TINS = {\
         'longitude'  : '98 28',   # longitude DMS, East positive
         'elevation'  : 2457.,     # Elevation above sea level, metres
         'app'        : 'tno.xml', # Application for the telescope
-        'plateScale' : 0.45,      # Arcsecs/unbinned pixel
+        'plateScale' : 0.452,     # Arcsecs/unbinned pixel
         'zerop'      : {\
             'u' : 22.29, # update 06/11/13
             'g' : 25.20,
@@ -951,7 +951,8 @@ class RangedFloat (FloatEntry):
     """
     Provides range-checked float input.
     """
-    def __init__(self, master, fval, fmin, fmax, checker, blank, allowzero=False, **kw):
+    def __init__(self, master, fval, fmin, fmax, checker, 
+                 blank, allowzero=False, **kw):
         """
         master    -- enclosing widget
         fval      -- initial float value
@@ -1058,13 +1059,17 @@ class Expose (RangedFloat):
         fval, fmin and fmax must be multiples of 0.0001
         """
         if round(10000*fval) != 10000*fval:
-            raise DriverError('drivers.Expose.__init__: fval must be a multiple of 0.0001')
+            raise DriverError(
+                'drivers.Expose.__init__: fval must be a multiple of 0.0001')
         if round(10000*fmin) != 10000*fmin:
-            raise DriverError('drivers.Expose.__init__: fmin must be a multiple of 0.0001')
+            raise DriverError(
+                'drivers.Expose.__init__: fmin must be a multiple of 0.0001')
         if round(10000*fmax) != 10000*fmax:
-            raise DriverError('drivers.Expose.__init__: fmax must be a multiple of 0.0001')
+            raise DriverError(
+                'drivers.Expose.__init__: fmax must be a multiple of 0.0001')
 
-        RangedFloat.__init__(self, master, fval, fmin, fmax, checker, True, **kw)
+        RangedFloat.__init__(self, master, fval, fmin, 
+                             fmax, checker, True, **kw)
 
     def validate(self, value):
         """
@@ -1143,17 +1148,30 @@ class TextEntry (tk.Entry):
 
 class Choice(tk.OptionMenu):
     """
-    Menu choice class
+    Menu choice class.
     """
-    def __init__(self, master, options, checker=None):
+    def __init__(self, master, options, initial=None, width=0, checker=None):
+        """
+        master  : containing widget
+        options : list of strings
+        initial : the initial one to select. If None will default to the first.
+        width   : minimum character width to use. Width set will be large 
+                  enough for longest option.
+        checker : callback to run on any change of selection.
+        """
+
         self.val = tk.StringVar()
-        self.val.set(options[0])
+        if initial is None:
+            self.val.set(options[0])
+        else:
+            self.val.set(initial)
         tk.OptionMenu.__init__(self, master, self.val, *options)
-        width = reduce(max, [len(s) for s in options])
+        width = max(width, reduce(max, [len(s) for s in options]))
         self.config(width=width)
         self.checker = checker
         if self.checker is not None:
             self.val.trace('w', self.checker)
+        self.options = options
 
     def value(self):
         return self.val.get()
@@ -1176,13 +1194,13 @@ class Radio(tk.Frame):
     def __init__(self, master, options, ncmax, checker=None, 
                  values=None, initial=0):
         """
-        master  : containing widget
+        master	: containing widget
         options : array of option strings, in order. These are the choices 
-                  presented to the user.
-        ncmax   : max number of columns (flows onto next row if need be)
+        presented to the user.
+        ncmax	: max number of columns (flows onto next row if need be)
         checker : callback to be run after any change
-        values  : array of string values used by the code internally. 
-                  If 'None', the value from 'options' will be used. 
+        values	: array of string values used by the code internally. 
+        If 'None', the value from 'options' will be used. 
         initial : index of initial value to set.
         """
         tk.Frame.__init__(self, master)
@@ -1210,10 +1228,10 @@ class Radio(tk.Frame):
                     tk.Radiobutton(self, text=option, variable=self.val, 
                                    value=values[nopt]))
                 self.buttons[-1].grid(row=row, column=col, sticky=tk.W)
-            col += 1
-            if col == ncmax:
-                row += 1
-                col  = 0
+                col += 1
+                if col == ncmax:
+                    row += 1
+                    col	 = 0
 
         self.checker = checker
         if self.checker is not None:
@@ -1266,9 +1284,9 @@ def overlap(xl1,yl1,nx1,ny1,xl2,yl2,nx2,ny2):
 def saveXML(root, clog):
     """
     Saves the current setup to disk. 
-
-      root : (xml.etree.ElementTree.Element)
-         The current setup.
+    
+    root : (xml.etree.ElementTree.Element)
+    The current setup.
     """
     fname = tkFileDialog.asksaveasfilename(
         defaultextension='.xml', filetypes=[('xml files', '.xml'),])
@@ -1283,11 +1301,12 @@ def saveXML(root, clog):
 def postXML(root, cpars, clog, rlog):
     """
     Posts the current setup to the camera and data servers.
+    
+    root : (xml.etree.ElementTree.Element)
+    The current setup.
 
-      root : (xml.etree.ElementTree.Element)
-         The current setup.
-      cpars : (dict)
-         Configuration parameters inc. urls of servers
+    cpars : (dict)
+    Configuration parameters inc. urls of servers
     """
     clog.log.debug('Entering postXML\n')
 
@@ -1302,18 +1321,18 @@ def postXML(root, cpars, clog, rlog):
     clog.log.debug('content length =',len(sxml),'\n')
     req = urllib2.Request(url, data=sxml, headers={'Content-type': 'text/xml'})
     response = opener.open(req, timeout=5)
-    csr  = ReadServer(response.read())
+    csr	 = ReadServer(response.read())
     rlog.log.warn(csr.resp() + '\n')
     if not csr.ok:
         clog.log.warn('Camera response was not OK\n')
         return False
-    
+	
     # Send the xml to the data server
     url = cpars['http_data_server'] + cpars['http_path_config']
     clog.log.debug('Data server URL =',url,'\n')
     req = urllib2.Request(url, data=sxml, headers={'Content-type': 'text/xml'})
     response = opener.open(req, timeout=5) # ?? need to check whether this is needed
-    fsr  = ReadServer(response.read())
+    fsr	 = ReadServer(response.read())
     rlog.log.warn(fsr.resp() + '\n')
     if not csr.ok:
         clog.log.warn('Fileserver response was not OK\n')
@@ -1421,22 +1440,25 @@ class Start(ActButton):
 
         o = self.share
         cpars, ipars, rpars, clog, rlog, info = \
-            o['cpars'], o['instpars'], o['runpars'], o['clog'], o['rlog'], o['info']
+            o['cpars'], o['instpars'], o['runpars'], o['clog'], \
+            o['rlog'], o['info']
 
         if cpars['access_tcs']:
             if cpars['telins_name'] == 'TNO-USPEC':
                 try:
-                    ra,dec,posang,focus = tcs.getTntTcs()
+                    ra,dec,pa,focus,engpa = tcs.getTntTcs()
                     gotPos = True
                 except Exception, err:
                     print(err)
                     if not tkMessageBox.askokcancel(
-                        'Could not get RA, Dec from telescope.\n' + 'Continue?'):
+                        'Could not get RA, Dec from telescope.\n' + 
+                        'Continue?'):
                         clog.log.warn('Start operation cancelled\n')
                     gotPos = False
             else:
                 if not tkMessageBox.askokcancel(
-                    'No TCS routine for telescope/instrument = ' + cpars['telins_name'] + '\n' +
+                    'No TCS routine for telescope/instrument = ' + 
+                    cpars['telins_name'] + '\n' +
                     'Could not get RA, Dec from telescope.\n' + 'Continue?'):
                     clog.log.warn('Start operation cancelled\n')
                 gotPos = False
@@ -1482,9 +1504,9 @@ class Start(ActButton):
 
             # update the positional info
             if gotPos:
-                info.ra.config(text='{0:f} '.format(math.degrees(ra)))
-                info.dec.config(text='{0:f} '.format(math.degrees(dec)))
-                info.pa.config(text='{0:f} '.format(math.degrees(pa)))
+                info.ra.config(text='{0:f} '.format(ra/15.))
+                info.dec.config(text='{0:f} '.format(dec))
+                info.pa.config(text='{0:f} '.format(pa))
 
             # start the exposure timer
             o['info'].timer.start()
@@ -2746,19 +2768,18 @@ class InfoFrame(tk.LabelFrame):
             if cpars['telins_name'] == 'TNO-USPEC':
                 try:
                     # Poll TCS for ra,dec etc.
-                    ra,dec,pa,focus,tflag = tcs.getTntTcs()
+                    ra,dec,pa,focus,tflag,engpa = tcs.getTntTcs()
 
-                    self.ra.configure(text=d2hms(math.degrees(ra)/15., 1, False))
-                    self.dec.configure(text=d2hms(math.degrees(dec), 0, True))
-                    padeg = math.degrees(pa)
-                    while padeg < 0.:
-                        padeg += 360.
-                    while padeg > 360.:
-                        padeg -= 360.
-                    self.pa.configure(text='{0:6.2f}'.format(padeg))
+                    self.ra.configure(text=d2hms(ra/15., 1, False))
+                    self.dec.configure(text=d2hms(dec, 0, True))
+                    while pa < 0.:
+                        pa += 360.
+                    while pa > 360.:
+                        pa -= 360.
+                    self.pa.configure(text='{0:6.2f}'.format(pa))
 
                     # check for significant changes in position to flag tracking failures
-                    if abs(ra-self.ra_old) < 1.e-5 and abs(dec-self.dec_old) < 1.e-5 and tflag:
+                    if abs(ra-self.ra_old) < 1.e-3 and abs(dec-self.dec_old) < 1.e-3 and tflag:
                         self.tracking = True
                         self.ra.configure(bg=COL['main'])
                         self.dec.configure(bg=COL['main'])
@@ -2768,8 +2789,8 @@ class InfoFrame(tk.LabelFrame):
                         self.dec.configure(bg=COL['warn'])
                         
                     # check for changing sky PA
-                    if abs(pa-self.pa_old) > 1.e-3 and abs(pa-self.pa_old-2.*math.pi) > 1.e-3 and \
-                            abs(pa-self.pa_old+2.*math.pi) > 1.e-3:
+                    if abs(pa-self.pa_old) > 0.1 and abs(pa-self.pa_old-360.) > 0.1 and \
+                            abs(pa-self.pa_old+360.) > 0.1:
                         self.pa.configure(bg=COL['warn'])
                     else:
                         self.pa.configure(bg=COL['main'])
@@ -2784,12 +2805,12 @@ class InfoFrame(tk.LabelFrame):
                     # create a Body for the target, calculate most of the stuff
                     # that we don't get from the telescope
                     star = ephem.FixedBody()
-                    star._ra  = ra
-                    star._dec = dec
+                    star._ra  = math.radians(ra)
+                    star._dec = math.radians(dec)
                     star.compute(astro.obs)
 
                     lst = astro.obs.sidereal_time()
-                    ha = math.degrees(lst-ra)/15.
+                    ha  = (math.degrees(lst)-ra)/15.
                     if ha > 12.:
                         ha -= 12.
                     elif ha < -12.:
