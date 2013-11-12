@@ -1,0 +1,49 @@
+<?xml version="1.0"?>
+<!-- Directory of XML files for Ultracam system.
+     This file contains a simple directory listing of XML files that
+     "contain" ultracam observation descriptions.
+     A directory has;
+        A name
+        A base path
+     Each file has;
+        A name
+        A path (such that basepath + path + name == location of file)
+        A description
+-->
+<directory name="ultraspec">
+  <file name="wht.xml" type="config">
+    <description>4.2m William Herschel Telescope</description>
+  </file>
+
+  <file name="vlt.xml" type="config">
+    <description>8.2m Very Large Telescope</description>
+  </file>
+
+  <file name="ntt.xml" type="config">
+    <description>3.5m New Technology Telescope</description>
+  </file>
+
+  <file name="eso3.6.xml" type="config">
+    <description>ESO 3.6m Telescope</description>
+  </file>
+
+  <file name="ultraspec.xml" type="config">
+    <description>ULTRASPEC config</description>
+  </file>
+
+
+  <file name="ccd201_pon_cfg.xml" type="utility">
+    <description>ULTRASPEC Power ON utility</description>
+  </file>
+
+
+  <file name="ccd201_winbin_app.xml" type="data">
+    <description>ULTRASPEC non drift-mode application</description>
+  </file>
+
+  <file name="ccd201_driftscan_app.xml" type="data">
+    <description>ULTRASPEC drift-mode application</description>
+  </file>
+
+
+</directory>

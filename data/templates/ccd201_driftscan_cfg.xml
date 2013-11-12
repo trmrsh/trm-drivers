@@ -1,0 +1,281 @@
+<?xml version="1.0"?>
+
+<!-- Downloadable application  - ULTRASPEC "Driftscan"
+
+     Authors: David Atkinson
+  -->
+
+<executable_application id="ccd201_driftscan_cfg" boot="N" name="ccd201_driftscan_cfg" version="2.0" author="da" xmlns:xlink="http://www.w3.org/1999/xlink">
+
+    <!-- The DSP for which this application has been written -->
+    <destination ref="sdsu_interface" xlink:href="sdsu_hardware.xml"/> 
+
+    <description>Ultraspec Readout Appliation for CCD201</description>
+
+    <!-- The coff element contains all the executable code and parameter information
+         extracted automatically from the COFF file. Create the COFF file with the
+         coff2xml utility.
+      -->
+
+    <coff xlink:href="ccd201_driftscan_dsp.xml"/>
+
+    <!-- Executable code doesn't contain any commands, so there are no command elements -->
+
+
+     <!--
+         Each condition_check element describes a condition that need to be checked.
+         A particular expression involving a combination of parameters needs to
+         fall within a defined range.
+
+         The when attribute can take one of the following values:
+         start - check these conditions after downloading the application.
+         pre   - check these conditions before executing the application.
+         post  - check these conditions after executing the application.
+         reset - check these conditions after executing a reset.
+      -->
+
+
+<condition_check when="pre" fatal="Y" >
+    <description>Check for sensible number of exposures</description>
+    <expression expect="T">(NUM_EXPS&gt;-2)&amp;(NUM_EXPS#0)&amp;(NUM_EXPS&lt;16777214)</expression>
+    <message>Invalid number of exposures.</message>
+</condition_check>
+
+
+<condition_check when="pre" fatal="Y" >
+    <description>Check which output</description>
+    <expression expect="T">(OUTPUT&gt;-1)&amp;(OUTPUT&lt;2)</expression>
+    <message>Invalid output selection.</message>
+</condition_check>
+
+
+<condition_check when="pre" fatal="Y" >
+       <description>Check for sensible number of LED units</description>
+       <expression expect="T">(LED_FLSH&gt;-1)&amp;(LED_FLSH&lt;4096)</expression>
+       <message>Invalid number LED units.</message>
+</condition_check>
+
+
+<condition_check when="pre" fatal="Y" >
+       <description>Check for sensible exposure time</description>
+       <expression expect="T">(DWELL&gt;-1)</expression>
+       <message>Exposure time must be zero or positive.</message>
+</condition_check>
+
+<condition_check when="pre" fatal="Y" >
+       <description>Check X binning factor</description>
+       <expression expect="T">(X_BIN&gt;0)&amp;(X_BIN&lt;9)</expression>
+       <message>Invalid X binning selection.</message>
+</condition_check>
+
+
+<condition_check when="pre" fatal="Y" >
+       <description>Check Y binning factor</description>
+       <expression expect="T">(Y_BIN&gt;0)&amp;(Y_BIN&lt;9)</expression>
+       <message>Invalid Y binning selection.</message>
+</condition_check>
+
+
+
+<condition_check when="pre" fatal="Y" >
+       <description>Check for valid window X1 start.</description>
+       <expression expect="T">(X1_START&gt;0)&amp;(X1_START&lt;1073)</expression>
+       <message>Window X1 start is outside chip bounds.</message>
+</condition_check>
+
+
+<condition_check when="pre" fatal="Y" >
+       <description>Check for valid window Y1 start.</description>
+       <expression expect="T">(Y1_START&gt;0)&amp;(Y1_START&lt;1073)</expression>
+       <message>Window Y1 start is outside chip bounds.</message>
+</condition_check>
+
+<condition_check when="pre" fatal="Y" >
+       <description>Check for valid window X2 start.</description>
+       <expression expect="T">(X2_START&gt;0)&amp;(X2_START&lt;1073)</expression>
+       <message>Window X2 start is outside chip bounds.</message>
+</condition_check>
+
+
+<!--
+<condition_check when="pre" fatal="Y" >
+       <description>Check for valid window Y2 start.</description>
+       <expression expect="T">(Y2_START&gt;0)&amp;(Y2_START&lt;1072)</expression>
+       <message>Window Y2 start is outside chip bounds.</message>
+</condition_check>
+-->
+
+    <!-- *** strange numbers here because of the way dji implemented binning *** -->
+<condition_check when="pre" fatal="Y" >
+       <description>Check for valid frame size.</description>
+       <expression expect="T">(X_SIZE&lt;1149185)</expression>
+       <message>X Size must be 1149185 or less!</message>
+</condition_check>
+
+
+<condition_check when="pre" fatal="Y" >
+       <description>Check for valid frame size.</description>
+       <expression expect="T">(Y_SIZE&lt;1073)</expression>
+       <message>Y Size must be 1072 or less!</message>
+</condition_check> 
+
+
+<condition_check when="pre" fatal="Y" >
+       <description>Check for valid window HV GAIN select.</description>
+       <expression expect="T">(HV_GAIN&gt;-1)&amp;(HV_GAIN&lt;10)</expression>
+       <message>Window HV gain select INCORRECT.</message>
+</condition_check>
+
+
+<condition_check when="pre" fatal="Y" >
+       <description>Check for readout speed </description>
+       <expression expect="T">(SPEED&gt;-1)&amp;(SPEED&lt;3)</expression>
+       <message>Invalid readout speed selection.</message>
+</condition_check>
+
+
+ 
+
+
+    <!-- The application_data element describes the quantity, type and format of the
+         data which this application generates.
+
+         It is assumed the entire data set is of the same type and has the same
+         word size in bytes, so these are specified as attributes to
+         "application_data".
+      -->
+
+    <application_data id="window1pair" type="uint" wordsize="2">
+
+       <!-- The following element describes the number of frames that the application
+            generates whenever it is executed. It is assumed that the data consists
+            of a set of identical frames whose size and shape are described in the 
+            "data" element below.
+
+            The contents of the this element may be an integer constant or an 
+            expression element involving application parameters.
+         -->
+
+       <nframes>NUM_EXPS</nframes>
+
+       <!-- Each frame of data is assumed to consist of a header followed by data.
+            The header element that follows describes the words contained in the data
+            header at the beginning of each frame.
+
+            NOTE: This only describes parameters contained in the header of the data 
+            frames transferred from the camera. It does not describe additional 
+            header items that may be in the data saved to disk.
+         -->
+
+       <header>
+
+          <!-- The following element describes the number of words contained in the
+               data header.
+
+            The contents of the this element may be an integer constant or an 
+            expression element involving application parameters.
+         -->
+
+          <headerwords>16</headerwords>
+
+          <!-- The header always contains a camera status bit field in the first word. -->
+
+          <camera_status type="int" length_words="1">
+
+             <!-- The status word contains zero or more bits to be checked, which may
+                  be grouped together into bit fields by status_bits elements.
+
+                  NOTE: The least significant bit in the camera status word is 
+                  expected to be the last frame bit.
+               -->
+
+             <status_bits name="lastframe" mask="0x00000001" expected="0" id="1">
+                <status_value value="1" fatal="no">
+Last frame received.
+                </status_value>
+             </status_bits>
+
+             <status_bits name="success" mask="0x00000006" expected="0" id="2">
+                <status_value value="1" fatal="no">
+Application finished with warning.
+                </status_value>
+                <status_value value="2" fatal="yes">
+Application finished with error.
+                </status_value>
+                <status_value value="3" fatal="yes">
+Application finished with fatal error.
+                </status_value>
+             </status_bits>
+
+             <status_bits name="name" mask="n" expected="val" id="some_unique_number">
+                <status_value value="val" fatal="yes|no">
+Message to be displayed when we get this particular unexpected value.
+                </status_value>
+             </status_bits>
+
+          </camera_status>
+
+          <!-- The header may also contains zero or more header parameters. Each 
+               header_parameter element describes the location, type and size of the
+               bytes containing the header item. All of these header parameters are
+               integers.
+            -->
+
+          <header_parameter id="count" type="int" start_word="3" length_words="2">
+Frame counter
+          </header_parameter>
+
+          <header_parameter id="timestamp" type="int" start_word="7" length_words="10">
+Time stamp
+          </header_parameter>
+
+       </header>
+
+       <!-- The data element describes the format and shape of the data and 
+            instructions on how to demultiplex it.
+
+            The fullframe attribute is "yes" when the data are full frame and "no"
+            when the data are divided into windows.
+         -->
+
+       <data fullframe="yes">
+
+          <!-- The following elements describe the total number of pixels in each 
+               frame of data. The product of this and the number of frames is the
+               total quantity of data generated by the application, and is used to
+               decide how large each data buffer must be to receive the data. It is
+               assumed that the data consists of a set of identically-shaped frames.
+
+               For full frame data ncolumns and nrows give the size of the full 
+               frame.
+               When there are windows, framesize is used to give the total number of
+               pixels.
+
+               The contents of the these elements may be an integer constant or an 
+               expression element involving application parameters.
+          -->
+
+          <!-- One frame of size cols x rows -->
+         <!--  <npixels>((X_SIZE)*(Y*SIZE))</npixels>  -->
+         <ncolumns> X_SIZE </ncolumns>
+         <nrows> Y_SIZE </nrows>
+
+          <!-- The following elements describe the windows contained in the data
+               (if any).
+
+               There is one window element for each window.
+               If no window elements are present the data are assumed to be full
+               frame.
+
+               The "join" attribute is a unique word used to indicate which
+               channels and windows are associated.
+            -->
+<window id="1" name="quad1win1" join="win1_1" xleft="0" ybottom="0" xsize="1072" ysize="1072"/>
+<channel id="1" name="quad1chan1" chip="ccd201" join="win1_1" index="col" stepcol="+1" steprow="+1" offset="0"/>
+
+
+       </data>
+
+    </application_data>
+
+</executable_application>

@@ -1,0 +1,153 @@
+<?xml version="1.0"?>
+
+<!-- Configuration file for ultraspec poweron.
+
+     Authors:  David Atkinson
+  -->
+
+<executable_application id="ccd201_pon_cfg" boot="N" name="ccd201_pon_cfg" version="1.0" author="da" 
+xmlns:xlink="http://www.w3.org/1999/xlink">
+
+    <!-- The DSP for which this application has been written -->
+    <destination ref="sdsu_interface" xlink:href="sdsu_hardware.xml"/> 
+
+    <description>The power on application.</description>
+
+    <!-- The coff element contains all the executable code and parameter information
+         extracted automatically from the COFF file. Create the COFF file with the
+         coff2xml utility.
+      -->
+
+    <coff xlink:href="ccd201_pon_dsp.xml"/>
+
+    <!-- Executable code doesn't contain any commands, so there are no command elements -->
+
+
+    <!-- The application_data element describes the quantity, type and format of the
+         data which this application generates.
+
+         It is assumed the entire data set is of the same type and has the same
+         word size in bytes, so these are specified as attributes to
+         "application_data".
+
+         NOTE - This application generates header information but no data.
+      -->
+
+    <application_data id="fullframe" type="int" wordsize="2">
+
+       <!-- The following element describes the number of frames that the application
+            generates whenever it is executed. It is assumed that the data consists
+            of a set of identical frames whose size and shape are described in the 
+            "data" element below.
+
+            The contents of the this element may be an integer constant or an 
+            expression element involving application parameters.
+         -->
+
+       <nframes>1</nframes>
+
+       <!-- Each frame of data is assumed to consist of a header followed by data.
+            The header element that follows describes the words contained in the data
+            header at the beginning of each frame.
+
+            NOTE: This only describes parameters contained in the header of the data 
+            frames transferred from the camera. It does not describe additional 
+            header items that may be in the data saved to disk.
+         -->
+
+       <header>
+
+          <!-- The following element describes the number of words contained in the
+               data header.
+
+            The contents of the this element may be an integer constant or an 
+            expression element involving application parameters.
+         -->
+
+          <headerwords>16</headerwords>
+
+          <!-- The header always contains a camera status bit field in the first word. -->
+
+          <camera_status type="int" length_words="1">
+
+             <!-- The status word contains zero or more bits to be checked, which may
+                  be grouped together into bit fields by status_bits elements.
+
+                  NOTE: The least significant bit in the camera status word is 
+                  expected to be the last frame bit.
+               -->
+
+             <status_bits name="lastframe" mask="0x0001" expected="0" id="1">
+                <status_value value="1" fatal="no">
+Last frame received.
+                </status_value>
+             </status_bits>
+
+             <status_bits name="success" mask="0x0006" expected="0" id="2">
+                <status_value value="1" fatal="no">
+Application finished with warning.
+                </status_value>
+                <status_value value="2" fatal="yes">
+Application finished with error.
+                </status_value>
+                <status_value value="3" fatal="yes">
+Application finished with fatal error.
+                </status_value>
+             </status_bits>
+
+             <status_bits name="name" mask="n" expected="val" id="some_unique_number">
+                <status_value value="val" fatal="yes|no">
+Message to be displayed when we get this particular unexpected value.
+                </status_value>
+             </status_bits>
+
+          </camera_status>
+
+          <!-- The header may also contains zero or more header parameters. Each 
+               header_parameter element describes the location, type and size of the
+               bytes containing the header item. All of these header parameters are
+               integers.
+            -->
+
+          <header_parameter id="count" type="int" start_word="3" length_words="2">
+Frame counter
+          </header_parameter>
+
+          <header_parameter id="timestamp" type="int" start_word="5" length_words="2">
+Time stamp
+          </header_parameter>
+
+       </header>
+
+       <!-- The data element describes the format and shape of the data and 
+            instructions on how to demultiplex it.
+
+            The fullframe attribute is "yes" when the data are full frame and "no"
+            when the data are divided into windows.
+         -->
+
+       <data fullframe="yes">
+
+          <!-- The following elements describe the total number of pixels in each 
+               frame of data. The product of this and the number of frames is the
+               total quantity of data generated by the application, and is used to
+               decide how large each data buffer must be to receive the data. It is
+               assumed that the data consists of a set of identically-shaped frames.
+
+               For full frame data ncolumns and nrows give the size of the full 
+               frame.
+               When there are windows, framesize is used to give the total number of
+               pixels.
+
+               The contents of the these elements may be an integer constant or an 
+               expression element involving application parameters.
+          -->
+
+          <ncolumns>0</ncolumns>
+          <nrows>0</nrows>
+
+       </data>
+
+    </application_data>
+
+</executable_application>

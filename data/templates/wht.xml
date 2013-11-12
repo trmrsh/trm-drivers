@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+
+<!-- This XML document describes the WHT environment
+
+     Author: Steven Beard
+  -->
+
+<observatory name="Isacc Newton Group of Telescopes, La Palma" time_zone="+1"
+xmlns:xlink="http://www.w3.org/1999/xlink">
+
+   <object_catalogue>  <!-- Name of this observatory's object catalogue (optional) -->
+/usr/local/etc/objects.dat
+   </object_catalogue>
+
+   <telescope name="William Herschel Telescope" id="WHT">
+
+      <!-- Where exactly is the telescope? -->
+      <!-- Latitude in degrees North -->
+      <!-- Longitude in degrees West -->
+      <!-- Height in metres above sea level -->
+      <global_position latitude="35.0" longitude="25.0" height="1500.0"/>  
+
+   </telescope>
+
+</observatory>
+

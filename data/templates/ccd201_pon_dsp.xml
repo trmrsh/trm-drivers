@@ -1,0 +1,4101 @@
+<?xml version="1.0"?>
+<coff id="UCAM_TIM_BOOT" version="6.3.0" device="DSP56300">
+   <parameter_filter memory_space_ref="X" readstart="0" writestart="0x5a" writefinish="0x6f" readfinish="0x6f"/>
+   <parameter_filter memory_space_ref="Y" readstart="0xffffff" writestart="0xffffff" writefinish="0" readfinish="0"/>
+   <parameter_filter memory_space_ref="P" readstart="0xffffff" writestart="0xffffff" writefinish="0" readfinish="0"/>
+   <dsp_data memory_space_ref="P" address="0x000200" fulladdress="0x100200">
+0x0A00A1 0x00023E 0x0D00BA 0x0D0070 0x0A7001 0x000018 0x0A7002 0x000018 0x0A7021 0x000000 
+0x0D025C 0x0A8902 0x44F400 0x989680 0x06C400 0x000210 0x000000 0x0A8903 0x44F400 0x989680 
+0x06C400 0x000216 0x000000 0x0A8980 0x00021D 0x0D0245 0x0A702F 0x000018 0x0C0223 0x0A8922 
+0x0A8923 0x0A7022 0x000018 0x0A700F 0x000018 0x0A892C 0x0A7020 0x000018 0x200013 0x56A100 
+0x000000 0x561600 0x56B500 0x000000 0x561700 0x200013 0x000000 0x501A00 0x000008 0x000000 
+0x501900 0x0D0087 0x0A7000 0x000018 0x0A7002 0x000018 0x0A7001 0x000018 0x0A890C 0x0A7021 
+0x000000 0x0C0002 0x60F400 0x0000D7 0x0A898E 0x000240 0x065860 0x09D8F3 0x0C0002 0x012F23 
+0x0A0801 0x0A0820 0x0A0822 0x09F0B5 0x000008 0x0D0271 0x60F400 0x000000 0x000000 0x000000 
+0x065840 0x000254 0x5ED800 0x0D0276 0x000000 0x44F400 0x061A80 0x06C400 0x000259 0x000000 
+0x012F03 0x00000C 0x0A0800 0x0A0802 0x09F0B5 0x000008 0x012F23 0x56F400 0x0C3000 0x20001B 
+0x241000 0x45F400 0x001000 0x060480 0x00026E 0x0D0276 0x200040 0x5F7000 0xFFFFF3 0x0D0271 
+0x200068 0x012F03 0x00000C 0x06A08F 0x000273 0x000000 0x000000 0x00000C 0x547000 0x000007 
+0x01A786 0x000278 0x07F42C 0x010000 0x060380 0x000282 0x01A786 0x00027E 0x04CCCC 0x0C1E90 
+0x000000 0x01A786 0x000283 0x07F42C 0x000000 0x54F000 0x000007 0x00000C 0x50F000 0x00003E 
+0x000008 0x000000 0x507000 0x00003E 0x56F000 0x00003E 0x44F000 0x000037 0x200046 0x000000 
+0x561900 0x56F000 0x00003E 0x44F000 0x000036 0x200046 0x0610A0 0x200022 0x000000 0x561A00 
+0x00000C 0x44F000 0x000080 0x56F000 0x00003F 0x200045 0x0E22A9 0x0A7028 0x000000 0x00000C 
+0x304C00 0x0A898E 0x0002AB 0x065860 0x09D8F3 0x44F000 0x00003B 0x06C400 0x0002B7 0x306D00 
+0x0A898E 0x0002B4 0x065860 0x09D8F3 0x305200 0x0A898E 0x0002B9 0x065860 0x09D8F3 0x060180 
+0x0002C3 0x307400 0x0A898E 0x0002C0 0x065860 0x09D8F3 0x44F000 0x000039 0x06C400 0x0002CD 
+0x60F400 0x000094 0x0A898E 0x0002CA 0x065860 0x09D8F3 0x44F000 0x00003A 0x06C400 0x0002D7 
+0x60F400 0x00009B 0x0A898E 0x0002D4 0x065860 0x09D8F3 0x000000 0x00000C 0x066480 0x0002DE 
+0x06E8A3 0x000000 0x000000 0x00000C 
+   </dsp_data>
+   <dsp_data memory_space_ref="X" address="0x00002E" fulladdress="0x20002e">
+0x01FD0D 0x000001 0x000064 0x00012C 0x0005DC 0x000001 0x000010 0x00000C 0xFF0000 0x00FFFF 
+0x0000FF 0x000430 0x000872 0x000860 0x000000 0x000000 0x000000 0xFFFFFF 0x000000 0x000408 
+   </dsp_data>
+   <dsp_data memory_space_ref="X" address="0x000080" fulladdress="0x200080">
+0x000000 
+   </dsp_data>
+   <dsp_data memory_space_ref="Y" address="0x000000" fulladdress="0x400000">
+0x00003C 0x2A0080 0x200196 0x200234 0x200496 0x200834 0x202096 0x204034 0x208096 0x210034 
+0x220196 0x220234 0x220496 0x220834 0x222096 0x224034 0x228096 0x230034 0x2401B6 0x240253 
+0x240480 0x240880 0x242080 0x244080 0x24809D 0x250080 0x260198 0x260258 0x260498 0x260858 
+0x262098 0x264058 0x268080 0x270080 0x2801B6 0x280253 0x280470 0x280870 0x282080 0x284080 
+0x288080 0x290080 0x2A0180 0x2A0280 0x2A0480 0x2A0880 0x2A2080 0x2A4080 0x2A80B1 0x2B0080 
+0x0C86CB 0x0CC6CB 0x0D0BD4 0x0D4BD4 0x0D88A5 0x0DCFBF 0x0E09A5 0x0F0050 0x0F46CB 0x0F88CB 
+0x0FCBFF 0x0C3000 0x7C0007 0x7C000B 0x3E0007 0x3E000B 0x180007 0x18000B 0x000F77 0x000FBB 
+0x000FDD 0x000FEE 0x000C77 0x000CBB 0x000CDD 0x000CEE 0x000005 0x3B3001 0x3B3003 0x3B2033 
+0x3B2133 0x3B2133 0x000005 0x3B2133 0x9F2133 0x9F2033 0x3B3001 0x3B3003 0x00000D 0x3B3001 
+0x3B3003 0x3B2033 0x9F2133 0x183003 0x183001 0x183000 0x182133 0x182033 0x183000 0x183001 
+0x183003 0x000003 0x3B2000 0x9F2000 0x9F2000 0x000003 0x3B2033 0x9F2033 0x9F2033 0x000006 
+0x3B2133 0x3B21FF 0x3B21CC 0x3B21CC 0x3B21FF 0x3B2133 0x000006 0x3B2033 0x3B20F3 0x3B20C3 
+0x3B20C3 0x3B20F3 0x3B2033 0x000006 0x3B2033 0x3B203F 0x3B203C 0x3B203C 0x3B203F 0x3B2033 
+0x000006 0x3B2033 0x3B2033 0x3B2033 0x3B2033 0x3B2033 0x3B2033 0x000006 0x3B2133 0x3B21F3 
+0x3B21C3 0x3B21C3 0x3B21F3 0x3B2133 0x000003 0x3B2033 0x3B2033 0x3B2033 0x000006 0x013002 
+0x013003 0x013001 0x013015 0x013014 0x013006 0x00000C 0x013001 0x013001 0x013003 0x013003 
+0x013002 0x013002 0x013006 0x013006 0x013014 0x013014 0x013005 0x013005 0x00000C 0x013001 
+0x013001 0x013803 0x013803 0x013802 0x013802 0x013806 0x013806 0x013014 0x013014 0x013005 
+0x013005 0x000010 0x000014 0x013002 0x013002 0x013002 0x013002 0x013002 0x020014 0x180007 
+0x000017 0x013002 0x013002 0x02001B 0x18000B 0x06001B 0x000073 0x000034 0x000010 0x000014 
+0x013002 0x013003 0x013011 0x013015 0x013004 0x020017 0x180007 0x00001B 0x013006 0x013002 
+0x02001B 0x18000B 0x06001B 0x000078 0x00F000 0x000010 0x000014 0x013002 0x013003 0x013011 
+0x013015 0x013004 0x020017 0x180007 0x00001B 0x013006 0x013002 0x02001B 0x18000B 0x06001B 
+0x000078 0x000078 0x000016 0x000014 0x013002 0x013003 0x013011 0x013015 0x013004 0x013006 
+0x020017 0x180007 0x00001B 0x013002 0x013003 0x013001 0x013005 0x013004 0x013006 0x013002 
+0x02001B 0x18000B 0x06001B 0x000078 0x00F000 0x000016 0x000014 0x013002 0x013003 0x013011 
+0x013015 0x013004 0x013006 0x020017 0x180007 0x00001B 0x013002 0x013003 0x013001 0x013005 
+0x013004 0x013006 0x013002 0x02001B 0x18000B 0x06001B 0x000078 0x000078 0x00001C 0x000014 
+0x013002 0x013003 0x013011 0x013015 0x013004 0x013006 0x020017 0x180007 0x00001B 0x013002 
+0x013003 0x013001 0x013005 0x013004 0x013006 0x013002 0x013003 0x013001 0x013005 0x013004 
+0x013006 0x013002 0x02001B 0x18000B 0x06001B 0x000078 0x00F000 0x00001C 0x000014 0x013002 
+0x013003 0x013011 0x013015 0x013004 0x013006 0x020017 0x180007 0x00001B 0x013002 0x013003 
+0x013001 0x013005 0x013004 0x013006 0x013002 0x013003 0x013001 0x013005 0x013004 0x013006 
+0x013002 0x02001B 0x18000B 0x06001B 0x000078 0x000018 0x000022 0x000014 0x013002 0x013003 
+0x013011 0x013015 0x013004 0x013006 0x020017 0x180007 0x00001B 0x013002 0x013003 0x013001 
+0x013005 0x013004 0x013006 0x013002 0x013003 0x013001 0x013005 0x013004 0x013006 0x013002 
+0x013003 0x013001 0x013005 0x013004 0x013006 0x013002 0x02001B 0x18000B 0x06001B 0x000078 
+0x00F000 0x000022 0x000014 0x013002 0x013003 0x013011 0x013015 0x013004 0x013006 0x020017 
+0x180007 0x00001B 0x013002 0x013003 0x013001 0x013005 0x013004 0x013006 0x013002 0x013003 
+0x013001 0x013005 0x013004 0x013006 0x013002 0x013003 0x013001 0x013005 0x013004 0x013006 
+0x013002 0x02001B 0x18000B 0x06001B 0x000078 0x000018 0x000028 0x000014 0x013002 0x013003 
+0x013011 0x013015 0x013004 0x013006 0x020017 0x180007 0x00001B 0x013002 0x013003 0x013001 
+0x013005 0x013004 0x013006 0x013002 0x013003 0x013001 0x013005 0x013004 0x013006 0x013002 
+0x013003 0x013001 0x013005 0x013004 0x013006 0x013002 0x013003 0x013001 0x013005 0x013004 
+0x013006 0x013002 0x02001B 0x18000B 0x06001B 0x000078 0x00F000 0x000028 0x000014 0x013002 
+0x013003 0x013011 0x013015 0x013004 0x013006 0x020017 0x180007 0x00001B 0x013002 0x013003 
+0x013001 0x013005 0x013004 0x013006 0x013002 0x013003 0x013001 0x013005 0x013004 0x013006 
+0x013002 0x013003 0x013001 0x013005 0x013004 0x013006 0x013002 0x013003 0x013001 0x013005 
+0x013004 0x013006 0x013002 0x02001B 0x18000B 0x06001B 0x000078 0x000018 0x00002E 0x000014 
+0x013002 0x013003 0x013011 0x013015 0x013004 0x013006 0x020017 0x180007 0x00001B 0x013002 
+0x013003 0x013001 0x013005 0x013004 0x013006 0x013002 0x013003 0x013001 0x013005 0x013004 
+0x013006 0x013002 0x013003 0x013001 0x013005 0x013004 0x013006 0x013002 0x013003 0x013001 
+0x013005 0x013004 0x013006 0x013002 0x013003 0x013001 0x013005 0x013004 0x013006 0x013002 
+0x02001B 0x18000B 0x06001B 0x000078 0x00F000 0x00002E 0x000014 0x013002 0x013003 0x013011 
+0x013015 0x013004 0x013006 0x020017 0x180007 0x00001B 0x013002 0x013003 0x013001 0x013005 
+0x013004 0x013006 0x013002 0x013003 0x013001 0x013005 0x013004 0x013006 0x013002 0x013003 
+0x013001 0x013005 0x013004 0x013006 0x013002 0x013003 0x013001 0x013005 0x013004 0x013006 
+0x013002 0x013003 0x013001 0x013005 0x013004 0x013006 0x013002 0x02001B 0x18000B 0x06001B 
+0x000078 0x000018 0x00002E 0x000014 0x013002 0x013003 0x013011 0x013015 0x013004 0x013006 
+0x020017 0x180007 0x00001B 0x013002 0x013003 0x013001 0x013005 0x013004 0x013006 0x013002 
+0x013003 0x013001 0x013005 0x013004 0x013006 0x013002 0x013003 0x013001 0x013005 0x013004 
+0x013006 0x013002 0x013003 0x013001 0x013005 0x013004 0x013006 0x013002 0x013003 0x013001 
+0x013005 0x013004 0x013006 0x013002 0x02001B 0x18000B 0x06001B 0x000078 0x00F000 0x00003A 
+0x000014 0x013002 0x013003 0x013011 0x013015 0x013004 0x013006 0x020017 0x180007 0x00001B 
+0x013002 0x013003 0x013001 0x013005 0x013004 0x013006 0x013002 0x013003 0x013001 0x013005 
+0x013004 0x013006 0x013002 0x013003 0x013001 0x013005 0x013004 0x013006 0x013002 0x013003 
+0x013001 0x013005 0x013004 0x013006 0x013002 0x013003 0x013001 0x013005 0x013004 0x013006 
+0x013002 0x013003 0x013001 0x013005 0x013004 0x013006 0x013002 0x013003 0x013001 0x013005 
+0x013004 0x013006 0x013002 0x02001B 0x18000B 0x06001B 0x000078 0x000018 0x000016 0x000014 
+0x013001 0x013001 0x013803 0x013803 0x013802 0x013802 0x013806 0x013806 0x013014 0x013014 
+0x013005 0x020017 0x180007 0x00001B 0x013005 0x013001 0x02001B 0x18000B 0x06001B 0x000078 
+0x00F041 0x000016 0x000014 0x013001 0x013001 0x013803 0x013803 0x013802 0x013802 0x013806 
+0x013806 0x013014 0x013014 0x013005 0x020017 0x180007 0x00001B 0x013005 0x013001 0x02001B 
+0x18000B 0x06001B 0x000078 0x000078 0x000021 0x000014 0x013001 0x013001 0x013803 0x013803 
+0x013802 0x013802 0x013806 0x013806 0x013014 0x013014 0x013005 0x020017 0x180007 0x02001B 
+0x013001 0x013001 0x013803 0x013803 0x013802 0x013802 0x013806 0x013806 0x013004 0x013004 
+0x013005 0x013005 0x013001 0x02001B 0x18000B 0x02001B 0x020078 0x00F041 0x000021 0x000014 
+0x013001 0x013001 0x013803 0x013803 0x013802 0x013802 0x013806 0x013806 0x013014 0x013014 
+0x013005 0x020017 0x180007 0x02001B 0x013001 0x013001 0x013803 0x013803 0x013802 0x013802 
+0x013806 0x013806 0x013004 0x013004 0x013005 0x013005 0x013001 0x02001B 0x18000B 0x02001B 
+0x020078 0x000078 0x00002D 0x000014 0x013001 0x013001 0x013803 0x013803 0x013802 0x013802 
+0x013806 0x013806 0x013014 0x013014 0x013005 0x020017 0x180007 0x02001B 0x013001 0x013001 
+0x013803 0x013803 0x013802 0x013802 0x013806 0x013806 0x013004 0x013004 0x013005 0x013005 
+0x013001 0x013001 0x013803 0x013803 0x013802 0x013802 0x013806 0x013806 0x013004 0x013004 
+0x013005 0x013005 0x013001 0x02001B 0x18000B 0x02001B 0x020078 0x00F041 0x00002D 0x000014 
+0x013001 0x013001 0x013803 0x013803 0x013802 0x013802 0x013806 0x013806 0x013014 0x013014 
+0x013005 0x020017 0x180007 0x02001B 0x013001 0x013001 0x013803 0x013803 0x013802 0x013802 
+0x013806 0x013806 0x013004 0x013004 0x013005 0x013005 0x013001 0x013001 0x013803 0x013803 
+0x013802 0x013802 0x013806 0x013806 0x013004 0x013004 0x013005 0x013005 0x013001 0x02001B 
+0x18000B 0x02001B 0x020078 0x000078 0x000039 0x000014 0x013001 0x013001 0x013803 0x013803 
+0x013802 0x013802 0x013806 0x013806 0x013014 0x013014 0x013005 0x020017 0x180007 0x02001B 
+0x013001 0x013001 0x013803 0x013803 0x013802 0x013802 0x013806 0x013806 0x013004 0x013004 
+0x013005 0x013005 0x013001 0x013001 0x013803 0x013803 0x013802 0x013802 0x013806 0x013806 
+0x013004 0x013004 0x013005 0x013005 0x013001 0x013001 0x013803 0x013803 0x013802 0x013802 
+0x013806 0x013806 0x013004 0x013004 0x013005 0x013005 0x013001 0x02001B 0x18000B 0x02001B 
+0x020078 0x00F041 0x000039 0x000014 0x013001 0x013001 0x013803 0x013803 0x013802 0x013802 
+0x013806 0x013806 0x013014 0x013014 0x013005 0x020017 0x180007 0x02001B 0x013001 0x013001 
+0x013803 0x013803 0x013802 0x013802 0x013806 0x013806 0x013004 0x013004 0x013005 0x013005 
+0x013001 0x013001 0x013803 0x013803 0x013802 0x013802 0x013806 0x013806 0x013004 0x013004 
+0x013005 0x013005 0x013001 0x013001 0x013803 0x013803 0x013802 0x013802 0x013806 0x013806 
+0x013004 0x013004 0x013005 0x013005 0x013001 0x02001B 0x18000B 0x02001B 0x020078 0x000078 
+0x000045 0x000014 0x013001 0x013001 0x013803 0x013803 0x013802 0x013802 0x013806 0x013806 
+0x013014 0x013014 0x013005 0x020017 0x180007 0x02001B 0x013001 0x013001 0x013803 0x013803 
+0x013802 0x013802 0x013806 0x013806 0x013004 0x013004 0x013005 0x013005 0x013001 0x013001 
+0x013803 0x013803 0x013802 0x013802 0x013806 0x013806 0x013004 0x013004 0x013005 0x013005 
+0x013001 0x013001 0x013803 0x013803 0x013802 0x013802 0x013806 0x013806 0x013004 0x013004 
+0x013005 0x013005 0x013001 0x013001 0x013803 0x013803 0x013802 0x013802 0x013806 0x013806 
+0x013004 0x013004 0x013005 0x013005 0x013001 0x02001B 0x18000B 0x02001B 0x020078 0x00F041 
+0x000045 0x000014 0x013001 0x013001 0x013803 0x013803 0x013802 0x013802 0x013806 0x013806 
+0x013014 0x013014 0x013005 0x020017 0x180007 0x02001B 0x013001 0x013001 0x013803 0x013803 
+0x013802 0x013802 0x013806 0x013806 0x013004 0x013004 0x013005 0x013005 0x013001 0x013001 
+0x013803 0x013803 0x013802 0x013802 0x013806 0x013806 0x013004 0x013004 0x013005 0x013005 
+0x013001 0x013001 0x013803 0x013803 0x013802 0x013802 0x013806 0x013806 0x013004 0x013004 
+0x013005 0x013005 0x013001 0x013001 0x013803 0x013803 0x013802 0x013802 0x013806 0x013806 
+0x013004 0x013004 0x013005 0x013005 0x013001 0x02001B 0x18000B 0x02001B 0x020078 0x000078 
+0x000051 0x000014 0x013001 0x013001 0x013803 0x013803 0x013802 0x013802 0x013806 0x013806 
+0x013014 0x013014 0x013005 0x020017 0x180007 0x02001B 0x013001 0x013001 0x013803 0x013803 
+0x013802 0x013802 0x013806 0x013806 0x013004 0x013004 0x013005 0x013005 0x013001 0x013001 
+0x013803 0x013803 0x013802 0x013802 0x013806 0x013806 0x013004 0x013004 0x013005 0x013005 
+0x013001 0x013001 0x013803 0x013803 0x013802 0x013802 0x013806 0x013806 0x013004 0x013004 
+0x013005 0x013005 0x013001 0x013001 0x013803 0x013803 0x013802 0x013802 0x013806 0x013806 
+0x013004 0x013004 0x013005 0x013005 0x013001 0x013001 0x013803 0x013803 0x013802 0x013802 
+0x013806 0x013806 0x013004 0x013004 0x013005 0x013005 0x013001 0x02001B 0x18000B 0x02001B 
+0x020078 0x00F041 0x000051 0x000014 0x013001 0x013001 0x013803 0x013803 0x013802 0x013802 
+0x013806 0x013806 0x013014 0x013014 0x013005 0x020017 0x180007 0x02001B 0x013001 0x013001 
+0x013803 0x013803 0x013802 0x013802 0x013806 0x013806 0x013004 0x013004 0x013005 0x013005 
+0x013001 0x013001 0x013803 0x013803 0x013802 0x013802 0x013806 0x013806 0x013004 0x013004 
+0x013005 0x013005 0x013001 0x013001 0x013803 0x013803 0x013802 0x013802 0x013806 0x013806 
+0x013004 0x013004 0x013005 0x013005 0x013001 0x013001 0x013803 0x013803 0x013802 0x013802 
+0x013806 0x013806 0x013004 0x013004 0x013005 0x013005 0x013001 0x013001 0x013803 0x013803 
+0x013802 0x013802 0x013806 0x013806 0x013004 0x013004 0x013005 0x013005 0x013001 0x02001B 
+0x18000B 0x02001B 0x020078 0x00001B 0x000069 0x000014 0x013001 0x013001 0x013803 0x013803 
+0x013802 0x013802 0x013806 0x013806 0x013014 0x013014 0x013005 0x020017 0x180007 0x02001B 
+0x013001 0x013001 0x013803 0x013803 0x013802 0x013802 0x013806 0x013806 0x013004 0x013004 
+0x013005 0x013005 0x013001 0x013001 0x013803 0x013803 0x013802 0x013802 0x013806 0x013806 
+0x013004 0x013004 0x013005 0x013005 0x013001 0x013001 0x013803 0x013803 0x013802 0x013802 
+0x013806 0x013806 0x013004 0x013004 0x013005 0x013005 0x013001 0x013001 0x013803 0x013803 
+0x013802 0x013802 0x013806 0x013806 0x013004 0x013004 0x013005 0x013005 0x013001 0x013001 
+0x013803 0x013803 0x013802 0x013802 0x013806 0x013806 0x013004 0x013004 0x013005 0x013005 
+0x013001 0x013001 0x013803 0x013803 0x013802 0x013802 0x013806 0x013806 0x013004 0x013004 
+0x013005 0x013005 0x013001 0x013001 0x013803 0x013803 0x013802 0x013802 0x013806 0x013806 
+0x013004 0x013004 0x013005 0x013005 0x013001 0x02001B 0x18000B 0x02001B 0x020078 0x00F041 
+0x000069 0x000014 0x013001 0x013001 0x013803 0x013803 0x013802 0x013802 0x013806 0x013806 
+0x013014 0x013014 0x013005 0x020017 0x180007 0x02001B 0x013001 0x013001 0x013803 0x013803 
+0x013802 0x013802 0x013806 0x013806 0x013004 0x013004 0x013005 0x013005 0x013001 0x013001 
+0x013803 0x013803 0x013802 0x013802 0x013806 0x013806 0x013004 0x013004 0x013005 0x013005 
+0x013001 0x013001 0x013803 0x013803 0x013802 0x013802 0x013806 0x013806 0x013004 0x013004 
+0x013005 0x013005 0x013001 0x013001 0x013803 0x013803 0x013802 0x013802 0x013806 0x013806 
+0x013004 0x013004 0x013005 0x013005 0x013001 0x013001 0x013803 0x013803 0x013802 0x013802 
+0x013806 0x013806 0x013004 0x013004 0x013005 0x013005 0x013001 0x013001 0x013803 0x013803 
+0x013802 0x013802 0x013806 0x013806 0x013004 0x013004 0x013005 0x013005 0x013001 0x013001 
+0x013803 0x013803 0x013802 0x013802 0x013806 0x013806 0x013004 0x013004 0x013005 0x013005 
+0x013001 0x02001B 0x18000B 0x02001B 0x020078 0x000078 0x000012 0x3B2001 0x3B2002 0x3B2004 
+0x3B2008 0x3B2010 0x3B2020 0x3B2040 0x3B2080 0x3B2100 0x3B2800 0x3B2000 0x3B3001 0x3B3802 
+0x3B3804 0x3B3810 0x3B3820 0x3B3800 0x3B3000 0x000007 0x7F2033 0x7F2033 0x7F2033 0x7F2833 
+0x7F2033 0x7F2033 0x7F2033 0x000002 0x3B2033 0x3B2033 
+   </dsp_data>
+   <parameter id="START" type="int" access="none" memory_space_ref="P"
+              address="0x000002" fulladdress="0x100002">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="TST_RCV" type="int" access="none" memory_space_ref="P"
+              address="0x000006" fulladdress="0x100006">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="STOP_IDLE" type="int" access="none" memory_space_ref="P"
+              address="0x00000D" fulladdress="0x10000d">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="COM_IN" type="int" access="none" memory_space_ref="P"
+              address="0x00000F" fulladdress="0x10000f">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="GT_ARGS" type="int" access="none" memory_space_ref="P"
+              address="0x000011" fulladdress="0x100011">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="COMMAND" type="int" access="none" memory_space_ref="P"
+              address="0x00001B" fulladdress="0x10001b">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="NOT_COM" type="int" access="none" memory_space_ref="P"
+              address="0x000025" fulladdress="0x100025">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="END_COM" type="int" access="none" memory_space_ref="P"
+              address="0x000026" fulladdress="0x100026">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="ERROR" type="int" access="none" memory_space_ref="P"
+              address="0x000026" fulladdress="0x100026">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="COM_RPY" type="int" access="none" memory_space_ref="P"
+              address="0x000036" fulladdress="0x100036">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="GET_RCV" type="int" access="none" memory_space_ref="P"
+              address="0x000038" fulladdress="0x100038">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="WT_FIFO" type="int" access="none" memory_space_ref="P"
+              address="0x00003C" fulladdress="0x10003c">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="TST1" type="int" access="none" memory_space_ref="P"
+              address="0x000042" fulladdress="0x100042">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="TST2" type="int" access="none" memory_space_ref="P"
+              address="0x000045" fulladdress="0x100045">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="TST3" type="int" access="none" memory_space_ref="P"
+              address="0x000048" fulladdress="0x100048">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="READ_WD" type="int" access="none" memory_space_ref="P"
+              address="0x00004A" fulladdress="0x10004a">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="CLR_RTS" type="int" access="none" memory_space_ref="P"
+              address="0x00006A" fulladdress="0x10006a">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="TX_COM_RPY" type="int" access="none" memory_space_ref="P"
+              address="0x000070" fulladdress="0x100070">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="TX_DATA_HEAD" type="int" access="none" memory_space_ref="P"
+              address="0x000087" fulladdress="0x100087">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="TIM_BUFF" type="int" access="none" memory_space_ref="P"
+              address="0x0000A9" fulladdress="0x1000a9">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="WORD_SEND" type="int" access="none" memory_space_ref="P"
+              address="0x0000AA" fulladdress="0x1000aa">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="OK_RPY" type="int" access="none" memory_space_ref="P"
+              address="0x0000BA" fulladdress="0x1000ba">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="FORMAT_EXP_TIM" type="int" access="none" memory_space_ref="P"
+              address="0x0000CB" fulladdress="0x1000cb">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="RESET" type="int" access="none" memory_space_ref="P"
+              address="0x0000DF" fulladdress="0x1000df">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="R_FO_INIT" type="int" access="none" memory_space_ref="P"
+              address="0x0000E7" fulladdress="0x1000e7">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="STOP" type="int" access="none" memory_space_ref="P"
+              address="0x0000EF" fulladdress="0x1000ef">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="DUMMY_EXPOSE_COMMAND" type="int" access="none" memory_space_ref="P"
+              address="0x0000F4" fulladdress="0x1000f4">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="ABORT" type="int" access="none" memory_space_ref="P"
+              address="0x0000F9" fulladdress="0x1000f9">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="R_FO_INIT1" type="int" access="none" memory_space_ref="P"
+              address="0x000102" fulladdress="0x100102">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="RDMEM" type="int" access="none" memory_space_ref="P"
+              address="0x00010A" fulladdress="0x10010a">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="RDP" type="int" access="none" memory_space_ref="P"
+              address="0x000112" fulladdress="0x100112">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="RDX" type="int" access="none" memory_space_ref="P"
+              address="0x000116" fulladdress="0x100116">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="RDY" type="int" access="none" memory_space_ref="P"
+              address="0x00011A" fulladdress="0x10011a">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="RM_ERR" type="int" access="none" memory_space_ref="P"
+              address="0x00011E" fulladdress="0x10011e">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="BIT_CONV" type="int" access="none" memory_space_ref="P"
+              address="0x00012B" fulladdress="0x10012b">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="WRMEM" type="int" access="none" memory_space_ref="P"
+              address="0x00013A" fulladdress="0x10013a">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="WRP" type="int" access="none" memory_space_ref="P"
+              address="0x000144" fulladdress="0x100144">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="WRX" type="int" access="none" memory_space_ref="P"
+              address="0x000148" fulladdress="0x100148">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="WRY" type="int" access="none" memory_space_ref="P"
+              address="0x00014C" fulladdress="0x10014c">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="WM_ERR" type="int" access="none" memory_space_ref="P"
+              address="0x000150" fulladdress="0x100150">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="EXPOSE" type="int" access="none" memory_space_ref="P"
+              address="0x00015D" fulladdress="0x10015d">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="CHK_COM" type="int" access="none" memory_space_ref="P"
+              address="0x00016D" fulladdress="0x10016d">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="CHK_TIM" type="int" access="none" memory_space_ref="P"
+              address="0x000170" fulladdress="0x100170">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="END_EXP" type="int" access="none" memory_space_ref="P"
+              address="0x000172" fulladdress="0x100172">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="CHK_CMD_TYPE" type="int" access="none" memory_space_ref="P"
+              address="0x00017E" fulladdress="0x10017e">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="CHK_EXT_WDS" type="int" access="none" memory_space_ref="P"
+              address="0x000193" fulladdress="0x100193">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="STOP_EXPOSE" type="int" access="none" memory_space_ref="P"
+              address="0x0001AA" fulladdress="0x1001aa">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="ABORT_EXPOSE" type="int" access="none" memory_space_ref="P"
+              address="0x0001B8" fulladdress="0x1001b8">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="EXTEND_EXPOSE" type="int" access="none" memory_space_ref="P"
+              address="0x0001BC" fulladdress="0x1001bc">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="PAUSE_EXPOSE" type="int" access="none" memory_space_ref="P"
+              address="0x0001C9" fulladdress="0x1001c9">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="PAUSE_WAIT" type="int" access="none" memory_space_ref="P"
+              address="0x0001DC" fulladdress="0x1001dc">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="CONTINUE_EXPOSE" type="int" access="none" memory_space_ref="P"
+              address="0x0001E0" fulladdress="0x1001e0">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="READ_EXPOSE_TIME" type="int" access="none" memory_space_ref="P"
+              address="0x0001E8" fulladdress="0x1001e8">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="RTN_MAIN" type="int" access="none" memory_space_ref="P"
+              address="0x0001F9" fulladdress="0x1001f9">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="APPLICATION" type="int" access="none" memory_space_ref="P"
+              address="0x000200" fulladdress="0x100200">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="INIT" type="int" access="none" memory_space_ref="P"
+              address="0x000201" fulladdress="0x100201">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="L_FO_INIT" type="int" access="none" memory_space_ref="P"
+              address="0x000249" fulladdress="0x100249">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="L_ANALOG" type="int" access="none" memory_space_ref="P"
+              address="0x000262" fulladdress="0x100262">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="XMIT_A_WORD" type="int" access="none" memory_space_ref="P"
+              address="0x000268" fulladdress="0x100268">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="L_XMIT" type="int" access="none" memory_space_ref="P"
+              address="0x000275" fulladdress="0x100275">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="SKIP" type="int" access="none" memory_space_ref="P"
+              address="0x00027C" fulladdress="0x10027c">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="X_BOOT_START" type="int" access="none" memory_space_ref="P"
+              address="0x000283" fulladdress="0x100283">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="BCR" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFFFB</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="AAR0" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFFF9</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="AAR1" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFFF8</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="AAR2" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFFF7</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="AAR3" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFFF6</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="PCTL" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFFFD</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="IPRP" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFFFE</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="IPRC" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFFFF</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="PCRE" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFF9F</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="PRRE" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFF9E</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="PDRE" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFF9D</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="SCR" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFF9C</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="SCCR" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFF9B</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="SRXH" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFF9A</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="SRXM" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFF99</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="SRXL" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFF98</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="STXH" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFF97</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="STXM" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFF96</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="STXL" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFF95</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="STXA" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFF94</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="SSR" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFF93</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="SCITE" type="int" access="none" memory_space_ref="N">
+      <value>0x000009</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="SCIRE" type="int" access="none" memory_space_ref="N">
+      <value>0x000008</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="TRNE" type="int" access="none" memory_space_ref="N">
+      <value>0x000000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="TDRE" type="int" access="none" memory_space_ref="N">
+      <value>0x000001</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="RDRF" type="int" access="none" memory_space_ref="N">
+      <value>0x000002</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="SELSCI" type="int" access="none" memory_space_ref="N">
+      <value>0x00000F</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="TDE" type="int" access="none" memory_space_ref="N">
+      <value>0x000006</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="TE" type="int" access="none" memory_space_ref="N">
+      <value>0x000010</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="PLL_INIT" type="int" access="none" memory_space_ref="N">
+      <value>0x050003</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="HPCR" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFFC4</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="HDR" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFFC9</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="HDDR" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFFC8</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="PCRC" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFFBF</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="PRRC" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFFBE</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="PDRC" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFFBD</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="TX00" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFFBC</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="SSISR0" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFFB7</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="CRB0" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFFB6</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="CRA0" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFFB5</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="PCRD" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFFAF</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="PRRD" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFFAE</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="PDRD" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFFAD</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="TX10" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFFAC</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="SSISR1" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFFA7</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="CRB1" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFFA6</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="CRA1" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFFA5</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="TCSR0" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFF8F</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="TLR0" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFF8E</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="TCPR0" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFF8D</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="TCR0" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFF8C</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="TPLR" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFF83</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="TPCR" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFF82</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="TIM_BIT" type="int" access="none" memory_space_ref="N">
+      <value>0x000000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="TRM" type="int" access="none" memory_space_ref="N">
+      <value>0x000009</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="TCF" type="int" access="none" memory_space_ref="N">
+      <value>0x000015</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="RDFO" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFFF1</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="WRFO" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFFF2</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="WRSS" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFFF3</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="WRLATCH" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFFF5</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="RDAD" type="int" access="none" memory_space_ref="N">
+      <value>0x010000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="EF" type="int" access="none" memory_space_ref="N">
+      <value>0x000009</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="PWROK" type="int" access="none" memory_space_ref="N">
+      <value>0x000000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="LED1" type="int" access="none" memory_space_ref="N">
+      <value>0x000001</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="LVEN" type="int" access="none" memory_space_ref="N">
+      <value>0x000002</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="HVEN" type="int" access="none" memory_space_ref="N">
+      <value>0x000003</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="SSFHF" type="int" access="none" memory_space_ref="N">
+      <value>0x00000E</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="EXT_IN0" type="int" access="none" memory_space_ref="N">
+      <value>0x00000A</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="EXT_IN1" type="int" access="none" memory_space_ref="N">
+      <value>0x00000B</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="EXT_OUT0" type="int" access="none" memory_space_ref="N">
+      <value>0x00000C</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="EXT_OUT1" type="int" access="none" memory_space_ref="N">
+      <value>0x00000D</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="SSFEF" type="int" access="none" memory_space_ref="N">
+      <value>0x000001</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="WRENA" type="int" access="none" memory_space_ref="N">
+      <value>0x000002</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="CDAC" type="int" access="none" memory_space_ref="N">
+      <value>0x000000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="ENCK" type="int" access="none" memory_space_ref="N">
+      <value>0x000002</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="SHUTTER" type="int" access="none" memory_space_ref="N">
+      <value>0x000004</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="TIM_U_RST" type="int" access="none" memory_space_ref="N">
+      <value>0x000005</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="RD_MODE" type="int" access="none" memory_space_ref="N">
+      <value>0x000003</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="ST_RDM" type="int" access="none" memory_space_ref="N">
+      <value>0x00000D</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="BOOT_TBL" type="int" access="none" memory_space_ref="N">
+      <value>0x000000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="COM_TBL" type="int" access="none" memory_space_ref="N">
+      <value>0x000070</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="CON_TBL" type="int" access="none" memory_space_ref="N">
+      <value>0x00002E</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="PAR_TBL" type="int" access="none" memory_space_ref="N">
+      <value>0x00005A</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="CON2_TBL" type="int" access="none" memory_space_ref="N">
+      <value>0x000080</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="CONVAR1_TBL" type="int" access="none" memory_space_ref="N">
+      <value>0x00002E</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="PARAMTR_TBL" type="int" access="none" memory_space_ref="N">
+      <value>0x000080</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="CONVAR2_TBL" type="int" access="none" memory_space_ref="N">
+      <value>0x000100</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="TBL_ADR" type="int" access="none" memory_space_ref="N">
+      <value>0x000000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="NUM_COM" type="int" access="none" memory_space_ref="N">
+      <value>0x00000A</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="APL_ADR" type="int" access="none" memory_space_ref="N">
+      <value>0x000200</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="SLW_BT" type="int" access="none" memory_space_ref="N">
+      <value>0x001000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="APL_LEN" type="int" access="none" memory_space_ref="N">
+      <value>0x000600</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="SSI_RCV" type="int" access="none" memory_space_ref="N">
+      <value>0x000006</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="MSG_RCV" type="int" access="none" memory_space_ref="N">
+      <value>0x000005</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="MSG_ERR" type="int" access="none" memory_space_ref="N">
+      <value>0x000007</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="CON_RUN" type="int" access="none" memory_space_ref="N">
+      <value>0x000008</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="ET_ZERO" type="int" access="none" memory_space_ref="N">
+      <value>0x000009</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="RPT_POW" type="int" access="none" memory_space_ref="N">
+      <value>0x00000F</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="COM_MOD" type="int" access="none" memory_space_ref="N">
+      <value>0x000000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="IDLE_MOD" type="int" access="none" memory_space_ref="N">
+      <value>0x000001</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="TEST_MOD" type="int" access="none" memory_space_ref="N">
+      <value>0x000002</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="BIN_MOD" type="int" access="none" memory_space_ref="N">
+      <value>0x000003</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="SYNC_INT" type="int" access="none" memory_space_ref="N">
+      <value>0x00000B</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="LAST_FRM" type="int" access="none" memory_space_ref="N">
+      <value>0x000000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="STOP_FLG" type="int" access="none" memory_space_ref="N">
+      <value>0x000001</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="PON_ERR" type="int" access="none" memory_space_ref="N">
+      <value>0x000002</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="ABRT_FRM" type="int" access="none" memory_space_ref="N">
+      <value>0x000003</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="VIDSS" type="int" access="none" memory_space_ref="N">
+      <value>0x000000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="VID1" type="int" access="none" memory_space_ref="N">
+      <value>0x000000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="VID2" type="int" access="none" memory_space_ref="N">
+      <value>0x001000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="APPLICATION" type="int" access="none" memory_space_ref="P"
+              address="0x000200" fulladdress="0x100200">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="POWER_ON" type="int" access="none" memory_space_ref="P"
+              address="0x000206" fulladdress="0x100206">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="PWR_ERR" type="int" access="none" memory_space_ref="P"
+              address="0x00021D" fulladdress="0x10021d">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="END_APP" type="int" access="none" memory_space_ref="P"
+              address="0x000223" fulladdress="0x100223">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="IDLE_ARRAY" type="int" access="none" memory_space_ref="P"
+              address="0x00023E" fulladdress="0x10023e">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="SET_BIASES" type="int" access="none" memory_space_ref="P"
+              address="0x000245" fulladdress="0x100245">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="L_DAC1" type="int" access="none" memory_space_ref="P"
+              address="0x000255" fulladdress="0x100255">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="CLEAR_SWITCHES_AND_DACS" type="int" access="none" memory_space_ref="P"
+              address="0x00025C" fulladdress="0x10025c">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="L_VIDEO" type="int" access="none" memory_space_ref="P"
+              address="0x00026F" fulladdress="0x10026f">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="PAL_DLY" type="int" access="none" memory_space_ref="P"
+              address="0x000271" fulladdress="0x100271">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="DLY" type="int" access="none" memory_space_ref="P"
+              address="0x000274" fulladdress="0x100274">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="XMIT_A_WORD" type="int" access="none" memory_space_ref="P"
+              address="0x000276" fulladdress="0x100276">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="L_XMIT" type="int" access="none" memory_space_ref="P"
+              address="0x000283" fulladdress="0x100283">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="INC_EXP_CNT" type="int" access="none" memory_space_ref="P"
+              address="0x00028A" fulladdress="0x10028a">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="CON_CHK" type="int" access="none" memory_space_ref="P"
+              address="0x0002A1" fulladdress="0x1002a1">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="END_CHK" type="int" access="none" memory_space_ref="P"
+              address="0x0002A9" fulladdress="0x1002a9">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="CLEAR_ARRAY" type="int" access="none" memory_space_ref="P"
+              address="0x0002AA" fulladdress="0x1002aa">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="END_VCLKC" type="int" access="none" memory_space_ref="P"
+              address="0x0002B8" fulladdress="0x1002b8">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="END_VCLKC1" type="int" access="none" memory_space_ref="P"
+              address="0x0002C4" fulladdress="0x1002c4">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="X_MOVE3" type="int" access="none" memory_space_ref="P"
+              address="0x0002CE" fulladdress="0x1002ce">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="CLR_AVAL1" type="int" access="none" memory_space_ref="P"
+              address="0x0002D8" fulladdress="0x1002d8">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="MS_DLY" type="int" access="none" memory_space_ref="P"
+              address="0x0002DA" fulladdress="0x1002da">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="MS_DLY_LOOP" type="int" access="none" memory_space_ref="P"
+              address="0x0002DF" fulladdress="0x1002df">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="END_APPLICATION" type="int" access="none" memory_space_ref="P"
+              address="0x0002E0" fulladdress="0x1002e0">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="VERSION" type="int" access="read" memory_space_ref="X"
+              address="0x00002E" fulladdress="0x20002e">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="RESET_DELAY" type="int" access="read" memory_space_ref="X"
+              address="0x00002F" fulladdress="0x20002f">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="PWR_DLY" type="int" access="read" memory_space_ref="X"
+              address="0x000030" fulladdress="0x200030">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="VDD_DLY" type="int" access="read" memory_space_ref="X"
+              address="0x000031" fulladdress="0x200031">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="LNG_DLY" type="int" access="read" memory_space_ref="X"
+              address="0x000032" fulladdress="0x200032">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="RESETS" type="int" access="read" memory_space_ref="X"
+              address="0x000033" fulladdress="0x200033">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="N_RESET" type="int" access="read" memory_space_ref="X"
+              address="0x000034" fulladdress="0x200034">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="PON_DATA" type="int" access="read" memory_space_ref="X"
+              address="0x000035" fulladdress="0x200035">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="MASK_HI" type="int" access="read" memory_space_ref="X"
+              address="0x000036" fulladdress="0x200036">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="MASK_LO" type="int" access="read" memory_space_ref="X"
+              address="0x000037" fulladdress="0x200037">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="MASK_32" type="int" access="read" memory_space_ref="X"
+              address="0x000038" fulladdress="0x200038">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="CLEAR_COLS" type="int" access="read" memory_space_ref="X"
+              address="0x000039" fulladdress="0x200039">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="CLEAR_H" type="int" access="read" memory_space_ref="X"
+              address="0x00003A" fulladdress="0x20003a">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="CLEAR_ROWS" type="int" access="read" memory_space_ref="X"
+              address="0x00003B" fulladdress="0x20003b">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="NO_PIXELS" type="int" access="read" memory_space_ref="X"
+              address="0x00003C" fulladdress="0x20003c">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="NO_WORDS" type="int" access="read" memory_space_ref="X"
+              address="0x00003D" fulladdress="0x20003d">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="EXP_COUNT" type="int" access="read" memory_space_ref="X"
+              address="0x00003E" fulladdress="0x20003e">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="NEG_ONE" type="int" access="read" memory_space_ref="X"
+              address="0x00003F" fulladdress="0x20003f">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="DIV_RESULT" type="int" access="read" memory_space_ref="X"
+              address="0x000040" fulladdress="0x200040">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="IMAGE_ROWS" type="int" access="read" memory_space_ref="X"
+              address="0x000041" fulladdress="0x200041">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="END_CONVAR1" type="int" access="read" memory_space_ref="X"
+              address="0x000042" fulladdress="0x200042">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="NUM_EXPS" type="int" access="none" memory_space_ref="X"
+              address="0x000080" fulladdress="0x200080">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="END_PARAMTR" type="int" access="none" memory_space_ref="X"
+              address="0x000081" fulladdress="0x200081">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="IN_MAX" type="float" access="none" memory_space_ref="N">
+      <value>0x6.000000E+000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="IN_MIN" type="float" access="none" memory_space_ref="N">
+      <value>0x0.000000E+000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="INNREF" type="float" access="none" memory_space_ref="N">
+      <value>0x-1.000000E+001</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="INPREF" type="float" access="none" memory_space_ref="N">
+      <value>0x1.000000E+001</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="INGAIN" type="float" access="none" memory_space_ref="N">
+      <value>0x1.000000E+000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="AD_MAX" type="float" access="none" memory_space_ref="N">
+      <value>0x3.000000E+000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="AD_MIN" type="float" access="none" memory_space_ref="N">
+      <value>0x-1.000000E+001</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="VOD_MAX" type="float" access="none" memory_space_ref="N">
+      <value>0x2.400000E+001</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="VOD_MIN" type="float" access="none" memory_space_ref="N">
+      <value>0x0.000000E+000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="VODNREF" type="float" access="none" memory_space_ref="N">
+      <value>0x2.000000E+000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="VODPREF" type="float" access="none" memory_space_ref="N">
+      <value>0x1.000000E+001</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="VODGAIN" type="float" access="none" memory_space_ref="N">
+      <value>0x3.000000E+000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="VABDGAIN" type="float" access="none" memory_space_ref="N">
+      <value>0x2.000000E+000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="VRD_MAX" type="float" access="none" memory_space_ref="N">
+      <value>0x1.500000E+001</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="VRD_MIN" type="float" access="none" memory_space_ref="N">
+      <value>0x5.000000E+000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="VRDNREF" type="float" access="none" memory_space_ref="N">
+      <value>0x2.000000E+000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="VRDPREF" type="float" access="none" memory_space_ref="N">
+      <value>0x1.000000E+001</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="VRDGAIN" type="float" access="none" memory_space_ref="N">
+      <value>0x2.000000E+000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="VDD_MAX" type="float" access="none" memory_space_ref="N">
+      <value>0x2.000000E+001</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="VDD_MIN" type="float" access="none" memory_space_ref="N">
+      <value>0x0.000000E+000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="VDDNREF" type="float" access="none" memory_space_ref="N">
+      <value>0x2.000000E+000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="VDDPREF" type="float" access="none" memory_space_ref="N">
+      <value>0x1.000000E+001</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="VDDGAIN" type="float" access="none" memory_space_ref="N">
+      <value>0x2.000000E+000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="VIG_MAX" type="float" access="none" memory_space_ref="N">
+      <value>0x1.000000E+001</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="VIG_MIN" type="float" access="none" memory_space_ref="N">
+      <value>0x-1.000000E+001</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="VIGNREF" type="float" access="none" memory_space_ref="N">
+      <value>0x-1.000000E+001</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="VIGPREF" type="float" access="none" memory_space_ref="N">
+      <value>0x1.000000E+001</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="VIGGAIN" type="float" access="none" memory_space_ref="N">
+      <value>0x1.000000E+000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="HV_MAX" type="float" access="none" memory_space_ref="N">
+      <value>0x5.000000E+000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="HV_MIN" type="float" access="none" memory_space_ref="N">
+      <value>0x-5.000000E-002</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="HV_NREF" type="float" access="none" memory_space_ref="N">
+      <value>0x-1.000000E+001</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="HV_PREF" type="float" access="none" memory_space_ref="N">
+      <value>0x1.000000E+001</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="HV_BUFF" type="float" access="none" memory_space_ref="N">
+      <value>0x1.000000E+000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="MAXCLK_HI" type="float" access="none" memory_space_ref="N">
+      <value>0x1.300000E+001</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="MINCLK_HI" type="float" access="none" memory_space_ref="N">
+      <value>0x-1.000000E+001</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="MAXCLK_LO" type="float" access="none" memory_space_ref="N">
+      <value>0x0.000000E+000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="MINCLK_LO" type="float" access="none" memory_space_ref="N">
+      <value>0x-1.300000E+001</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="NREF" type="float" access="none" memory_space_ref="N">
+      <value>0x-2.500000E+000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="PREF" type="float" access="none" memory_space_ref="N">
+      <value>0x2.500000E+000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="CLKGAIN" type="float" access="none" memory_space_ref="N">
+      <value>0x5.200000E+000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="BIAS_ZERO_VOLTS" type="int" access="none" memory_space_ref="N">
+      <value>0x000800</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="CLK_ZERO_VOLTS" type="int" access="none" memory_space_ref="N">
+      <value>0x000800</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="VIDBRD1" type="int" access="none" memory_space_ref="N">
+      <value>0x000000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="CLKBRD1" type="int" access="none" memory_space_ref="N">
+      <value>0x200000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="DAC_CLK0" type="int" access="none" memory_space_ref="N">
+      <value>0x000100</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="DAC_CLK1" type="int" access="none" memory_space_ref="N">
+      <value>0x000200</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="DAC_CLK2" type="int" access="none" memory_space_ref="N">
+      <value>0x000400</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="DAC_CLK3" type="int" access="none" memory_space_ref="N">
+      <value>0x000800</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="DAC_CLK4" type="int" access="none" memory_space_ref="N">
+      <value>0x002000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="DAC_CLK5" type="int" access="none" memory_space_ref="N">
+      <value>0x004000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="DAC_CLK6" type="int" access="none" memory_space_ref="N">
+      <value>0x008000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="DAC_CLK7" type="int" access="none" memory_space_ref="N">
+      <value>0x010000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="DAC_CLK8" type="int" access="none" memory_space_ref="N">
+      <value>0x020100</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="DAC_CLK9" type="int" access="none" memory_space_ref="N">
+      <value>0x020200</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="DAC_CLK10" type="int" access="none" memory_space_ref="N">
+      <value>0x020400</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="DAC_CLK11" type="int" access="none" memory_space_ref="N">
+      <value>0x020800</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="DAC_CLK12" type="int" access="none" memory_space_ref="N">
+      <value>0x022000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="DAC_CLK13" type="int" access="none" memory_space_ref="N">
+      <value>0x024000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="DAC_CLK14" type="int" access="none" memory_space_ref="N">
+      <value>0x028000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="DAC_CLK15" type="int" access="none" memory_space_ref="N">
+      <value>0x030000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="DAC_CLK16" type="int" access="none" memory_space_ref="N">
+      <value>0x040100</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="DAC_CLK17" type="int" access="none" memory_space_ref="N">
+      <value>0x040200</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="DAC_CLK18" type="int" access="none" memory_space_ref="N">
+      <value>0x040400</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="DAC_CLK19" type="int" access="none" memory_space_ref="N">
+      <value>0x040800</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="DAC_CLK20" type="int" access="none" memory_space_ref="N">
+      <value>0x042000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="DAC_CLK21" type="int" access="none" memory_space_ref="N">
+      <value>0x044000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="DAC_CLK22" type="int" access="none" memory_space_ref="N">
+      <value>0x048000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="DAC_CLK23" type="int" access="none" memory_space_ref="N">
+      <value>0x050000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="DAC_CLK24" type="int" access="none" memory_space_ref="N">
+      <value>0x060100</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="DAC_CLK25" type="int" access="none" memory_space_ref="N">
+      <value>0x060200</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="DAC_CLK26" type="int" access="none" memory_space_ref="N">
+      <value>0x060400</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="DAC_CLK27" type="int" access="none" memory_space_ref="N">
+      <value>0x060800</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="DAC_CLK28" type="int" access="none" memory_space_ref="N">
+      <value>0x062000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="DAC_CLK29" type="int" access="none" memory_space_ref="N">
+      <value>0x064000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="DAC_CLK30" type="int" access="none" memory_space_ref="N">
+      <value>0x068000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="DAC_CLK31" type="int" access="none" memory_space_ref="N">
+      <value>0x070000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="DAC_CLK32" type="int" access="none" memory_space_ref="N">
+      <value>0x080100</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="DAC_CLK33" type="int" access="none" memory_space_ref="N">
+      <value>0x080200</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="DAC_CLK34" type="int" access="none" memory_space_ref="N">
+      <value>0x080400</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="DAC_CLK35" type="int" access="none" memory_space_ref="N">
+      <value>0x080800</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="DAC_CLK36" type="int" access="none" memory_space_ref="N">
+      <value>0x082000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="DAC_CLK37" type="int" access="none" memory_space_ref="N">
+      <value>0x084000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="DAC_CLK38" type="int" access="none" memory_space_ref="N">
+      <value>0x088000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="DAC_CLK39" type="int" access="none" memory_space_ref="N">
+      <value>0x090000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="DAC_CLK40" type="int" access="none" memory_space_ref="N">
+      <value>0x0A0100</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="DAC_CLK41" type="int" access="none" memory_space_ref="N">
+      <value>0x0A0200</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="DAC_CLK42" type="int" access="none" memory_space_ref="N">
+      <value>0x0A0400</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="DAC_CLK43" type="int" access="none" memory_space_ref="N">
+      <value>0x0A0800</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="DAC_CLK44" type="int" access="none" memory_space_ref="N">
+      <value>0x0A2000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="DAC_CLK45" type="int" access="none" memory_space_ref="N">
+      <value>0x0A4000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="DAC_CLK46" type="int" access="none" memory_space_ref="N">
+      <value>0x0A8000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="DAC_CLK47" type="int" access="none" memory_space_ref="N">
+      <value>0x0B0000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="UNBUFFERED_DACS" type="int" access="none" memory_space_ref="N">
+      <value>0x0A0080</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="DAC12" type="int" access="none" memory_space_ref="N">
+      <value>0x0C0000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="DAC13" type="int" access="none" memory_space_ref="N">
+      <value>0x0D0000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="DAC14" type="int" access="none" memory_space_ref="N">
+      <value>0x0E0000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="DAC15" type="int" access="none" memory_space_ref="N">
+      <value>0x0F0000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="OUTA" type="int" access="none" memory_space_ref="N">
+      <value>0x000000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="OUTB" type="int" access="none" memory_space_ref="N">
+      <value>0x004000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="OUTC" type="int" access="none" memory_space_ref="N">
+      <value>0x008000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="OUTD" type="int" access="none" memory_space_ref="N">
+      <value>0x00C000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="DACS" type="int" access="none" memory_space_ref="Y"
+              address="0x000000" fulladdress="0x400000">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="END_DACS" type="int" access="none" memory_space_ref="Y"
+              address="0x00003D" fulladdress="0x40003d">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="I1_L" type="int" access="none" memory_space_ref="N">
+      <value>0x000000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="I1_H" type="int" access="none" memory_space_ref="N">
+      <value>0x000001</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="I2_L" type="int" access="none" memory_space_ref="N">
+      <value>0x000000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="I2_H" type="int" access="none" memory_space_ref="N">
+      <value>0x000002</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="I3_L" type="int" access="none" memory_space_ref="N">
+      <value>0x000000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="I3_H" type="int" access="none" memory_space_ref="N">
+      <value>0x000004</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="I4_L" type="int" access="none" memory_space_ref="N">
+      <value>0x000000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="I4_H" type="int" access="none" memory_space_ref="N">
+      <value>0x000008</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="S1_L" type="int" access="none" memory_space_ref="N">
+      <value>0x000000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="S1_H" type="int" access="none" memory_space_ref="N">
+      <value>0x000010</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="S2_L" type="int" access="none" memory_space_ref="N">
+      <value>0x000000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="S2_H" type="int" access="none" memory_space_ref="N">
+      <value>0x000020</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="S3_L" type="int" access="none" memory_space_ref="N">
+      <value>0x000000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="S3_H" type="int" access="none" memory_space_ref="N">
+      <value>0x000040</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="S4_L" type="int" access="none" memory_space_ref="N">
+      <value>0x000000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="S4_H" type="int" access="none" memory_space_ref="N">
+      <value>0x000080</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="DG_L" type="int" access="none" memory_space_ref="N">
+      <value>0x000000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="DG_H" type="int" access="none" memory_space_ref="N">
+      <value>0x000100</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="LED_L" type="int" access="none" memory_space_ref="N">
+      <value>0x000000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="LED_H" type="int" access="none" memory_space_ref="N">
+      <value>0x000800</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="R1_L" type="int" access="none" memory_space_ref="N">
+      <value>0x000000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="R1_H" type="int" access="none" memory_space_ref="N">
+      <value>0x000001</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="R2_L" type="int" access="none" memory_space_ref="N">
+      <value>0x000000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="R2_H" type="int" access="none" memory_space_ref="N">
+      <value>0x000002</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="R3_L" type="int" access="none" memory_space_ref="N">
+      <value>0x000000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="R3_H" type="int" access="none" memory_space_ref="N">
+      <value>0x000004</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="RST_L" type="int" access="none" memory_space_ref="N">
+      <value>0x000000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="RST_H" type="int" access="none" memory_space_ref="N">
+      <value>0x000010</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="OG_L" type="int" access="none" memory_space_ref="N">
+      <value>0x000000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="OG_H" type="int" access="none" memory_space_ref="N">
+      <value>0x000020</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="MULT_L" type="int" access="none" memory_space_ref="N">
+      <value>0x000000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="MULT_H" type="int" access="none" memory_space_ref="N">
+      <value>0x000800</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="CLK2" type="int" access="none" memory_space_ref="N">
+      <value>0x002000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="CLK3" type="int" access="none" memory_space_ref="N">
+      <value>0x003000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="SWVDBD" type="int" access="none" memory_space_ref="N">
+      <value>0x000000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="LATCHH" type="int" access="none" memory_space_ref="N">
+      <value>0x000040</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="CONVTH" type="int" access="none" memory_space_ref="N">
+      <value>0x000020</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="INTEGH" type="int" access="none" memory_space_ref="N">
+      <value>0x000010</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="POLPH" type="int" access="none" memory_space_ref="N">
+      <value>0x000008</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="POLNH" type="int" access="none" memory_space_ref="N">
+      <value>0x000004</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="CLAMPH" type="int" access="none" memory_space_ref="N">
+      <value>0x000002</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="INTRSTH" type="int" access="none" memory_space_ref="N">
+      <value>0x000001</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="LATCHL" type="int" access="none" memory_space_ref="N">
+      <value>0x000000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="CONVTL" type="int" access="none" memory_space_ref="N">
+      <value>0x000000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="INTEGL" type="int" access="none" memory_space_ref="N">
+      <value>0x000000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="POLPL" type="int" access="none" memory_space_ref="N">
+      <value>0x000000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="POLNL" type="int" access="none" memory_space_ref="N">
+      <value>0x000000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="CLAMPL" type="int" access="none" memory_space_ref="N">
+      <value>0x000000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="INTRSTL" type="int" access="none" memory_space_ref="N">
+      <value>0x000000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="GSDAC1" type="int" access="none" memory_space_ref="Y"
+              address="0x00003D" fulladdress="0x40003d">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="SXMIT1" type="int" access="none" memory_space_ref="N">
+      <value>0x00F000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="SXMIT0" type="int" access="none" memory_space_ref="N">
+      <value>0x00F041</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="SXMIT2" type="int" access="none" memory_space_ref="N">
+      <value>0x00F040</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="P_DELAY" type="int" access="none" memory_space_ref="N">
+      <value>0x3B0000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="F_DELAY" type="int" access="none" memory_space_ref="N">
+      <value>0x2A0000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="U_DELAY" type="int" access="none" memory_space_ref="N">
+      <value>0x180000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="D_DELAY" type="int" access="none" memory_space_ref="N">
+      <value>0x9F0000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="N_DELAY" type="int" access="none" memory_space_ref="N">
+      <value>0x050000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="S_DELAY" type="int" access="none" memory_space_ref="N">
+      <value>0x010000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="S1_DELAY" type="int" access="none" memory_space_ref="N">
+      <value>0x010000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="T_DELAY" type="int" access="none" memory_space_ref="N">
+      <value>0x050000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="L_DELAY" type="int" access="none" memory_space_ref="N">
+      <value>0x7F0000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="Z_DELAY" type="int" access="none" memory_space_ref="N">
+      <value>0x000000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="X_DELAY" type="int" access="none" memory_space_ref="N">
+      <value>0x010000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="INT_TIM" type="int" access="none" memory_space_ref="N">
+      <value>0x180000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="INT_TIM_SLOW" type="int" access="none" memory_space_ref="N">
+      <value>0x180000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="INT_TIM_FAST" type="int" access="none" memory_space_ref="N">
+      <value>0x060000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="SWH_DLY" type="int" access="none" memory_space_ref="N">
+      <value>0x020000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="SWH_DLY1" type="int" access="none" memory_space_ref="N">
+      <value>0x020000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="ZRO_DLY" type="int" access="none" memory_space_ref="N">
+      <value>0x000000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="SMP_DLY" type="int" access="none" memory_space_ref="N">
+      <value>0x060000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="SPEED0_1" type="int" access="none" memory_space_ref="Y"
+              address="0x00003E" fulladdress="0x40003e">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="SPEED0_2" type="int" access="none" memory_space_ref="Y"
+              address="0x00003F" fulladdress="0x40003f">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="SPEED1_1" type="int" access="none" memory_space_ref="Y"
+              address="0x000040" fulladdress="0x400040">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="SPEED1_2" type="int" access="none" memory_space_ref="Y"
+              address="0x000041" fulladdress="0x400041">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="SPEED2_1" type="int" access="none" memory_space_ref="Y"
+              address="0x000042" fulladdress="0x400042">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="SPEED2_2" type="int" access="none" memory_space_ref="Y"
+              address="0x000043" fulladdress="0x400043">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="LOW_GAIN_T1" type="int" access="none" memory_space_ref="Y"
+              address="0x000044" fulladdress="0x400044">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="STD_GAIN_T1" type="int" access="none" memory_space_ref="Y"
+              address="0x000045" fulladdress="0x400045">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="MED_GAIN_T1" type="int" access="none" memory_space_ref="Y"
+              address="0x000046" fulladdress="0x400046">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="HIH_GAIN_T1" type="int" access="none" memory_space_ref="Y"
+              address="0x000047" fulladdress="0x400047">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="LOW_GAIN_T5" type="int" access="none" memory_space_ref="Y"
+              address="0x000048" fulladdress="0x400048">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="STD_GAIN_T5" type="int" access="none" memory_space_ref="Y"
+              address="0x000049" fulladdress="0x400049">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="MED_GAIN_T5" type="int" access="none" memory_space_ref="Y"
+              address="0x00004A" fulladdress="0x40004a">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="HIH_GAIN_T5" type="int" access="none" memory_space_ref="Y"
+              address="0x00004B" fulladdress="0x40004b">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="DGATE_ON" type="int" access="none" memory_space_ref="Y"
+              address="0x00004C" fulladdress="0x40004c">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="END_DGATE_ON" type="int" access="none" memory_space_ref="Y"
+              address="0x000052" fulladdress="0x400052">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="DGATE_OFF" type="int" access="none" memory_space_ref="Y"
+              address="0x000052" fulladdress="0x400052">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="END_DGATE_OFF" type="int" access="none" memory_space_ref="Y"
+              address="0x000058" fulladdress="0x400058">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="DUMP_ROW" type="int" access="none" memory_space_ref="Y"
+              address="0x000058" fulladdress="0x400058">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="END_DUMP_ROW" type="int" access="none" memory_space_ref="Y"
+              address="0x000065" fulladdress="0x400065">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="INVERT_CCD" type="int" access="none" memory_space_ref="Y"
+              address="0x000065" fulladdress="0x400065">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="END_INVERT_CCD" type="int" access="none" memory_space_ref="Y"
+              address="0x000069" fulladdress="0x400069">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="INVERT_OFF" type="int" access="none" memory_space_ref="Y"
+              address="0x000069" fulladdress="0x400069">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="END_INVERT_OFF" type="int" access="none" memory_space_ref="Y"
+              address="0x00006D" fulladdress="0x40006d">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="VCLOCK_DG" type="int" access="none" memory_space_ref="Y"
+              address="0x00006D" fulladdress="0x40006d">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="END_VCLOCK_DG" type="int" access="none" memory_space_ref="Y"
+              address="0x000074" fulladdress="0x400074">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="ST_VCLOCK" type="int" access="none" memory_space_ref="Y"
+              address="0x000074" fulladdress="0x400074">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="END_ST_VCLOCK" type="int" access="none" memory_space_ref="Y"
+              address="0x00007B" fulladdress="0x40007b">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="IM_VCLOCK" type="int" access="none" memory_space_ref="Y"
+              address="0x00007B" fulladdress="0x40007b">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="END_IM_VCLOCK" type="int" access="none" memory_space_ref="Y"
+              address="0x000082" fulladdress="0x400082">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="DUM_VCLOCK" type="int" access="none" memory_space_ref="Y"
+              address="0x000082" fulladdress="0x400082">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="END_DUM_VCLOCK" type="int" access="none" memory_space_ref="Y"
+              address="0x000089" fulladdress="0x400089">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="ST_VCLOCK_DG" type="int" access="none" memory_space_ref="Y"
+              address="0x000089" fulladdress="0x400089">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="END_ST_VCLOCK_DG" type="int" access="none" memory_space_ref="Y"
+              address="0x000090" fulladdress="0x400090">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="START_FT" type="int" access="none" memory_space_ref="Y"
+              address="0x000090" fulladdress="0x400090">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="END_START_FT" type="int" access="none" memory_space_ref="Y"
+              address="0x000094" fulladdress="0x400094">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="HH_CLOCK" type="int" access="none" memory_space_ref="Y"
+              address="0x000094" fulladdress="0x400094">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="END_HH_CLOCK" type="int" access="none" memory_space_ref="Y"
+              address="0x00009B" fulladdress="0x40009b">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="HL_CLOCK_L" type="int" access="none" memory_space_ref="Y"
+              address="0x00009B" fulladdress="0x40009b">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="END_HL_CLOCK_L" type="int" access="none" memory_space_ref="Y"
+              address="0x0000A8" fulladdress="0x4000a8">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="HL_CLOCK_H" type="int" access="none" memory_space_ref="Y"
+              address="0x0000A8" fulladdress="0x4000a8">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="END_HL_CLOCK_H" type="int" access="none" memory_space_ref="Y"
+              address="0x0000B5" fulladdress="0x4000b5">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="DUMPIXH" type="int" access="none" memory_space_ref="Y"
+              address="0x0000B5" fulladdress="0x4000b5">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="END_DUMPIXH" type="int" access="none" memory_space_ref="Y"
+              address="0x0000C6" fulladdress="0x4000c6">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="RDTX_PIXEL_H" type="int" access="none" memory_space_ref="Y"
+              address="0x0000C6" fulladdress="0x4000c6">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="H_TM1" type="int" access="none" memory_space_ref="Y"
+              address="0x0000CE" fulladdress="0x4000ce">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="H_TM2" type="int" access="none" memory_space_ref="Y"
+              address="0x0000D3" fulladdress="0x4000d3">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="END_RDTX_PIXEL_H" type="int" access="none" memory_space_ref="Y"
+              address="0x0000D7" fulladdress="0x4000d7">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="DUM_RDTX_PIXEL_H" type="int" access="none" memory_space_ref="Y"
+              address="0x0000D7" fulladdress="0x4000d7">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="H_TM3" type="int" access="none" memory_space_ref="Y"
+              address="0x0000DF" fulladdress="0x4000df">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="H_TM4" type="int" access="none" memory_space_ref="Y"
+              address="0x0000E4" fulladdress="0x4000e4">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="END_DUM_RDTX_PIXEL_H" type="int" access="none" memory_space_ref="Y"
+              address="0x0000E8" fulladdress="0x4000e8">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="RDTX_BIN2_PIXEL_H" type="int" access="none" memory_space_ref="Y"
+              address="0x0000E8" fulladdress="0x4000e8">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="H_TM5" type="int" access="none" memory_space_ref="Y"
+              address="0x0000F1" fulladdress="0x4000f1">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="H_TM6" type="int" access="none" memory_space_ref="Y"
+              address="0x0000FB" fulladdress="0x4000fb">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="END_RDTX_BIN2_PIXEL_H" type="int" access="none" memory_space_ref="Y"
+              address="0x0000FF" fulladdress="0x4000ff">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="DUM_RDTX_BIN2_PIXEL_H" type="int" access="none" memory_space_ref="Y"
+              address="0x0000FF" fulladdress="0x4000ff">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="H_TM7" type="int" access="none" memory_space_ref="Y"
+              address="0x000108" fulladdress="0x400108">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="H_TM8" type="int" access="none" memory_space_ref="Y"
+              address="0x000112" fulladdress="0x400112">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="END_DUM_RDTX_BIN2_PIXEL_H" type="int" access="none" memory_space_ref="Y"
+              address="0x000116" fulladdress="0x400116">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="RDTX_BIN3_PIXEL_H" type="int" access="none" memory_space_ref="Y"
+              address="0x000116" fulladdress="0x400116">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="H_TM9" type="int" access="none" memory_space_ref="Y"
+              address="0x00011F" fulladdress="0x40011f">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="H_TM10" type="int" access="none" memory_space_ref="Y"
+              address="0x00012F" fulladdress="0x40012f">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="END_RDTX_BIN3_PIXEL_H" type="int" access="none" memory_space_ref="Y"
+              address="0x000133" fulladdress="0x400133">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="DUM_RDTX_BIN3_PIXEL_H" type="int" access="none" memory_space_ref="Y"
+              address="0x000133" fulladdress="0x400133">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="H_TM11" type="int" access="none" memory_space_ref="Y"
+              address="0x00013C" fulladdress="0x40013c">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="H_TM12" type="int" access="none" memory_space_ref="Y"
+              address="0x00014C" fulladdress="0x40014c">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="END_DUM_RDTX_BIN3_PIXEL_H" type="int" access="none" memory_space_ref="Y"
+              address="0x000150" fulladdress="0x400150">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="RDTX_BIN4_PIXEL_H" type="int" access="none" memory_space_ref="Y"
+              address="0x000150" fulladdress="0x400150">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="H_TM13" type="int" access="none" memory_space_ref="Y"
+              address="0x000159" fulladdress="0x400159">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="H_TM14" type="int" access="none" memory_space_ref="Y"
+              address="0x00016F" fulladdress="0x40016f">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="END_RDTX_BIN4_PIXEL_H" type="int" access="none" memory_space_ref="Y"
+              address="0x000173" fulladdress="0x400173">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="DUM_RDTX_BIN4_PIXEL_H" type="int" access="none" memory_space_ref="Y"
+              address="0x000173" fulladdress="0x400173">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="H_TM15" type="int" access="none" memory_space_ref="Y"
+              address="0x00017C" fulladdress="0x40017c">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="H_TM16" type="int" access="none" memory_space_ref="Y"
+              address="0x000192" fulladdress="0x400192">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="END_DUM_RDTX_BIN4_PIXEL_H" type="int" access="none" memory_space_ref="Y"
+              address="0x000196" fulladdress="0x400196">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="RDTX_BIN5_PIXEL_H" type="int" access="none" memory_space_ref="Y"
+              address="0x000196" fulladdress="0x400196">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="H_TM17" type="int" access="none" memory_space_ref="Y"
+              address="0x00019F" fulladdress="0x40019f">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="H_TM18" type="int" access="none" memory_space_ref="Y"
+              address="0x0001BB" fulladdress="0x4001bb">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="END_RDTX_BIN5_PIXEL_H" type="int" access="none" memory_space_ref="Y"
+              address="0x0001BF" fulladdress="0x4001bf">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="DUM_RDTX_BIN5_PIXEL_H" type="int" access="none" memory_space_ref="Y"
+              address="0x0001BF" fulladdress="0x4001bf">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="H_TM19" type="int" access="none" memory_space_ref="Y"
+              address="0x0001C8" fulladdress="0x4001c8">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="H_TM20" type="int" access="none" memory_space_ref="Y"
+              address="0x0001E4" fulladdress="0x4001e4">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="END_DUM_RDTX_BIN5_PIXEL_H" type="int" access="none" memory_space_ref="Y"
+              address="0x0001E8" fulladdress="0x4001e8">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="RDTX_BIN6_PIXEL_H" type="int" access="none" memory_space_ref="Y"
+              address="0x0001E8" fulladdress="0x4001e8">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="H_TM21" type="int" access="none" memory_space_ref="Y"
+              address="0x0001F1" fulladdress="0x4001f1">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="H_TM22" type="int" access="none" memory_space_ref="Y"
+              address="0x000213" fulladdress="0x400213">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="END_RDTX_BIN6_PIXEL_H" type="int" access="none" memory_space_ref="Y"
+              address="0x000217" fulladdress="0x400217">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="DUM_RDTX_BIN6_PIXEL_H" type="int" access="none" memory_space_ref="Y"
+              address="0x000217" fulladdress="0x400217">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="H_TM23" type="int" access="none" memory_space_ref="Y"
+              address="0x000220" fulladdress="0x400220">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="H_TM24" type="int" access="none" memory_space_ref="Y"
+              address="0x000242" fulladdress="0x400242">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="END_DUM_RDTX_BIN6_PIXEL_H" type="int" access="none" memory_space_ref="Y"
+              address="0x000246" fulladdress="0x400246">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="RDTX_BIN8_PIXEL_H" type="int" access="none" memory_space_ref="Y"
+              address="0x000246" fulladdress="0x400246">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="H_TM25" type="int" access="none" memory_space_ref="Y"
+              address="0x00024F" fulladdress="0x40024f">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="H_TM26" type="int" access="none" memory_space_ref="Y"
+              address="0x000271" fulladdress="0x400271">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="END_RDTX_BIN8_PIXEL_H" type="int" access="none" memory_space_ref="Y"
+              address="0x000275" fulladdress="0x400275">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="DUM_RDTX_BIN8_PIXEL_H" type="int" access="none" memory_space_ref="Y"
+              address="0x000275" fulladdress="0x400275">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="H_TM27" type="int" access="none" memory_space_ref="Y"
+              address="0x00027E" fulladdress="0x40027e">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="H_TM28" type="int" access="none" memory_space_ref="Y"
+              address="0x0002AC" fulladdress="0x4002ac">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="END_DUM_RDTX_BIN8_PIXEL_H" type="int" access="none" memory_space_ref="Y"
+              address="0x0002B0" fulladdress="0x4002b0">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="RDTX_PIXEL_L" type="int" access="none" memory_space_ref="Y"
+              address="0x0002B0" fulladdress="0x4002b0">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="A_TM1" type="int" access="none" memory_space_ref="Y"
+              address="0x0002BE" fulladdress="0x4002be">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="A_TM2" type="int" access="none" memory_space_ref="Y"
+              address="0x0002C3" fulladdress="0x4002c3">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="END_RDTX_PIXEL_L" type="int" access="none" memory_space_ref="Y"
+              address="0x0002C7" fulladdress="0x4002c7">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="DUM_RDTX_PIXEL_L" type="int" access="none" memory_space_ref="Y"
+              address="0x0002C7" fulladdress="0x4002c7">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="A_TM3" type="int" access="none" memory_space_ref="Y"
+              address="0x0002D5" fulladdress="0x4002d5">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="A_TM4" type="int" access="none" memory_space_ref="Y"
+              address="0x0002DA" fulladdress="0x4002da">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="END_DUM_RDTX_PIXEL_L" type="int" access="none" memory_space_ref="Y"
+              address="0x0002DE" fulladdress="0x4002de">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="RDTX_BIN2_PIXEL_L" type="int" access="none" memory_space_ref="Y"
+              address="0x0002DE" fulladdress="0x4002de">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="A_TM5" type="int" access="none" memory_space_ref="Y"
+              address="0x0002EC" fulladdress="0x4002ec">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="A_TM6" type="int" access="none" memory_space_ref="Y"
+              address="0x0002FC" fulladdress="0x4002fc">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="END_RDTX_BIN2_PIXEL_L" type="int" access="none" memory_space_ref="Y"
+              address="0x000300" fulladdress="0x400300">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="DUM_RDTX_BIN2_PIXEL_L" type="int" access="none" memory_space_ref="Y"
+              address="0x000300" fulladdress="0x400300">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="A_TM7" type="int" access="none" memory_space_ref="Y"
+              address="0x00030E" fulladdress="0x40030e">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="A_TM8" type="int" access="none" memory_space_ref="Y"
+              address="0x00031E" fulladdress="0x40031e">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="END_DUM_RDTX_BIN2_PIXEL_L" type="int" access="none" memory_space_ref="Y"
+              address="0x000322" fulladdress="0x400322">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="RDTX_BIN3_PIXEL_L" type="int" access="none" memory_space_ref="Y"
+              address="0x000322" fulladdress="0x400322">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="A_TM9" type="int" access="none" memory_space_ref="Y"
+              address="0x000330" fulladdress="0x400330">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="A_TM10" type="int" access="none" memory_space_ref="Y"
+              address="0x00034C" fulladdress="0x40034c">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="END_RDTX_BIN3_PIXEL_L" type="int" access="none" memory_space_ref="Y"
+              address="0x000350" fulladdress="0x400350">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="DUM_RDTX_BIN3_PIXEL_L" type="int" access="none" memory_space_ref="Y"
+              address="0x000350" fulladdress="0x400350">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="A_TM11" type="int" access="none" memory_space_ref="Y"
+              address="0x00035E" fulladdress="0x40035e">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="A_TM12" type="int" access="none" memory_space_ref="Y"
+              address="0x00037A" fulladdress="0x40037a">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="END_DUM_RDTX_BIN3_PIXEL_L" type="int" access="none" memory_space_ref="Y"
+              address="0x00037E" fulladdress="0x40037e">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="RDTX_BIN4_PIXEL_L" type="int" access="none" memory_space_ref="Y"
+              address="0x00037E" fulladdress="0x40037e">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="A_TM13" type="int" access="none" memory_space_ref="Y"
+              address="0x00038C" fulladdress="0x40038c">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="A_TM14" type="int" access="none" memory_space_ref="Y"
+              address="0x0003B4" fulladdress="0x4003b4">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="END_RDTX_BIN4_PIXEL_L" type="int" access="none" memory_space_ref="Y"
+              address="0x0003B8" fulladdress="0x4003b8">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="DUM_RDTX_BIN4_PIXEL_L" type="int" access="none" memory_space_ref="Y"
+              address="0x0003B8" fulladdress="0x4003b8">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="A_TM15" type="int" access="none" memory_space_ref="Y"
+              address="0x0003C6" fulladdress="0x4003c6">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="A_TM16" type="int" access="none" memory_space_ref="Y"
+              address="0x0003EE" fulladdress="0x4003ee">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="END_DUM_RDTX_BIN4_PIXEL_L" type="int" access="none" memory_space_ref="Y"
+              address="0x0003F2" fulladdress="0x4003f2">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="RDTX_BIN5_PIXEL_L" type="int" access="none" memory_space_ref="Y"
+              address="0x0003F2" fulladdress="0x4003f2">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="A_TM17" type="int" access="none" memory_space_ref="Y"
+              address="0x000400" fulladdress="0x400400">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="A_TM18" type="int" access="none" memory_space_ref="Y"
+              address="0x000434" fulladdress="0x400434">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="END_RDTX_BIN5_PIXEL_L" type="int" access="none" memory_space_ref="Y"
+              address="0x000438" fulladdress="0x400438">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="DUM_RDTX_BIN5_PIXEL_L" type="int" access="none" memory_space_ref="Y"
+              address="0x000438" fulladdress="0x400438">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="A_TM19" type="int" access="none" memory_space_ref="Y"
+              address="0x000446" fulladdress="0x400446">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="A_TM20" type="int" access="none" memory_space_ref="Y"
+              address="0x00047A" fulladdress="0x40047a">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="END_DUM_RDTX_BIN5_PIXEL_L" type="int" access="none" memory_space_ref="Y"
+              address="0x00047E" fulladdress="0x40047e">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="RDTX_BIN6_PIXEL_L" type="int" access="none" memory_space_ref="Y"
+              address="0x00047E" fulladdress="0x40047e">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="A_TM21" type="int" access="none" memory_space_ref="Y"
+              address="0x00048C" fulladdress="0x40048c">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="A_TM22" type="int" access="none" memory_space_ref="Y"
+              address="0x0004CC" fulladdress="0x4004cc">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="END_RDTX_BIN6_PIXEL_L" type="int" access="none" memory_space_ref="Y"
+              address="0x0004D0" fulladdress="0x4004d0">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="DUM_RDTX_BIN6_PIXEL_L" type="int" access="none" memory_space_ref="Y"
+              address="0x0004D0" fulladdress="0x4004d0">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="A_TM23" type="int" access="none" memory_space_ref="Y"
+              address="0x0004DE" fulladdress="0x4004de">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="A_TM24" type="int" access="none" memory_space_ref="Y"
+              address="0x00051E" fulladdress="0x40051e">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="END_DUM_RDTX_BIN6_PIXEL_L" type="int" access="none" memory_space_ref="Y"
+              address="0x000522" fulladdress="0x400522">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="RDTX_BIN8_PIXEL_L" type="int" access="none" memory_space_ref="Y"
+              address="0x000522" fulladdress="0x400522">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="A_TM25" type="int" access="none" memory_space_ref="Y"
+              address="0x000530" fulladdress="0x400530">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="A_TM26" type="int" access="none" memory_space_ref="Y"
+              address="0x000588" fulladdress="0x400588">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="END_RDTX_BIN8_PIXEL_L" type="int" access="none" memory_space_ref="Y"
+              address="0x00058C" fulladdress="0x40058c">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="DUM_RDTX_BIN8_PIXEL_L" type="int" access="none" memory_space_ref="Y"
+              address="0x00058C" fulladdress="0x40058c">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="A_TM27" type="int" access="none" memory_space_ref="Y"
+              address="0x00059A" fulladdress="0x40059a">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="A_TM28" type="int" access="none" memory_space_ref="Y"
+              address="0x0005F2" fulladdress="0x4005f2">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="END_DUM_RDTX_BIN8_PIXEL_L" type="int" access="none" memory_space_ref="Y"
+              address="0x0005F6" fulladdress="0x4005f6">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="CLOCK_TEST" type="int" access="none" memory_space_ref="Y"
+              address="0x0005F6" fulladdress="0x4005f6">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="END_CLOCK_TEST" type="int" access="none" memory_space_ref="Y"
+              address="0x000609" fulladdress="0x400609">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="PULSE_LED" type="int" access="none" memory_space_ref="Y"
+              address="0x000609" fulladdress="0x400609">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="END_PULSE_LED" type="int" access="none" memory_space_ref="Y"
+              address="0x000611" fulladdress="0x400611">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="CLOCK_DELAY" type="int" access="none" memory_space_ref="Y"
+              address="0x000611" fulladdress="0x400611">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="END_CLOCK_DELAY" type="int" access="none" memory_space_ref="Y"
+              address="0x000614" fulladdress="0x400614">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="END_WAVEFORMS" type="int" access="none" memory_space_ref="Y"
+              address="0x000614" fulladdress="0x400614">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="BCR" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFFFB</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="AAR0" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFFF9</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="AAR1" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFFF8</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="AAR2" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFFF7</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="AAR3" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFFF6</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="PCTL" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFFFD</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="IPRP" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFFFE</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="IPRC" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFFFF</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="PCRE" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFF9F</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="PRRE" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFF9E</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="PDRE" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFF9D</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="SCR" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFF9C</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="SCCR" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFF9B</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="SRXH" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFF9A</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="SRXM" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFF99</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="SRXL" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFF98</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="STXH" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFF97</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="STXM" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFF96</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="STXL" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFF95</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="STXA" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFF94</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="SSR" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFF93</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="SCITE" type="int" access="none" memory_space_ref="N">
+      <value>0x000009</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="SCIRE" type="int" access="none" memory_space_ref="N">
+      <value>0x000008</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="TRNE" type="int" access="none" memory_space_ref="N">
+      <value>0x000000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="TDRE" type="int" access="none" memory_space_ref="N">
+      <value>0x000001</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="RDRF" type="int" access="none" memory_space_ref="N">
+      <value>0x000002</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="SELSCI" type="int" access="none" memory_space_ref="N">
+      <value>0x00000F</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="TDE" type="int" access="none" memory_space_ref="N">
+      <value>0x000006</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="TE" type="int" access="none" memory_space_ref="N">
+      <value>0x000010</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="PLL_INIT" type="int" access="none" memory_space_ref="N">
+      <value>0x050003</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="HPCR" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFFC4</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="HDR" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFFC9</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="HDDR" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFFC8</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="PCRC" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFFBF</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="PRRC" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFFBE</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="PDRC" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFFBD</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="TX00" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFFBC</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="SSISR0" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFFB7</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="CRB0" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFFB6</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="CRA0" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFFB5</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="PCRD" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFFAF</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="PRRD" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFFAE</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="PDRD" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFFAD</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="TX10" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFFAC</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="SSISR1" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFFA7</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="CRB1" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFFA6</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="CRA1" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFFA5</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="TCSR0" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFF8F</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="TLR0" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFF8E</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="TCPR0" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFF8D</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="TCR0" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFF8C</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="TPLR" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFF83</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="TPCR" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFF82</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="TIM_BIT" type="int" access="none" memory_space_ref="N">
+      <value>0x000000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="TRM" type="int" access="none" memory_space_ref="N">
+      <value>0x000009</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="TCF" type="int" access="none" memory_space_ref="N">
+      <value>0x000015</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="RDFO" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFFF1</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="WRFO" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFFF2</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="WRSS" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFFF3</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="WRLATCH" type="int" access="none" memory_space_ref="N">
+      <value>0xFFFFF5</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="RDAD" type="int" access="none" memory_space_ref="N">
+      <value>0x010000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="EF" type="int" access="none" memory_space_ref="N">
+      <value>0x000009</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="PWROK" type="int" access="none" memory_space_ref="N">
+      <value>0x000000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="LED1" type="int" access="none" memory_space_ref="N">
+      <value>0x000001</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="LVEN" type="int" access="none" memory_space_ref="N">
+      <value>0x000002</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="HVEN" type="int" access="none" memory_space_ref="N">
+      <value>0x000003</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="SSFHF" type="int" access="none" memory_space_ref="N">
+      <value>0x00000E</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="EXT_IN0" type="int" access="none" memory_space_ref="N">
+      <value>0x00000A</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="EXT_IN1" type="int" access="none" memory_space_ref="N">
+      <value>0x00000B</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="EXT_OUT0" type="int" access="none" memory_space_ref="N">
+      <value>0x00000C</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="EXT_OUT1" type="int" access="none" memory_space_ref="N">
+      <value>0x00000D</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="SSFEF" type="int" access="none" memory_space_ref="N">
+      <value>0x000001</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="WRENA" type="int" access="none" memory_space_ref="N">
+      <value>0x000002</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="CDAC" type="int" access="none" memory_space_ref="N">
+      <value>0x000000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="ENCK" type="int" access="none" memory_space_ref="N">
+      <value>0x000002</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="SHUTTER" type="int" access="none" memory_space_ref="N">
+      <value>0x000004</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="TIM_U_RST" type="int" access="none" memory_space_ref="N">
+      <value>0x000005</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="RD_MODE" type="int" access="none" memory_space_ref="N">
+      <value>0x000003</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="ST_RDM" type="int" access="none" memory_space_ref="N">
+      <value>0x00000D</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="BOOT_TBL" type="int" access="none" memory_space_ref="N">
+      <value>0x000000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="COM_TBL" type="int" access="none" memory_space_ref="N">
+      <value>0x000070</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="CON_TBL" type="int" access="none" memory_space_ref="N">
+      <value>0x00002E</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="PAR_TBL" type="int" access="none" memory_space_ref="N">
+      <value>0x00005A</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="CON2_TBL" type="int" access="none" memory_space_ref="N">
+      <value>0x000080</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="CONVAR1_TBL" type="int" access="none" memory_space_ref="N">
+      <value>0x00002E</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="PARAMTR_TBL" type="int" access="none" memory_space_ref="N">
+      <value>0x000080</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="CONVAR2_TBL" type="int" access="none" memory_space_ref="N">
+      <value>0x000100</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="TBL_ADR" type="int" access="none" memory_space_ref="N">
+      <value>0x000000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="NUM_COM" type="int" access="none" memory_space_ref="N">
+      <value>0x00000A</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="APL_ADR" type="int" access="none" memory_space_ref="N">
+      <value>0x000200</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="SLW_BT" type="int" access="none" memory_space_ref="N">
+      <value>0x001000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="APL_LEN" type="int" access="none" memory_space_ref="N">
+      <value>0x000600</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="SSI_RCV" type="int" access="none" memory_space_ref="N">
+      <value>0x000006</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="MSG_RCV" type="int" access="none" memory_space_ref="N">
+      <value>0x000005</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="MSG_ERR" type="int" access="none" memory_space_ref="N">
+      <value>0x000007</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="CON_RUN" type="int" access="none" memory_space_ref="N">
+      <value>0x000008</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="ET_ZERO" type="int" access="none" memory_space_ref="N">
+      <value>0x000009</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="RPT_POW" type="int" access="none" memory_space_ref="N">
+      <value>0x00000F</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="COM_MOD" type="int" access="none" memory_space_ref="N">
+      <value>0x000000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="IDLE_MOD" type="int" access="none" memory_space_ref="N">
+      <value>0x000001</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="TEST_MOD" type="int" access="none" memory_space_ref="N">
+      <value>0x000002</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="BIN_MOD" type="int" access="none" memory_space_ref="N">
+      <value>0x000003</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="SYNC_INT" type="int" access="none" memory_space_ref="N">
+      <value>0x00000B</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="LAST_FRM" type="int" access="none" memory_space_ref="N">
+      <value>0x000000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="STOP_FLG" type="int" access="none" memory_space_ref="N">
+      <value>0x000001</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="PON_ERR" type="int" access="none" memory_space_ref="N">
+      <value>0x000002</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="ABRT_FRM" type="int" access="none" memory_space_ref="N">
+      <value>0x000003</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="VIDSS" type="int" access="none" memory_space_ref="N">
+      <value>0x000000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="VID1" type="int" access="none" memory_space_ref="N">
+      <value>0x000000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="VID2" type="int" access="none" memory_space_ref="N">
+      <value>0x001000</value>
+      <units></units>
+      <comment>(symbolic constant)</comment>
+   </parameter>
+   <parameter id="STATUS" type="int" access="read" memory_space_ref="X"
+              address="0x000000" fulladdress="0x200000">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="BOOT_VERSION" type="int" access="read" memory_space_ref="X"
+              address="0x000001" fulladdress="0x200001">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="EXP_TIM" type="int" access="read" memory_space_ref="X"
+              address="0x000002" fulladdress="0x200002">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="ACTUAL_EXP_TIM" type="int" access="read" memory_space_ref="X"
+              address="0x000003" fulladdress="0x200003">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="ELAPSED_EXP_TIM" type="int" access="read" memory_space_ref="X"
+              address="0x000004" fulladdress="0x200004">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="TX_WD1" type="int" access="read" memory_space_ref="X"
+              address="0x000005" fulladdress="0x200005">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="TX_WD2" type="int" access="read" memory_space_ref="X"
+              address="0x000006" fulladdress="0x200006">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="SV_A1" type="int" access="read" memory_space_ref="X"
+              address="0x000007" fulladdress="0x200007">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="LATCH" type="int" access="read" memory_space_ref="X"
+              address="0x000008" fulladdress="0x200008">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="C100K" type="int" access="read" memory_space_ref="X"
+              address="0x000009" fulladdress="0x200009">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="AC_HEAD" type="int" access="read" memory_space_ref="X"
+              address="0x00000A" fulladdress="0x20000a">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="COM_SAV" type="int" access="read" memory_space_ref="X"
+              address="0x00000B" fulladdress="0x20000b">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="ARG1_SAV" type="int" access="read" memory_space_ref="X"
+              address="0x00000C" fulladdress="0x20000c">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="ARG2_SAV" type="int" access="read" memory_space_ref="X"
+              address="0x00000D" fulladdress="0x20000d">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="REP_H1" type="int" access="read" memory_space_ref="X"
+              address="0x00000E" fulladdress="0x20000e">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="REP_H2" type="int" access="read" memory_space_ref="X"
+              address="0x00000F" fulladdress="0x20000f">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="REP_H3" type="int" access="read" memory_space_ref="X"
+              address="0x000010" fulladdress="0x200010">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="REP_W1" type="int" access="read" memory_space_ref="X"
+              address="0x000011" fulladdress="0x200011">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="REP_W2" type="int" access="read" memory_space_ref="X"
+              address="0x000012" fulladdress="0x200012">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="REP_W3" type="int" access="read" memory_space_ref="X"
+              address="0x000013" fulladdress="0x200013">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="REP_W4" type="int" access="read" memory_space_ref="X"
+              address="0x000014" fulladdress="0x200014">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="DAT_H1" type="int" access="read" memory_space_ref="X"
+              address="0x000015" fulladdress="0x200015">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="DAT_H2" type="int" access="read" memory_space_ref="X"
+              address="0x000016" fulladdress="0x200016">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="DAT_H3" type="int" access="read" memory_space_ref="X"
+              address="0x000017" fulladdress="0x200017">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="STA_W1" type="int" access="read" memory_space_ref="X"
+              address="0x000018" fulladdress="0x200018">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="FRM_CNTL" type="int" access="read" memory_space_ref="X"
+              address="0x000019" fulladdress="0x200019">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="FRM_CNTH" type="int" access="read" memory_space_ref="X"
+              address="0x00001A" fulladdress="0x20001a">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="EXP_CNTL" type="int" access="read" memory_space_ref="X"
+              address="0x00001B" fulladdress="0x20001b">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="EXP_CNTH" type="int" access="read" memory_space_ref="X"
+              address="0x00001C" fulladdress="0x20001c">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="TIM_WORD" type="int" access="read" memory_space_ref="X"
+              address="0x00001D" fulladdress="0x20001d">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="PRE_DAT" type="int" access="read" memory_space_ref="X"
+              address="0x00001E" fulladdress="0x20001e">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="N_TIM_WDS" type="int" access="read" memory_space_ref="X"
+              address="0x00001F" fulladdress="0x20001f">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="MASK_16BIT" type="int" access="read" memory_space_ref="X"
+              address="0x000020" fulladdress="0x200020">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="ZERO" type="int" access="read" memory_space_ref="X"
+              address="0x000021" fulladdress="0x200021">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="ONE" type="int" access="read" memory_space_ref="X"
+              address="0x000022" fulladdress="0x200022">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="TWO" type="int" access="read" memory_space_ref="X"
+              address="0x000023" fulladdress="0x200023">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="THREE" type="int" access="read" memory_space_ref="X"
+              address="0x000024" fulladdress="0x200024">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="FOUR" type="int" access="read" memory_space_ref="X"
+              address="0x000025" fulladdress="0x200025">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="FIVE" type="int" access="read" memory_space_ref="X"
+              address="0x000026" fulladdress="0x200026">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="SIX" type="int" access="read" memory_space_ref="X"
+              address="0x000027" fulladdress="0x200027">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="SEVEN" type="int" access="read" memory_space_ref="X"
+              address="0x000028" fulladdress="0x200028">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="EIGHT" type="int" access="read" memory_space_ref="X"
+              address="0x000029" fulladdress="0x200029">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="ER" type="int" access="read" memory_space_ref="X"
+              address="0x00002A" fulladdress="0x20002a">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="OK" type="int" access="read" memory_space_ref="X"
+              address="0x00002B" fulladdress="0x20002b">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="ABT" type="int" access="read" memory_space_ref="X"
+              address="0x00002C" fulladdress="0x20002c">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="EXT" type="int" access="read" memory_space_ref="X"
+              address="0x00002D" fulladdress="0x20002d">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="END_X_BOOT_VALUES" type="int" access="read" memory_space_ref="X"
+              address="0x00002E" fulladdress="0x20002e">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="COM_TAB_START" type="int" access="readwrite" memory_space_ref="X"
+              address="0x00006E" fulladdress="0x20006e">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="END_X_TBL" type="int" access="none" memory_space_ref="X"
+              address="0x00007E" fulladdress="0x20007e">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+   <parameter id="END_ADR" type="int" access="none" memory_space_ref="X"
+              address="0x00007E" fulladdress="0x20007e">
+      <value></value>
+      <units></units>
+      <comment></comment>
+   </parameter>
+</coff>

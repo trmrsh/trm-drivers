@@ -1,0 +1,56 @@
+<?xml version="1.0"?>
+
+<!-- This XML document contains a description of the SDSU controller DSP card.
+
+     Author: Steven Beard
+  -->
+
+<dsp_hardware id="controller" name="SDSU controller" type="DSP56000" xmlns:xlink="http://www.w3.org/1999/xlink">
+
+   <description>  <!-- Comment describing the function of this card -->
+This card controls the SDSU CCD electronics
+   </description>
+
+   <!-- A description of the memory spaces that the card supports -->
+
+   <memory_space id="P" mask= "0x100000" start="0x000000" finish="0x001fff"/>
+   <memory_space id="X" mask= "0x200000" start="0x000000" finish="0x001fff"/>
+   <memory_space id="Y" mask= "0x400000" start="0x000000" finish="0x003fff"/>
+   <memory_space id="E" mask= "0x100000" start="0x004000" finish="0x00ffff"/>
+
+
+   <!-- There can now be one or more "parameter" elements describing the parameters (such as
+        latches etc.) that permanently exist on the DSP hardware regardless of which application
+        is downloaded. Each parameter can be read/write accessible and will normally exist within
+        the non-volatile RAM within the DSP.
+     -->
+
+   <parameter id="reset" type="int" access="write" fulladdress="0x000000"> 
+
+      <value default="0.0">  <!-- current value of parameter -->
+      </value>
+
+      <description>  <!-- Comment describing the parameter (optional) -->
+The processor reset register?
+      </description>
+
+   </parameter>
+
+
+   <!-- The boot-code element describes the boot code installed on the card. -->
+        hred contains a URI pointing to the XML document (based on the boot_application.xml template)
+        containing the DSP bootcode. This file contains a description of all the
+        parameters defined by the boot code.
+     -->
+
+   <bootcode xlink:href="sdsu_bootcode.xml"/>
+
+   <!-- The applications runnable on this hardware can be found by looking for all the
+        XML files in the XML subdirectory containing "executable_application" elements
+        with the "destination" element appropriate for this DSP.
+     -->
+
+</dsp_hardware>
+
+
+

@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+
+<!-- This XML document describes the VLT environment
+
+     Author: Vik Dhillon, Paranal, 30-April-2005
+  -->
+
+<observatory name="European Southern Observatory, Paranal, Chile" time_zone="-5"
+xmlns:xlink="http://www.w3.org/1999/xlink">
+
+   <object_catalogue>  <!-- Name of this observatory's object catalogue (optional) -->
+/usr/local/etc/objects.dat
+   </object_catalogue>
+
+   <telescope name="Very Large Telescope, UT3 (Melipal)" id="VLT_UT3">
+      <!-- Where exactly is the telescope? -->
+      <!-- Latitude in degrees North -->
+      <!-- Longitude in degrees West -->
+      <!-- Height in metres above sea level -->
+      <global_position latitude="-24.6250833" longitude="70.4027489" height="2635.42993"/>  
+
+   </telescope>
+
+</observatory>
