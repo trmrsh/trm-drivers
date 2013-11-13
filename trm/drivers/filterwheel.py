@@ -46,21 +46,21 @@ class FilterWheel(object):
                                        ' serial commands')
         self.initialised = True
 
-    def sendCommand(self,str):
+    def sendCommand(self,comm):
         """
         wrapper function to send commands to filter wheel
         """
-        if not self.initialised:
+        if not self.initialised and comm != 'WSMODE':
             raise FilterWheelError('Filter wheel not initialised')
 
         if not self.connected:
             raise FilterWheelError('Filter wheel not connected')
 
-        if str=='WHOME' or str.startswith('WGOTO'):
+        if comm == 'WHOME' or comm.startswith('WGOTO'):
             self.ser.setTimeout(30)
         else:
             self.ser.setTimeout(self.default_timeout)
-        self.ser.write(str+'\r\n',)
+        self.ser.write(comm+'\r\n',)
         retVal = self.ser.readline()
 
         # return command with leading and trailing whitespace removed
@@ -131,7 +131,7 @@ class FilterWheel(object):
         if response != '*':
             raise FilterWheelError('unrecognised error ' + response)
 
-    def reBoot(self):
+    def reboot(self):
         """
         use this to fix a non-responding filter wheel
         """
@@ -157,45 +157,54 @@ class WheelController(tk.Toplevel):
                   run parameters (target name etc), 'clog' and 'rlog'
         """
 
-        width = 10
+        width = 12
         tk.Toplevel.__init__(self)
         self.title('Filter selector')
 
+        self.wheel = wheel
+        self.share = share
+
         cpars, clog = share['cpars'], share['clog']
         try:
-            if not wheel.connected:
-                wheel.connect()
-                wheel.init()
+            if not self.wheel.connected:
+                self.wheel.connect()
+                self.wheel.init()
         except Exception, err:
             clog.log.warn('Filter wheel error\n')
             clog.log.warn(str(err) + '\n')
 
         self.filter = drvs.Choice(self, cpars['active_filter_names'],
-                                  width=width)
+                                  width=width-1)
         self.filter.grid(row=0,column=0)
 
         self.go     = drvs.ActButton(self, width, share, self._go, text='go')
         self.go.grid(row=0, column=1)
 
-        self.home   = drvs.ActButton(self, width, share, text='home')
+        self.home   = drvs.ActButton(self, width, share, self._home,
+                                     text='home wheel')
         self.home.grid(row=1, column=0)
 
-        self.init   = drvs.ActButton(self, width, share, text='init')
+        self.init   = drvs.ActButton(self, width, share, self._init,
+                                     text='init wheel')
         self.init.grid(row=1, column=1)
 
-        self.close   = drvs.ActButton(self, width, share, text='close')
+        self.close   = drvs.ActButton(self, width, share, self._close,
+                                      text='close wheel')
         self.close.grid(row=2, column=1)
 
-        self.wheel = wheel
-        self.share = share
-
     def _go(self, *args):
-        """
-        Defines go action. Might want to do this in background.
-        """
         findex = self.filter.options.index(self.filter.value())+1
         print('filter index desired =',findex)
         self.wheel.goto(findex)
+
+    def _home(self, *args):
+        self.wheel.home()
+
+    def _close(self, *args):
+        self.wheel.close()
+
+    def _init(self, *args):
+        self.wheel.reboot()
 
 class FilterWheelError(Exception):
     pass

@@ -3,13 +3,13 @@ from __future__ import print_function
 
 usage = \
 """
-Python replacement for usdriver GUI. 
+Python replacement for usdriver GUI.
 
 Author: Tom Marsh
 
 This allows you to define the windows and readout mode you want to use.
 The window setup can be carried out at any time, including while a run
-is exposing. Nothing is sent to the camera until you send the 'post' 
+is exposing. Nothing is sent to the camera until you send the 'post'
 command.
 """
 
@@ -35,6 +35,7 @@ class GUI(tk.Tk):
         # Create the main GUI
         tk.Tk.__init__(self)
         self.title('usdriver')
+        self.protocol("WM_DELETE_WINDOW", self.ask_quit)
 
         # Style it
         drvs.addStyle(self)
@@ -48,14 +49,14 @@ class GUI(tk.Tk):
         clog = drvs.LogDisplay(self, 5, 50, 'Command log')
         rlog = drvs.LogDisplay(self, 5, 56, 'Response log')
 
-        # dictionary of objects to share. Used to pass the widgets 
+        # dictionary of objects to share. Used to pass the widgets
         # from one to another. Basically a thinly-disguised global
         share = {'clog' : clog, 'rlog' : rlog, 'cpars' : cpars}
 
-        # Instrument setup frame. 
+        # Instrument setup frame.
         instpars  = uspec.InstPars(self, share)
         share.update({'instpars' : instpars})
-        
+
         print('created instpars')
 
         # Run setup data frame
@@ -116,11 +117,11 @@ class GUI(tk.Tk):
 
         # Top menubar
         menubar = tk.Menu(self)
-        menubar.add_command(label="Quit", command=self.quit)
+        menubar.add_command(label="Quit", command=self.ask_quit)
 
         # Settings menu
         settingsMenu = tk.Menu(menubar, tearoff=0)
-        
+
         # level of expertise
         expertMenu   = drvs.ExpertMenu(settingsMenu, cpars, observe, setup)
         settingsMenu.add_cascade(label='Expert', menu=expertMenu)
@@ -131,22 +132,22 @@ class GUI(tk.Tk):
             var=drvs.Boolean('require_run_params',cpars))
 
         settingsMenu.add_checkbutton(
-            label='Confirm HV gain', 
+            label='Confirm HV gain',
             var=drvs.Boolean('confirm_hv_gain_on',cpars))
 
         settingsMenu.add_checkbutton(
-            label='Confirm target', 
+            label='Confirm target',
             var=drvs.Boolean('confirm_on_change',cpars))
 
         settingsMenu.add_checkbutton(
-            label='Access TCS', 
+            label='Access TCS',
             var=drvs.Boolean('access_tcs',cpars))
 
         # Add to menubar
         menubar.add_cascade(label='Settings', menu=settingsMenu)
 
         # Filter selector. First create a FilterWheel
-        wheel = filterwheel.FilterWheel()
+        self.wheel = filterwheel.FilterWheel()
 
         class SetFilter(object):
             """
@@ -159,15 +160,15 @@ class GUI(tk.Tk):
                 self.wc    = None
 
             def __call__(self):
-                if self.wc is None:
+                if self.wc is None or not self.wc.winfo_exists():
                     self.wc = \
-						filterwheel.WheelController(self.wheel, self.share)
+                        filterwheel.WheelController(self.wheel, self.share)
                 else:
                     clog = self.share['clog']
-                    clog.log.info('There is already a wheel control window')
+                    clog.log.info('There already is a wheel control window')
 
         # create the SetFilter attach to the Filters label
-        setfilt = SetFilter(wheel, share)
+        setfilt = SetFilter(self.wheel, share)
         menubar.add_command(label='Filters', command=setfilt)
 
         # Stick the menubar in place
@@ -190,11 +191,13 @@ class GUI(tk.Tk):
                 t.daemon = True
                 t.start()
                 print('rtplot server started on port',
-					  cpars['rtplot_server_port'])
-            except Exception as e:
+                      cpars['rtplot_server_port'])
+            except Exception, e:
                 print('Problem trying to start rtplot server:', e)
         else:
             print('rtplot server was not started')
+
+        self.share = share
 
     def startRtplotServer(self, x):
         """
@@ -202,10 +205,21 @@ class GUI(tk.Tk):
         It is at this point that we pass the window parameters
         to the server.
         """
-        self.server = drvs.RtplotServer(self.instpars, 
-										self.cpars['rtplot_server_port'])
+        self.server = drvs.RtplotServer(self.instpars,
+                                        self.cpars['rtplot_server_port'])
         self.server.run()
 
+    def ask_quit(self):
+        cpars, clog = self.share['cpars'], self.share['clog']
+        if cpars['confirm_on_quit']:
+            if not tkMessageBox.askokcancel(
+                'Do you really want to quit usdriver?'):
+                clog.log.warn('Quit usdriver cancelled.\n')
+            else:
+                if self.wheel.connected:
+                    self.wheel.close()
+                    print('closed filter wheel')
+                self.destroy()
 
 if __name__ == '__main__':
 
@@ -216,9 +230,9 @@ if __name__ == '__main__':
     # parser.add_argument('run', help='run to plot, e.g. "run045"')
 
     # optional
-    parser.add_argument('-c', dest='cpars', default='usdriver.conf', 
+    parser.add_argument('-c', dest='cpars', default='usdriver.conf',
                         help='configuration file name')
-    
+
     try:
         # OK, parse arguments
         args = parser.parse_args()

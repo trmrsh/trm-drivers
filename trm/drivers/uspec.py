@@ -14,10 +14,10 @@ import filterwheel as fwheel
 import math
 
 # Timing, gain, noise parameters lifted from java usdriver
-VCLOCK           =  14.4e-6  # vertical clocking time 
+VCLOCK           =  14.4e-6  # vertical clocking time
 HCLOCK_NORM      =  0.48e-6  # normal mode horizontal clock
 HCLOCK_AV        =  0.96e-6  # avalanche mode horizontal clock
-VIDEO_NORM_SLOW  = 11.20e-6  
+VIDEO_NORM_SLOW  = 11.20e-6
 VIDEO_NORM_MED   =  6.24e-6
 VIDEO_NORM_FAST  =  3.20e-6
 VIDEO_AV_SLOW    = 11.20e-6
@@ -62,7 +62,7 @@ class InstPars(tk.LabelFrame):
     """
     Ultraspec instrument parameters block.
     """
-        
+
     def __init__(self, master, share):
         """
         master : enclosing widget
@@ -337,7 +337,7 @@ class InstPars(tk.LabelFrame):
         Estimates timing information for the current setup. You should
         run a check on the instrument parameters before calling this.
 
-        Returns: (expTime, deadTime, cycleTime, dutyCycle) 
+        Returns: (expTime, deadTime, cycleTime, dutyCycle)
 
         expTime   : exposure time per frame (seconds)
         deadTime  : dead time per frame (seconds)
@@ -349,7 +349,7 @@ class InstPars(tk.LabelFrame):
         # avalanche mode y/n?
         lnormal = not self.avalanche()
         HCLOCK  = HCLOCK_NORM if lnormal else HCLOCK_AV
-		
+
         # drift mode y/n?
         isDriftMode = self.app.value() == 'Drift'
 
@@ -367,7 +367,7 @@ class InstPars(tk.LabelFrame):
                                  + readSpeed + ' not recognised.')
 
         # clear chip on/off?
-        lclear = not isDriftMode and self.clear() 
+        lclear = not isDriftMode and self.clear()
         print('clear =',lclear,self.clear(),isDriftMode)
 
         # get exposure delay
@@ -375,16 +375,16 @@ class InstPars(tk.LabelFrame):
 
         # window parameters
         if isDriftMode:
-            xbin    = self.pframe.xbin.value()	
-            ybin    = self.pframe.ybin.value()	
+            xbin    = self.pframe.xbin.value()
+            ybin    = self.pframe.ybin.value()
             dxleft  = self.pframe.xsl[0].value()
             dxright = self.pframe.xsr[0].value()
             dys     = self.pframe.ys[0].value()
             dnx     = self.pframe.nx[0].value()
             dny     = self.pframe.ny[0].value()
         else:
-            xbin   = self.wframe.xbin.value()	
-            ybin   = self.wframe.ybin.value()	
+            xbin   = self.wframe.xbin.value()
+            ybin   = self.wframe.ybin.value()
             xs, ys, nx, ny = [], [], [], []
             nwin = self.wframe.nwin.value()
             for xsv, ysv, nxv, nyv in self.wframe:
@@ -392,7 +392,7 @@ class InstPars(tk.LabelFrame):
                 ys.append(ysv)
                 nx.append(nxv)
                 ny.append(nyv)
-            
+
         if lnormal:
             # normal mode convert xs by ignoring 16 overscan pixel
             if isDriftMode:
@@ -412,7 +412,7 @@ class InstPars(tk.LabelFrame):
                 # in avalanche mode, need to swap windows around
                 for nw in xrange(nwin):
                     xs[nw] = FFX - (xs[nw]-1) - (nx[nw]-1)
-		    
+
         # convert timing parameters to seconds
         expose_delay = expose
 
@@ -428,7 +428,7 @@ class InstPars(tk.LabelFrame):
         hclockFactor = 1.0 if lnormal else 2.0
 
         if isDriftMode:
-            # for drift mode, we need the number of windows in the pipeline 
+            # for drift mode, we need the number of windows in the pipeline
             # and the pipeshift
             pnwin  = int(((1037. / dny) + 1.)/2.)
             pshift = 1037.- (2.*pnwin-1.)*dny
@@ -437,19 +437,19 @@ class InstPars(tk.LabelFrame):
             yshift   = [0.]
             yshift[0]=(dys-1.0)*VCLOCK
 
-            # After placing the window adjacent to the serial register, the 
-            # register must be cleared by clocking out the entire register, 
-            # taking FFX hclocks (we no longer open the dump gates, which 
-            # took only 8 hclock cycles to complete, but gave ramps and 
-            # bright rows in the bias). We think dave does 2*FFX hclocks 
+            # After placing the window adjacent to the serial register, the
+            # register must be cleared by clocking out the entire register,
+            # taking FFX hclocks (we no longer open the dump gates, which
+            # took only 8 hclock cycles to complete, but gave ramps and
+            # bright rows in the bias). We think dave does 2*FFX hclocks
             # in avalanche mode, but need to check this with him.
             line_clear = [0.]
-            if yshift[0] != 0: 
+            if yshift[0] != 0:
                 line_clear[0] = hclockFactor*FFX*HCLOCK
 
             numhclocks = [0]
             numhclocks[0] = FFX
-            if not lnormal: 
+            if not lnormal:
                 numhclocks[0] += AVALANCHE_PIXELS
 
             line_read = [0.]
@@ -462,8 +462,8 @@ class InstPars(tk.LabelFrame):
         else:
             # If not drift mode, move entire image into storage area
             # the -35 component is because Derek only shifts 1037 pixels
-            # (composed of 1024 active rows, 5 dark reference rows, 2 
-            # transition rows and 6 extra overscan rows for good measure) 
+            # (composed of 1024 active rows, 5 dark reference rows, 2
+            # transition rows and 6 extra overscan rows for good measure)
             # If drift mode, just move the window into the storage area
             frame_transfer = (FFY-35)*VCLOCK + 49.0e-6
 
@@ -471,16 +471,16 @@ class InstPars(tk.LabelFrame):
             yshift[0]=(ys[0]-1.0)*VCLOCK
             for nw in xrange(1,nwin):
                 yshift[nw] = (ys[nw]-ys[nw-1]-ny[nw-1])*VCLOCK
-		
+
             line_clear = nwin*[0.]
             for nw in xrange(nwin):
-                if yshift[nw] != 0: 
+                if yshift[nw] != 0:
                     line_clear[nw] = hclockFactor*FFX*HCLOCK
 
-            # calculate how long it takes to shift one row into the serial 
-            # register shift along serial register and then read out the data. 
-            # The charge in a row after a window used to be dumped, taking 
-            # 8 HCLOCK cycles. This created ramps and bright rows/columns in 
+            # calculate how long it takes to shift one row into the serial
+            # register shift along serial register and then read out the data.
+            # The charge in a row after a window used to be dumped, taking
+            # 8 HCLOCK cycles. This created ramps and bright rows/columns in
             # the images, so was removed.
             numhclocks = nwin*[0]
             for nw in xrange(nwin):
@@ -493,7 +493,7 @@ class InstPars(tk.LabelFrame):
                 line_read[nw] = VCLOCK*ybin + numhclocks[nw]*HCLOCK + \
                     video*nx[nw]/xbin
 
-            # multiply time to shift one row into serial register by 
+            # multiply time to shift one row into serial register by
             # number of rows for total readout time
             readout = nwin*[0.]
             for nw in xrange(nwin):
@@ -521,9 +521,9 @@ class RunPars(tk.LabelFrame):
     """
     DTYPES = ('data', 'acquire', 'bias', 'flat', 'dark', 'tech')
     DVALS  = ('data', 'data caution', 'bias', 'flat', 'dark', 'technical')
-        
+
     def __init__(self, master, share):
-        tk.LabelFrame.__init__(self, master, text='Run parameters', 
+        tk.LabelFrame.__init__(self, master, text='Run parameters',
                                padx=10, pady=10)
 
         row     = 0
@@ -538,12 +538,12 @@ class RunPars(tk.LabelFrame):
         row += 1
         tk.Label(self, text='Programme ID').grid(
             row=row,column=column, sticky=tk.W)
-            
+
         row += 1
-        tk.Label(self, 
+        tk.Label(self,
                  text='Principal Investigator').grid(
             row=row,column=column, sticky=tk.W)
-            
+
         row += 1
         tk.Label(self, text='Observer(s)').grid(
             row=row, column=column, sticky=tk.W)
@@ -555,7 +555,7 @@ class RunPars(tk.LabelFrame):
         row += 1
         tk.Label(self, text='Data type').grid(
             row=row,column=column, sticky=tk.W+tk.N)
-            
+
         # spacer
         column += 1
         tk.Label(self, text=' ').grid(row=0,column=column)
@@ -568,8 +568,9 @@ class RunPars(tk.LabelFrame):
 
         # filter
         row += 1
+        print('filter =',share['cpars']['active_filter_names'])
         self.filter = drvs.Radio(self, share['cpars']['active_filter_names'], 6)
-        self.filter.set('undef') 
+        self.filter.set('undef')
         self.filter.grid(row=row,column=column,sticky=tk.W)
 
         # programme ID

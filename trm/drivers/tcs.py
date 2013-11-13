@@ -11,7 +11,7 @@ def getTntTcs():
     """
     Accesses TCS on TNT. Returns (ra,dec,posang,focus,tflag)
     where::
-    
+
       ra     : RA, degrees
       dec    : Declination, degrees
       posang : position angle, degrees
@@ -21,7 +21,7 @@ def getTntTcs():
                to check for constant Ra, Dec as well outside this
                routine.
       engpa  : PA, degrees, related to instrument position. Not quite
-               sure what it refers to but it runs from -220 to 250 deg.
+               sure what it refers to but it runs from -220 to +250 deg.
     """
 
     # TNT TCS access
@@ -29,7 +29,7 @@ def getTntTcs():
         'http://192.168.20.190/TCSDataSharing/DataRequest.asmx/GetTelescopeData'
     req = urllib2.Request(url,data='',
                           headers={'content-type':'application/json'})
-    response = urllib2.urlopen(req,timeout=1)
+    response = urllib2.urlopen(req,timeout=2)
     string   = response.read()
     jsonData = json.loads(string)
 

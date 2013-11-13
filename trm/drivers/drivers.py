@@ -47,7 +47,7 @@ DAY   = 86400.
 COL = {\
     'main' : '#d0d0ff',     # Colour for the surrounds
     'text' : '#000050',     # Text colour
-    'debug' : '#a0a0ff',    # Text background for debug messages 
+    'debug' : '#a0a0ff',    # Text background for debug messages
     'warn' : '#f0c050',     # Text background for warnings
     'error' : '#ffa0a0',    # Text background for errors
     'critical' : '#ff0000', # Text background for disasters
@@ -134,16 +134,16 @@ def loadCpars(fp):
 
     # names / types of simple single value items needing no changes.
     SINGLE_ITEMS = {\
-        'RTPLOT_SERVER_ON' : 'boolean', 'ULTRACAM_SERVERS_ON' : 'boolean', 
-        'EXPERT_LEVEL' : 'integer', 'FILE_LOGGING_ON' : 'boolean', 
+        'RTPLOT_SERVER_ON' : 'boolean', 'ULTRACAM_SERVERS_ON' : 'boolean',
+        'EXPERT_LEVEL' : 'integer', 'FILE_LOGGING_ON' : 'boolean',
         'HTTP_CAMERA_SERVER' : 'string', 'HTTP_DATA_SERVER' : 'string',
         'APP_DIRECTORY' : 'string', 'TEMPLATE_FROM_SERVER' : 'boolean',
         'TEMPLATE_DIRECTORY' : 'string', 'LOG_FILE_DIRECTORY' : 'string',
         'CONFIRM_ON_CHANGE' : 'boolean', 'CONFIRM_HV_GAIN_ON' : 'boolean',
-        'RTPLOT_SERVER_PORT' : 'integer', 'DEBUG' : 'boolean', 
-        'HTTP_PATH_GET' : 'string', 'HTTP_PATH_EXEC' : 'string', 
-        'HTTP_PATH_CONFIG' : 'string', 'HTTP_SEARCH_ATTR_NAME' : 'string', 
-        'INSTRUMENT_APP' : 'string', 'POWER_ON' : 'string', 
+        'RTPLOT_SERVER_PORT' : 'integer', 'DEBUG' : 'boolean',
+        'HTTP_PATH_GET' : 'string', 'HTTP_PATH_EXEC' : 'string',
+        'HTTP_PATH_CONFIG' : 'string', 'HTTP_SEARCH_ATTR_NAME' : 'string',
+        'INSTRUMENT_APP' : 'string', 'POWER_ON' : 'string',
         'FOCAL_PLANE_SLIDE' : 'string', 'TELINS_NAME' : 'string',
         'REQUIRE_RUN_PARAMS' : 'boolean', 'ACCESS_TCS' : 'boolean',
         'HTTP_FILE_SERVER' : 'string'}
@@ -166,11 +166,11 @@ def loadCpars(fp):
 
     # names with multiple values (all strings)
     MULTI_ITEMS = [\
-        'FILTER_NAMES', 'FILTER_IDS', 'ACTIVE_FILTER_NAMES', 
+        'FILTER_NAMES', 'FILTER_IDS', 'ACTIVE_FILTER_NAMES',
         'UAC_DATABASE_HOST']
 
     for item in MULTI_ITEMS:
-        cpars[item.lower()] = [x.strip() for x in 
+        cpars[item.lower()] = [x.strip() for x in
                                   parser.get('All',item).split(';')]
 
     # Check the filters
@@ -181,7 +181,7 @@ def loadCpars(fp):
 
     # Check the telescope/instrument combo
     if cpars['telins_name'] not in TINS:
-        print('Telescope/instrument combination = ' + 
+        print('Telescope/instrument combination = ' +
               cpars['telins_name'] + ' not recognised.')
         print('Current possibilities are : ' + str(TINS.keys().sort()))
         print('Please fix the configuration file = ' + fp.name)
@@ -189,7 +189,7 @@ def loadCpars(fp):
 
     # Special code for the templates
     labels = [x.strip() for x in parser.get('All','TEMPLATE_LABELS').split(';')]
-    pairs  = [int(x.strip()) for x in 
+    pairs  = [int(x.strip()) for x in
               parser.get('All','TEMPLATE_PAIRS').split(';')]
     apps   = [x.strip() for x in parser.get('All','TEMPLATE_APPS').split(';')]
     ids    = [x.strip() for x in parser.get('All','TEMPLATE_IDS').split(';')]
@@ -207,14 +207,14 @@ def loadCpars(fp):
 
     # Next line is so that we know the order defined in the file
     cpars['template_labels'] = labels
-            
+
     return cpars
 
 class Boolean(tk.IntVar):
     """
     Defines an object representing one of the boolean
     configuration parameters to allow it to be interfaced with
-    the menubar easily. 
+    the menubar easily.
     """
     def __init__(self, flag, cpars):
         tk.IntVar.__init__(self)
@@ -231,8 +231,8 @@ class Boolean(tk.IntVar):
 
 class IntegerEntry(tk.Entry):
     """
-    Defines an Entry field which only accepts integer input. 
-    This is the base class for several varieties of integer 
+    Defines an Entry field which only accepts integer input.
+    This is the base class for several varieties of integer
     input fields.
     """
 
@@ -262,14 +262,14 @@ class IntegerEntry(tk.Entry):
 
     def validate(self, value):
         """
-        Applies the validation criteria. 
+        Applies the validation criteria.
         Returns value, new value, or None if invalid.
 
         Overload this in derived classes.
         """
         try:
             # trap blank fields here
-            if not self.blank or value: 
+            if not self.blank or value:
                 int(value)
             return value
         except ValueError:
@@ -434,14 +434,14 @@ class PosInt (IntegerEntry):
 
     def validate(self, value):
         """
-        Applies the validation criteria. 
+        Applies the validation criteria.
         Returns value, new value, or None if invalid.
 
         Overload this in derived classes.
         """
         try:
             # trap blank fields here
-            if not self.blank or value: 
+            if not self.blank or value:
                 v = int(value)
                 if v < 0:
                     return None
@@ -523,14 +523,14 @@ class RangedInt (IntegerEntry):
 
     def validate(self, value):
         """
-        Applies the validation criteria. 
+        Applies the validation criteria.
         Returns value, new value, or None if invalid.
 
         Overload this in derived classes.
         """
         try:
             # trap blank fields here
-            if not self.blank or value: 
+            if not self.blank or value:
                 v = int(value)
                 if v < self.imin or v > self.imax:
                     return None
@@ -620,7 +620,7 @@ class RangedMint (RangedInt):
             val = num
 
         chunk = self.mfac.value()
-        if val % chunk > 0: 
+        if val % chunk > 0:
             if num > 0:
                 val = chunk*(val // chunk + 1)
             elif num < 0:
@@ -640,7 +640,7 @@ class RangedMint (RangedInt):
             val = -num
 
         chunk = self.mfac.value()
-        if val % chunk > 0: 
+        if val % chunk > 0:
             if num > 0:
                 val = chunk*(val // chunk)
             elif num < 0:
@@ -687,9 +687,11 @@ class ListInt (IntegerEntry):
         kw      -- keyword arguments
         """
         if ival not in allowed:
-            raise DriverError('drivers.ListInt: value = ' + str(ival) + ' not in list of allowed values.')
+            raise DriverError('drivers.ListInt: value = ' + str(ival) +
+                              ' not in list of allowed values.')
         if len(set(allowed)) != len(allowed):
-            raise DriverError('drivers.ListInt: not all values unique in allowed list.')
+            raise DriverError('drivers.ListInt: not all values unique'+
+                              ' in allowed list.')
 
         # we need to maintain an index of which integer has been selected
         self.allowed = allowed
@@ -735,7 +737,7 @@ class ListInt (IntegerEntry):
 
     def validate(self, value):
         """
-        Applies the validation criteria. 
+        Applies the validation criteria.
         Returns value, new value, or None if invalid.
 
         Overload this in derived classes.
@@ -752,14 +754,14 @@ class ListInt (IntegerEntry):
         """
         Adds num to the current value
         """
-        self.index = max(0,min(len(self.allowed)-1,self.index+num)) 
+        self.index = max(0,min(len(self.allowed)-1,self.index+num))
         self.set(self.allowed[self.index])
 
     def sub(self, num):
         """
         Subtracts num from the current value
         """
-        self.index = max(0,min(len(self.allowed)-1,self.index-num)) 
+        self.index = max(0,min(len(self.allowed)-1,self.index-num))
         self.set(self.allowed[self.index])
 
     def ok(self):
@@ -770,7 +772,7 @@ class ListInt (IntegerEntry):
 
 class FloatEntry(tk.Entry):
     """
-    Defines an Entry field which only accepts floating point input. 
+    Defines an Entry field which only accepts floating point input.
     """
 
     def __init__(self, master, fval, checker, blank, **kw):
@@ -799,14 +801,14 @@ class FloatEntry(tk.Entry):
 
     def validate(self, value):
         """
-        Applies the validation criteria. 
+        Applies the validation criteria.
         Returns value, new value, or None if invalid.
 
         Overload this in derived classes.
         """
         try:
             # trap blank fields here
-            if not self.blank or value: 
+            if not self.blank or value:
                 float(value)
             return value
         except ValueError:
@@ -951,7 +953,7 @@ class RangedFloat (FloatEntry):
     """
     Provides range-checked float input.
     """
-    def __init__(self, master, fval, fmin, fmax, checker, 
+    def __init__(self, master, fval, fmin, fmax, checker,
                  blank, allowzero=False, **kw):
         """
         master    -- enclosing widget
@@ -993,14 +995,14 @@ class RangedFloat (FloatEntry):
 
     def validate(self, value):
         """
-        Applies the validation criteria. 
+        Applies the validation criteria.
         Returns value, new value, or None if invalid.
 
         Overload this in derived classes.
         """
         try:
             # trap blank fields here
-            if not self.blank or value: 
+            if not self.blank or value:
                 v = float(value)
                 if (self.allowzero and v != 0 and v < self.fmin) or \
                         (not self.allowzero and v < self.fmin) or v > self.fmax:
@@ -1068,7 +1070,7 @@ class Expose (RangedFloat):
             raise DriverError(
                 'drivers.Expose.__init__: fmax must be a multiple of 0.0001')
 
-        RangedFloat.__init__(self, master, fval, fmin, 
+        RangedFloat.__init__(self, master, fval, fmin,
                              fmax, checker, True, **kw)
 
     def validate(self, value):
@@ -1077,7 +1079,7 @@ class Expose (RangedFloat):
         """
         try:
             # trap blank fields here
-            if value: 
+            if value:
                 v = float(value)
                 if (v != 0 and v < self.fmin) or v > self.fmax:
                     return None
@@ -1105,11 +1107,11 @@ class Expose (RangedFloat):
                                   'fmin must be a multiple of 0.0001')
         self.fmin = fmin
         self.set(self.fmin)
-        
+
 class TextEntry (tk.Entry):
     """
     Sub-class of Entry for basic text input. Not a lot to
-    it but it keeps things neater and it has a check for 
+    it but it keeps things neater and it has a check for
     blank entries.
     """
 
@@ -1155,7 +1157,7 @@ class Choice(tk.OptionMenu):
         master  : containing widget
         options : list of strings
         initial : the initial one to select. If None will default to the first.
-        width   : minimum character width to use. Width set will be large 
+        width   : minimum character width to use. Width set will be large
                   enough for longest option.
         checker : callback to run on any change of selection.
         """
@@ -1185,22 +1187,31 @@ class Choice(tk.OptionMenu):
     def enable(self):
         self.configure(state='normal')
 
+    def getIndex(self):
+        """
+        Returns the index of the selected choice,
+        Throws a ValueError if the set value is not
+        one of the options.
+        """
+        return self.options.index(self.val.get())
+
+
 class Radio(tk.Frame):
     """
     Left-to-right radio button class. Lays out buttons in a grid
-    from left-to-right. Has a max number of columns after which it 
+    from left-to-right. Has a max number of columns after which it
     will jump to left of next row and start over.
     """
-    def __init__(self, master, options, ncmax, checker=None, 
+    def __init__(self, master, options, ncmax, checker=None,
                  values=None, initial=0):
         """
-        master	: containing widget
-        options : array of option strings, in order. These are the choices 
+        master : containing widget
+        options : array of option strings, in order. These are the choices
         presented to the user.
-        ncmax	: max number of columns (flows onto next row if need be)
+        ncmax : max number of columns (flows onto next row if need be)
         checker : callback to be run after any change
-        values	: array of string values used by the code internally. 
-        If 'None', the value from 'options' will be used. 
+        values : array of string values used by the code internally.
+        If 'None', the value from 'options' will be used.
         initial : index of initial value to set.
         """
         tk.Frame.__init__(self, master)
@@ -1220,22 +1231,23 @@ class Radio(tk.Frame):
         for nopt, option in enumerate(options):
             if values is None:
                 self.buttons.append(
-                    tk.Radiobutton(self, text=option, variable=self.val, 
+                    tk.Radiobutton(self, text=option, variable=self.val,
                                    value=option))
                 self.buttons[-1].grid(row=row, column=col, sticky=tk.W)
             else:
                 self.buttons.append(
-                    tk.Radiobutton(self, text=option, variable=self.val, 
+                    tk.Radiobutton(self, text=option, variable=self.val,
                                    value=values[nopt]))
                 self.buttons[-1].grid(row=row, column=col, sticky=tk.W)
-                col += 1
-                if col == ncmax:
-                    row += 1
-                    col	 = 0
+            col += 1
+            if col == ncmax:
+                row += 1
+                col = 0
 
         self.checker = checker
         if self.checker is not None:
             self.val.trace('w', self.checker)
+        self.options = options
 
     def value(self):
         return self.val.get()
@@ -1251,6 +1263,14 @@ class Radio(tk.Frame):
         for b in self.buttons:
             b.configure(state='normal')
 
+    def getIndex(self):
+        """
+        Returns the index of the selected choice,
+        Throws a ValueError if the set value is not
+        one of the options.
+        """
+        return self.options.index(self.val.get())
+
 class OnOff(tk.Checkbutton):
     """
     On or Off choice
@@ -1263,7 +1283,7 @@ class OnOff(tk.Checkbutton):
             self, master, variable=self.val, command=checker)
 
     def __call__(self):
-        return self.val.get() 
+        return self.val.get()
 
     def disable(self):
         self.configure(state='disable')
@@ -1283,14 +1303,14 @@ def overlap(xl1,yl1,nx1,ny1,xl2,yl2,nx2,ny2):
 
 def saveXML(root, clog):
     """
-    Saves the current setup to disk. 
-    
+    Saves the current setup to disk.
+
     root : (xml.etree.ElementTree.Element)
     The current setup.
     """
     fname = tkFileDialog.asksaveasfilename(
         defaultextension='.xml', filetypes=[('xml files', '.xml'),])
-    if not fname: 
+    if not fname:
         clog.log.warn('Aborted save to disk\n')
         return False
     tree = ET.ElementTree(root)
@@ -1301,7 +1321,7 @@ def saveXML(root, clog):
 def postXML(root, cpars, clog, rlog):
     """
     Posts the current setup to the camera and data servers.
-    
+
     root : (xml.etree.ElementTree.Element)
     The current setup.
 
@@ -1326,7 +1346,7 @@ def postXML(root, cpars, clog, rlog):
     if not csr.ok:
         clog.log.warn('Camera response was not OK\n')
         return False
-	
+
     # Send the xml to the data server
     url = cpars['http_data_server'] + cpars['http_path_config']
     clog.log.debug('Data server URL =',url,'\n')
@@ -1345,9 +1365,9 @@ class ActButton(tk.Button):
     """
     Base class for action buttons. This keeps an internal flag
     representing whether the button should be active or not.
-    Whether it actually is, might be overridden, but the internal 
-    flag tracks the (potential) activity status allowing it to be 
-    reset. The 'expert' flag controls whether the activity status 
+    Whether it actually is, might be overridden, but the internal
+    flag tracks the (potential) activity status allowing it to be
+    reset. The 'expert' flag controls whether the activity status
     will be overridden. The button starts out in non-expert mode by
     default. This can be switches with setExpert, setNonExpert.
     """
@@ -1364,8 +1384,8 @@ class ActButton(tk.Button):
         tk.Button.__init__(
             self, master, fg='black', width=width, command=self.act, **kwargs)
 
-        # store some attributes. other anc calbback are obvious. 
-        # _active indicates whether the button should be enabled or disabled 
+        # store some attributes. other anc calbback are obvious.
+        # _active indicates whether the button should be enabled or disabled
         # _expert indicates whether the activity state should be overridden so
         #         that the button is enabled in any case (if set True)
         self.share    = share
@@ -1428,7 +1448,7 @@ class Start(ActButton):
         width    : width of button
         share    : dictionary with configuration parameters and the loggers
         """
-        
+
         ActButton.__init__(
             self, master, width, share, bg=COL['start'], text='Start')
         self.target = None
@@ -1451,18 +1471,17 @@ class Start(ActButton):
                 except Exception, err:
                     print(err)
                     if not tkMessageBox.askokcancel(
-                        'Could not get RA, Dec from telescope.\n' + 
+                        'Could not get RA, Dec from telescope.\n' +
                         'Continue?'):
                         clog.log.warn('Start operation cancelled\n')
                     gotPos = False
             else:
                 if not tkMessageBox.askokcancel(
-                    'No TCS routine for telescope/instrument = ' + 
+                    'No TCS routine for telescope/instrument = ' +
                     cpars['telins_name'] + '\n' +
                     'Could not get RA, Dec from telescope.\n' + 'Continue?'):
                     clog.log.warn('Start operation cancelled\n')
                 gotPos = False
-
 
         # Couple of safety checks
         if cpars['expert_level'] == 0 and cpars['confirm_hv_gain_on'] and \
@@ -1475,11 +1494,11 @@ class Start(ActButton):
 
         if cpars['expert_level'] == 0 and cpars['confirm_on_change'] and \
                 self.target is not None and self.target != rpars.target.value():
-             if not tkMessageBox.askokcancel('Target name has changed\n' + 
+             if not tkMessageBox.askokcancel('Target name has changed\n' +
                                              'Continue?'):
                 clog.log.warn('Start operation cancelled\n')
                 return False
-        
+
         if execCommand('GO', cpars, clog, rlog):
             clog.log.info('Run started\n')
 
@@ -1527,7 +1546,7 @@ class Stop(ActButton):
         width    : width of button
         share    : dictionary with configuration parameters and the loggers
         """
-        
+
         ActButton.__init__(
             self, master, width, share, bg=COL['stop'], text='Stop')
 
@@ -1573,19 +1592,19 @@ class Target(tk.Frame):
     def __init__(self, master, share, callback=None):
         tk.Frame.__init__(self, master)
 
-        # Entry field, linked to a StringVar which is traced for 
+        # Entry field, linked to a StringVar which is traced for
         # any modification
         self.val    = tk.StringVar()
         self.val.trace('w', self.modver)
         self.entry  = tk.Entry(
-            self, textvariable=self.val, fg=COL['text'], 
+            self, textvariable=self.val, fg=COL['text'],
             bg=COL['main'], width=25)
         self.entry.bind('<Enter>', lambda e : self.entry.focus())
 
-        # Verification button which accesses simbad to see if 
+        # Verification button which accesses simbad to see if
         # the target is recognised.
         self.verify = tk.Button(
-            self, fg='black', width=8, text='Verify', 
+            self, fg='black', width=8, text='Verify',
             bg=COL['main'], command=self.act)
         self.entry.pack(side=tk.LEFT,anchor=tk.W)
         self.verify.pack(side=tk.LEFT,anchor=tk.W,padx=5)
@@ -1609,7 +1628,7 @@ class Target(tk.Frame):
         if self.val.get() == '' or self.val.get().isspace():
             return False
         else:
-            return True        
+            return True
 
     def modver(self, *args):
         """
@@ -1647,7 +1666,7 @@ class Target(tk.Frame):
                 'Found ' + str(len(ret)) + ' matches to "' + tname + '"\n')
             for entry in ret:
                 rlog.log.info(
-                    'Name: ' + entry['Name'] + ', position: ' + 
+                    'Name: ' + entry['Name'] + ', position: ' +
                     entry['Position'] + '\n')
 
 class ReadServer(object):
@@ -1656,18 +1675,18 @@ class ReadServer(object):
 
     Set the following attributes:
 
-     root    : the xml.etree.ElementTree.Element at the root of the xml 
+     root    : the xml.etree.ElementTree.Element at the root of the xml
      camera  : true if the response was from the camera server (else filesave)
      ok      : whether response is OK or not (True/False)
      err     : message if ok == False
-     state   : state of the camera. Possibilties are: 
+     state   : state of the camera. Possibilties are:
                'IDLE', 'BUSY', 'ERROR', 'ABORT', 'UNKNOWN'
      run     : current or last run number
     """
 
     def __init__(self, resp):
         print('Server response = ' + resp)
- 
+
         # Store the entire response
         self.root = ET.fromstring(resp)
 
@@ -1732,10 +1751,10 @@ def execCommand(command, cpars, clog, rlog):
       cpars : (dict)
            configuration parameters
 
-      clog : 
+      clog :
            logger of commands
 
-      rlog : 
+      rlog :
            logger of responses
 
     Possible commands are:
@@ -1758,8 +1777,8 @@ def execCommand(command, cpars, clog, rlog):
         clog.log.info('execCommand, command = "' + command + '"\n')
         response = urllib2.urlopen(url)
         rs  = ReadServer(response.read())
-        
-        rlog.log.info('Camera response =\n' + rs.resp() + '\n')        
+
+        rlog.log.info('Camera response =\n' + rs.resp() + '\n')
         if rs.ok:
             clog.log.info('Response from camera server was OK\n')
             return True
@@ -1793,7 +1812,7 @@ def execServer(name, app, cpars, clog, rlog):
 
       rlog :
           response log
-          
+
     Returns True/False according to success or otherwise
     """
     print(cpars['http_camera_server'], cpars['http_path_config'], '?', app)
@@ -1804,7 +1823,7 @@ def execServer(name, app, cpars, clog, rlog):
         url = cpars['http_data_server'] + cpars['http_path_config'] + '?' + app
     else:
         raise Exception('Server name = ' + name + ' not recognised.')
-    
+
     clog.log.debug('execServer, url = ' + url + '\n')
 
     response = urllib2.urlopen(url)
@@ -1854,7 +1873,7 @@ class ResetSDSUhard(ActButton):
         width    : width of button
         share    : dictionary of other objects
         """
-        
+
         ActButton.__init__(
             self, master, width, share, text='Reset SDSU hardware')
 
@@ -1897,7 +1916,7 @@ class ResetSDSUsoft(ActButton):
         width    : width of button
         share    : dictionary of other objects
         """
-        
+
         ActButton.__init__(
             self, master, width, share, text='Reset SDSU software')
 
@@ -1940,7 +1959,7 @@ class ResetPCI(ActButton):
         width    : width of button
         share    : dictionary with cpars, observe, clog, rlog
         """
-        
+
         ActButton.__init__(self, master, width, share, text='Reset PCI')
 
     def act(self):
@@ -1981,7 +2000,7 @@ class SystemReset(ActButton):
         width    : width of button
         share    : dictionary with cpars, observe, clog, rlog
         """
-        
+
         ActButton.__init__(self, master, width, share, text='System Reset')
 
     def act(self):
@@ -1996,7 +2015,7 @@ class SystemReset(ActButton):
         if execCommand('SRS', cpars, clog, rlog):
             clog.log.info('System Reset succeeded\n')
 
-            # alter buttons here 
+            # alter buttons here
             o['observe'].start.disable()
             o['observe'].stop.disable()
             o['observe'].post.disable()
@@ -2022,7 +2041,7 @@ class SetupServers(ActButton):
         width    : width of button
         share    : dictionary with cpars, observe, clog, rlog
         """
-        
+
         ActButton.__init__(self, master, width, share, text='Setup servers')
 
     def act(self):
@@ -2040,10 +2059,10 @@ class SetupServers(ActButton):
             'camera', cpars['instrument_app'], cpars, clog, rlog) and \
             execServer('data', tapp, cpars, clog, rlog) and \
             execServer('data', cpars['instrument_app'], cpars, cLog, rLog):
-            
+
             clog.log.info('Setup servers succeeded\n')
 
-            # alter buttons 
+            # alter buttons
             self.disable()
             o['observe'].start.disable()
             o['observe'].stop.disable()
@@ -2070,7 +2089,7 @@ class PowerOn(ActButton):
         width   : width of button
         share   : other objects
         """
-        
+
         ActButton.__init__(self, master, width, share, text='Power on')
 
     def act(self):
@@ -2082,7 +2101,7 @@ class PowerOn(ActButton):
         cpars, clog, rlog = o['cpars'], o['clog'], o['rlog']
 
         clog.log.debug('Power on pressed\n')
-            
+
         if execRemoteApp(cpars['power_on'], cpars, clog, rlog) and \
                 execCommand('GO', cpars, clog, rlog):
 
@@ -2099,11 +2118,13 @@ class PowerOn(ActButton):
             o['Power off'].enable()
             self.disable()
 
-            # now check the run number -- lifted from Java code; the wait 
+            # now check the run number -- lifted from Java code; the wait
             # for the power on application to finish may not be needed
             n = 0
             while isRunActive() and n < 5:
                 n += 1
+                time.sleep(1)
+
             if isRunActive():
                 clog.log.warn(
                     'Timed out waiting for power on run to ' + \
@@ -2127,7 +2148,7 @@ class PowerOff(ActButton):
         width   : width of button
         share   : other objects
         """
-        
+
         ActButton.__init__(self, master, width, share, text='Power off')
         self.disable()
 
@@ -2142,7 +2163,7 @@ class PowerOff(ActButton):
         clog.log.debug('Power off pressed\n')
         clog.log.debug('This is a placeholder as there is no Power' + \
                            ' off application so it will fail\n')
-            
+
         if execRemoteApp(cpars['power_off'], cpars, clog, rlog) and \
                 execCommand('GO', cpars, clog, rlog):
 
@@ -2175,7 +2196,7 @@ class Initialise(ActButton):
         width   : width of button
         share   : other objects
         """
-        
+
         ActButton.__init__(self, master, width, share, text='Initialise')
 
     def act(self):
@@ -2185,7 +2206,7 @@ class Initialise(ActButton):
         # shortening
         o = self.share
         cpars, clog, rlog = o['cpars'], o['clog'], o['rlog']
-        
+
         clog.log.debug('Initialise pressed\n')
 
         if not o['System reset'].act():
@@ -2207,7 +2228,7 @@ class InstSetup(tk.LabelFrame):
     """
     Instrument configuration frame.
     """
-    
+
     def __init__(self, master, share):
         """
         master -- containing widget
@@ -2243,7 +2264,7 @@ class InstSetup(tk.LabelFrame):
 
         # set which buttons are presented and where they go
         self.setExpertLevel(share['cpars']['expert_level'])
-        
+
     def setExpertLevel(self, level):
         """
         Set expert level
@@ -2264,7 +2285,7 @@ class InstSetup(tk.LabelFrame):
             # then re-grid the two simple ones
             self.initialise.grid(row=0,column=0)
             self.powerOff.grid(row=0,column=1)
-            
+
         elif level == 1 or level == 2:
             # first remove all possible buttons
             self.resetSDSUhard.grid_forget()
@@ -2290,7 +2311,7 @@ class InstSetup(tk.LabelFrame):
             self.setupServers.grid(row=row,column=column)
             row += 1
             self.powerOn.grid(row=row,column=column)
-        
+
             # next column
             row = 0
             column += 1
@@ -2318,25 +2339,25 @@ class InstSetup(tk.LabelFrame):
             self.initialise.setExpert()
 
 class LoggingToGUI(logging.Handler):
-    """ 
-    Used to redirect logging output to the widget passed in parameters 
+    """
+    Used to redirect logging output to the widget passed in parameters
     """
     def __init__(self, console):
         """
         console : widget to display logging messages
         """
         logging.Handler.__init__(self)
-        self.console = console 
+        self.console = console
         self.console.tag_config('debug', background=COL['debug'])
         self.console.tag_config('warn', background=COL['warn'])
         self.console.tag_config('error', background=COL['error'])
         self.console.tag_config('critical', background=COL['critical'])
         self.console.tag_config('debug', background=COL['debug'])
 
-    def emit(self, message): 
+    def emit(self, message):
         """
         Overwrites the default handler's emit method:
-        
+
         message : the message to display
         """
         formattedMessage = self.format(message)
@@ -2355,7 +2376,7 @@ class LoggingToGUI(logging.Handler):
             self.console.insert(tk.END, formattedMessage, ('critical'))
         else:
             print('Do not recognise level = ' + message.levelname)
-        
+
         # Prevent further input
         self.console.configure(state=tk.DISABLED)
         self.console.see(tk.END)
@@ -2368,11 +2389,11 @@ class LogDisplay(tk.LabelFrame):
     def __init__(self, root, height, width, text, **options):
 
         tk.LabelFrame.__init__(self, root, text=text, **options);
-        
+
         scrollbar = tk.Scrollbar(self)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         self.console = tk.Text(
-            self, height=height, width=width, bg=COL['log'], 
+            self, height=height, width=width, bg=COL['log'],
             yscrollcommand=scrollbar.set)
         self.console.configure(state=tk.DISABLED)
         self.console.pack(side=tk.LEFT)
@@ -2390,11 +2411,11 @@ class LogDisplay(tk.LabelFrame):
         self.log = logging.getLogger(text)
         self.log.addHandler(ltgh)
 
-        
+
 class Switch(tk.Frame):
     """
-    Frame sub-class to switch between setup, focal plane slide 
-    and observing frames. Provides radio buttons and hides / shows 
+    Frame sub-class to switch between setup, focal plane slide
+    and observing frames. Provides radio buttons and hides / shows
     respective frames
     """
     def __init__(self, master, share):
@@ -2405,17 +2426,17 @@ class Switch(tk.Frame):
         tk.Frame.__init__(self, master)
 
         self.val = tk.StringVar()
-        self.val.set('Setup') 
+        self.val.set('Setup')
         self.val.trace('w', self._changed)
 
-        tk.Radiobutton(self, text='Setup', variable=self.val, 
+        tk.Radiobutton(self, text='Setup', variable=self.val,
                        value='Setup').grid(row=0, column=0, sticky=tk.W)
-        tk.Radiobutton(self, text='Focal plane slide', variable=self.val, 
+        tk.Radiobutton(self, text='Focal plane slide', variable=self.val,
                        value='Focal plane slide').grid(
             row=0, column=1, sticky=tk.W)
-        tk.Radiobutton(self, text='Observe', variable=self.val, 
+        tk.Radiobutton(self, text='Observe', variable=self.val,
                        value='Observe').grid(row=0, column=2, sticky=tk.W)
-        
+
         self.observe = share['observe']
         self.fpslide = share['fpslide']
         self.setup   = share['setup']
@@ -2435,14 +2456,14 @@ class Switch(tk.Frame):
             self.setup.pack_forget()
             self.fpslide.pack_forget()
             self.observe.pack(anchor=tk.W, pady=10)
-            
+
         else:
             raise DriverError('Unrecognised Switch value')
 
 class ExpertMenu(tk.Menu):
     """
-    Provides a menu to select the level of expertise wanted 
-    when interacting with a control GUI. This setting might 
+    Provides a menu to select the level of expertise wanted
+    when interacting with a control GUI. This setting might
     be used to hide buttons for instance according to
     the status of others, etc.
     """
@@ -2454,7 +2475,7 @@ class ExpertMenu(tk.Menu):
         args     -- other objects that have a 'setExpertLevel(elevel)' method.
         """
         tk.Menu.__init__(self, master, tearoff=0)
-        
+
         self.val = tk.IntVar()
         self.val.set(cpars['expert_level'])
         self.val.trace('w', self._change)
@@ -2495,7 +2516,7 @@ class RtplotServer (SocketServer.TCPServer):
     their positions.
     """
     def __init__(self, instpars, port):
-        SocketServer.TCPServer.__init__(self, ('localhost', port), 
+        SocketServer.TCPServer.__init__(self, ('localhost', port),
                                         RtplotHandler)
         self.instpars = instpars
 
@@ -2503,7 +2524,7 @@ class RtplotServer (SocketServer.TCPServer):
         while True:
             try:
                 self.serve_forever()
-            except Exception as e:
+            except Exception, e:
                 print('RtplotServer.run', e)
 
 class Timer(tk.Label):
@@ -2542,7 +2563,6 @@ class CurrentRun(tk.Label):
     def __init__(self, master, share):
         tk.Label.__init__(self, master, text='UNDEF')
         self.share = share
-#        self.run()
 
     def set(self, rnum):
         """
@@ -2556,7 +2576,7 @@ class CurrentRun(tk.Label):
         """
         self.set(int(self.get())+1)
 
-    def run(self):
+    def update(self):
         """
         Runs the run number checker, once per second.
         """
@@ -2578,24 +2598,24 @@ class FocalPlaneSlide(tk.LabelFrame):
         tk.LabelFrame.__init__(
             self, master, text='Focal plane slide',padx=10,pady=10)
         width = 7
-        self.home    = tk.Button(self, fg='black', text='home',  width=width, 
+        self.home    = tk.Button(self, fg='black', text='home',  width=width,
                                  command=lambda: self.wrap('home'))
-        self.park    = tk.Button(self, fg='black', text='park',  width=width, 
+        self.park    = tk.Button(self, fg='black', text='park',  width=width,
                                  command=lambda: self.wrap('park'))
-        self.block   = tk.Button(self, fg='black', text='block', width=width, 
+        self.block   = tk.Button(self, fg='black', text='block', width=width,
                                  command=lambda: self.wrap('block'))
 
-        self.goto    = tk.Button(self, fg='black', text='goto', width=width, 
+        self.goto    = tk.Button(self, fg='black', text='goto', width=width,
                                  command=lambda: self.wrap('restore'))
         self.gval    = IntegerEntry(self, 1100., None, True, width=width)
-        self.reset   = tk.Button(self, fg='black', text='reset', width=width, 
+        self.reset   = tk.Button(self, fg='black', text='reset', width=width,
                                  command=lambda: self.wrap('reset'))
 
-        self.enable  = tk.Button(self, fg='black', text='enable', width=width, 
+        self.enable  = tk.Button(self, fg='black', text='enable', width=width,
                                  command=lambda: self.wrap('enable'))
-        self.disable = tk.Button(self, fg='black', text='disable', width=width, 
+        self.disable = tk.Button(self, fg='black', text='disable', width=width,
                                  command=lambda: self.wrap('disable'))
-        self.restore = tk.Button(self, fg='black', text='restore', width=width, 
+        self.restore = tk.Button(self, fg='black', text='restore', width=width,
                                  command=lambda: self.wrap('restore'))
 
         self.home.grid(row=0,column=0)
@@ -2616,7 +2636,7 @@ class FocalPlaneSlide(tk.LabelFrame):
 
     def wrap(self, comm):
         """
-        Carries out an action wrapping it in a thread so that 
+        Carries out an action wrapping it in a thread so that
         we don't have to sit around waiting for completion.
         """
         if not self.running:
@@ -2641,7 +2661,7 @@ class FocalPlaneSlide(tk.LabelFrame):
         """
         o       = self.share
         cpars   = o['cpars']
-        command = [cpars['focal_plane_slide'],comm] 
+        command = [cpars['focal_plane_slide'],comm]
 
         # place command here
         time.sleep(10)
@@ -2669,25 +2689,26 @@ class InfoFrame(tk.LabelFrame):
     Information frame: run number, exposure time, etc.
     """
     def __init__(self, master, share):
-        tk.LabelFrame.__init__(self, master, 
+        tk.LabelFrame.__init__(self, master,
                                text='Run & Tel status', padx=4, pady=4)
 
         self.run     = CurrentRun(self, share)
-        self.frame   = tk.Label(self,text='UNDEF') 
+        self.frame   = tk.Label(self,text='UNDEF')
         self.timer   = Timer(self)
-        self.cadence = tk.Label(self,text='UNDEF') 
-        self.duty    = tk.Label(self,text='UNDEF') 
-        self.filt    = tk.Label(self,text='UNDEF ') 
-        self.ra      = tk.Label(self,text='UNDEF ') 
-        self.dec     = tk.Label(self,text='UNDEF ') 
-        self.alt     = tk.Label(self,text='UNDEF ') 
-        self.az      = tk.Label(self,text='UNDEF ') 
-        self.airmass = tk.Label(self,text='UNDEF ') 
-        self.ha      = tk.Label(self,text='UNDEF ') 
-        self.pa      = tk.Label(self,text='UNDEF ') 
-        self.focus   = tk.Label(self,text='UNDEF ') 
-        self.mdist   = tk.Label(self,text='UNDEF ') 
-        self.fpslide = tk.Label(self,text='UNDEF ') 
+        self.cadence = tk.Label(self,text='UNDEF')
+        self.duty    = tk.Label(self,text='UNDEF')
+        self.filt    = tk.Label(self,text='UNDEF')
+        self.ra      = tk.Label(self,text='UNDEF')
+        self.dec     = tk.Label(self,text='UNDEF')
+        self.alt     = tk.Label(self,text='UNDEF')
+        self.az      = tk.Label(self,text='UNDEF')
+        self.airmass = tk.Label(self,text='UNDEF')
+        self.ha      = tk.Label(self,text='UNDEF')
+        self.pa      = tk.Label(self,text='UNDEF')
+        self.engpa   = tk.Label(self,text='UNDEF')
+        self.focus   = tk.Label(self,text='UNDEF')
+        self.mdist   = tk.Label(self,text='UNDEF')
+        self.fpslide = tk.Label(self,text='UNDEF')
 
         # left-hand side
         tk.Label(self,text='Run:').grid(row=0,column=0,padx=5,sticky=tk.W)
@@ -2732,14 +2753,18 @@ class InfoFrame(tk.LabelFrame):
         tk.Label(self,text='PA:').grid(row=0,column=6,padx=5,sticky=tk.W)
         self.pa.grid(row=0,column=7,padx=5,sticky=tk.W)
 
-        tk.Label(self,text='Focus:').grid(row=1,column=6,padx=5,sticky=tk.W)
-        self.focus.grid(row=1,column=7,padx=5,sticky=tk.W)
+        # right-hand side
+        tk.Label(self,text='Eng. PA:').grid(row=1,column=6,padx=5,sticky=tk.W)
+        self.engpa.grid(row=1,column=7,padx=5,sticky=tk.W)
 
-        tk.Label(self,text='Mdist:').grid(row=2,column=6,padx=5,sticky=tk.W)
-        self.mdist.grid(row=2,column=7,padx=5,sticky=tk.W)
+        tk.Label(self,text='Focus:').grid(row=2,column=6,padx=5,sticky=tk.W)
+        self.focus.grid(row=2,column=7,padx=5,sticky=tk.W)
 
-        tk.Label(self,text='FP slide:').grid(row=3,column=6,padx=5,sticky=tk.W)
-        self.fpslide.grid(row=3,column=7,padx=5,sticky=tk.W)
+        tk.Label(self,text='Mdist:').grid(row=3,column=6,padx=5,sticky=tk.W)
+        self.mdist.grid(row=3,column=7,padx=5,sticky=tk.W)
+
+        tk.Label(self,text='FP slide:').grid(row=4,column=6,padx=5,sticky=tk.W)
+        self.fpslide.grid(row=4,column=7,padx=5,sticky=tk.W)
 
         self.share = share
 
@@ -2748,13 +2773,14 @@ class InfoFrame(tk.LabelFrame):
         self.dec_old   = 0.
         self.pa_old    = 0.
         self.tracking  = False
-        
+
         # start
+        self.count = 0
         self.update()
 
     def update(self):
         """
-        Updates run & tel status window. Runs 
+        Updates run & tel status window. Runs
         once every 10 seconds.
         """
 
@@ -2762,7 +2788,8 @@ class InfoFrame(tk.LabelFrame):
             self.after(100, self.update)
             return
 
-        cpars, clog, astro = self.share['cpars'], self.share['clog'], self.share['astro']
+        cpars, clog, astro = self.share['cpars'], \
+            self.share['clog'], self.share['astro']
 
         if cpars['access_tcs']:
             if cpars['telins_name'] == 'TNO-USPEC':
@@ -2778,8 +2805,10 @@ class InfoFrame(tk.LabelFrame):
                         pa -= 360.
                     self.pa.configure(text='{0:6.2f}'.format(pa))
 
-                    # check for significant changes in position to flag tracking failures
-                    if abs(ra-self.ra_old) < 1.e-3 and abs(dec-self.dec_old) < 1.e-3 and tflag:
+                    # check for significant changes in position to flag
+                    # tracking failures
+                    if abs(ra-self.ra_old) < 1.e-3 and \
+                            abs(dec-self.dec_old) < 1.e-3 and tflag:
                         self.tracking = True
                         self.ra.configure(bg=COL['main'])
                         self.dec.configure(bg=COL['main'])
@@ -2787,9 +2816,10 @@ class InfoFrame(tk.LabelFrame):
                         self.tracking = False
                         self.ra.configure(bg=COL['warn'])
                         self.dec.configure(bg=COL['warn'])
-                        
+
                     # check for changing sky PA
-                    if abs(pa-self.pa_old) > 0.1 and abs(pa-self.pa_old-360.) > 0.1 and \
+                    if abs(pa-self.pa_old) > 0.1 and \
+                            abs(pa-self.pa_old-360.) > 0.1 and \
                             abs(pa-self.pa_old+360.) > 0.1:
                         self.pa.configure(bg=COL['warn'])
                     else:
@@ -2800,6 +2830,20 @@ class InfoFrame(tk.LabelFrame):
                     self.dec_old = dec
                     self.pa_old  = pa
 
+                    # set engineering PA, warn if within 20 degrees
+                    # of limits
+                    self.engpa.configure(text='{0:+6.1f}'.format(engpa))
+
+                    # rotator limits are -220, +250. Warn when within 20
+                    # degrees of these. (I carried out a test and the
+                    # upper rotator limit was actually hit at +255 but
+                    # I have stuck to 250).
+                    if engpa < -200 or engpa > 230:
+                        self.engpa.configure(bg=COL['warn'])
+                    else:
+                        self.engpa.configure(bg=COL['main'])
+
+                    # set focus
                     self.focus.configure(text='{0:+5.2f}'.format(focus))
 
                     # create a Body for the target, calculate most of the stuff
@@ -2821,22 +2865,24 @@ class InfoFrame(tk.LabelFrame):
                     daz  = math.degrees(star.az)
                     self.alt.configure(text='{0:<4.1f}'.format(dalt))
                     self.az.configure(text='{0:<5.1f}'.format(daz))
-                        
+
                     # warn about the TV mast. Basically checks whether
-                    # alt and az lie in roughly triangular shape 
-                    # presented by the mast. First move azimuth 5 deg closer 
+                    # alt and az lie in roughly triangular shape
+                    # presented by the mast. First move azimuth 5 deg closer
                     # to the mast to give a bit of warning.
                     if daz > 33.5:
                         daz = min(33.5,daz-5.)
                     else:
                         daz = max(33.5,daz+5.)
 
-                    if daz > 25.5 and daz < 50.0 and dalt < 73.5 \
-                            and \
+                    if daz > 25.5 and daz < 50.0 and \
+                            dalt < 73.5 and \
                             ((daz < 33.5 and \
-                                  dalt < 73.5-(33.5-daz)/(33.5-25.5)*(73.5-21.5)) or \
+                                  dalt < 73.5-(33.5-daz)/ \
+                                  (33.5-25.5)*(73.5-21.5)) or \
                                  (daz > 33.5 and \
-                                      dalt < 73.5-(daz-33.5)/(50.0-33.5)*(73.5-21.5))):
+                                      dalt < 73.5- \
+                                      (daz-33.5)/(50.0-33.5)*(73.5-21.5))):
                         self.alt.configure(bg=COL['warn'])
                         self.az.configure(bg=COL['warn'])
                     else:
@@ -2844,7 +2890,8 @@ class InfoFrame(tk.LabelFrame):
                         self.az.configure(bg=COL['main'])
 
                     # set airmass
-                    self.airmass.configure(text='{0:<4.2f}'.format(1./math.sin(star.alt)))
+                    self.airmass.configure(text='{0:<4.2f}'.format(
+                            1./math.sin(star.alt)))
 
                     # distance to the moon. Warn if < 20 degrees from it.
                     md = math.degrees(ephem.separation(astro.moon,star))
@@ -2854,10 +2901,10 @@ class InfoFrame(tk.LabelFrame):
                     else:
                         self.mdist.configure(bg=COL['main'])
 
-                    # calculate cosine of angle between vertical and celestial North
-                    # cpan = (math.sin(astro.obs.lat)-math.sin(star._dec)*math.sin(star.alt))/
-                    # (math.cos(star._dec)*math.cos(star.alt))
-                    # pan = math.acos(cpan)
+                    # calculate cosine of angle between vertical and celestial
+                    # North cpan = (math.sin(astro.obs.lat)-math.sin(star._dec)
+                    # *math.sin(star.alt))/(math.cos(star._dec)*math.cos(
+                    # star.alt)) pan = math.acos(cpan)
 
                 except Exception, err:
                     self.ra.configure(text='UNDEF')
@@ -2872,9 +2919,25 @@ class InfoFrame(tk.LabelFrame):
 
         # get run number (set by the 'Start' button')
         # get frame number (need FileServer to be running
-        # url = cpars['http_file_server'] + run + '?action=get_num_frames'
-        
+        # url = cpars['http_file_server'] + run + '?action=get_num_frame
+
+        # get the current filter, if the wheel is defined
+        # poll at 5x slower rate than the frame
+        if 'wheel' in self.share and self.count % 5 == 0:
+            wheel = self.share['wheel']
+            try:
+                if not wheel.connected:
+                    wheel.connect()
+                    wheel.init()
+                findex = wheel.getPos()-1
+                self.filter.configure(text=cpars['active_filter_names'][findex])
+            except Exception, err:
+                if self.count % 50:
+                    clog.info.warn('Failed to get filter for Run & Tel\n')
+                    clog.info.warn(str(err) + '\n')
+
         # run every 2 seconds
+        self.count += 1
         self.after(2000, self.update)
 
 class AstroFrame(tk.LabelFrame):
@@ -2964,7 +3027,7 @@ class AstroFrame(tk.LabelFrame):
         self.lastRiset = 0
         self.lastAstro = 0
         self.counter   = 0
-        
+
         # start
         self.update()
 
@@ -2978,7 +3041,7 @@ class AstroFrame(tk.LabelFrame):
 
         # configure times
         self.utc.configure(text=time.strftime('%H:%M:%S',time.gmtime(utc)))
-        self.mjd.configure(text='{0:11.5f}'.format(UNIX0-MJD0+utc/DAY)) 
+        self.mjd.configure(text='{0:11.5f}'.format(UNIX0-MJD0+utc/DAY))
         lst = DAY*(self.obs.sidereal_time()/math.pi/2.)
         self.lst.configure(text=time.strftime('%H:%M:%S',time.gmtime(lst)))
 
@@ -2995,15 +3058,15 @@ class AstroFrame(tk.LabelFrame):
 
             if self.obs.date > self.lastRiset and \
                     self.obs.date > self.lastAstro:
-                # Only re-compute rise and setting times when necessary, 
-                # and only re-compute when both rise/set and astro twilight 
+                # Only re-compute rise and setting times when necessary,
+                # and only re-compute when both rise/set and astro twilight
                 # times have gone by
 
-                # turn off refraction for both sunrise & set and astro 
+                # turn off refraction for both sunrise & set and astro
                 # twilight calculation.
                 self.obs.pressure = 0.
 
-                # For sunrise and set we set the horizon down to match 
+                # For sunrise and set we set the horizon down to match
                 # a standard amount of refraction at the horizon
                 self.obs.horizon  = '-0:34'
                 sunset  = self.obs.next_setting(self.sun)
@@ -3014,15 +3077,15 @@ class AstroFrame(tk.LabelFrame):
                 astroset  = self.obs.next_setting(self.sun, use_center=True)
                 astrorise = self.obs.next_rising(self.sun, use_center=True)
 
-                if sunrise > sunset: 
-                    # In the day time we report the upcoming sunset and 
+                if sunrise > sunset:
+                    # In the day time we report the upcoming sunset and
                     # end of evening twilight
                     self.lriset.configure(text='Sets:')
                     self.lastRiset = sunset
                     self.lastAstro = astroset
 
                 elif astrorise > astroset and astrorise < sunrise:
-                    # During evening twilight, we report the sunset just 
+                    # During evening twilight, we report the sunset just
                     # passed and end of evening twilight
                     self.lriset.configure(text='Sets:')
                     self.obs.horizon  = '-0:34'
@@ -3030,15 +3093,15 @@ class AstroFrame(tk.LabelFrame):
                     self.lastAstro = astroset
 
                 elif astrorise > astroset and astrorise < sunrise:
-                    # During night, report upcoming start of morning 
-                    # twilight and sunrise 
+                    # During night, report upcoming start of morning
+                    # twilight and sunrise
                     self.lriset.configure(text='Rises:')
                     self.obs.horizon  = '-0:34'
                     self.lastRiset = sunrise
                     self.lastAstro = astrorise
 
                 else:
-                    # During morning twilight report start of twilight 
+                    # During morning twilight report start of twilight
                     # just passed and upcoming sunrise
                     self.lriset.configure(text='Rises:')
                     self.obs.horizon  = '-18'
@@ -3082,7 +3145,7 @@ def isRunActive():
     url = cpars['http_data_server'] + 'status'
     response = urllib2.urlopen(url)
     rs  = ReadServer(response.read())
-    rlog.log.debug('Data server response =\n' + rs.resp() + '\n')        
+    rlog.log.debug('Data server response =\n' + rs.resp() + '\n')
     if not rs.ok:
         raise DriverError('Active run check error: ' + str(rs.err))
 
@@ -3095,22 +3158,25 @@ def isRunActive():
 
 def getRunNumber(cpars):
     """
-    Polls the data server to find the current run number. This
-    gets called often, so is designed to run silently. It therefore
-    traps all errors and returns 0 if there are any problems.
+    Polls the data server to find the current run number. Throws
+    exceptions if it can't determine it.
     """
-    try:
+
+    if isRunActive():
         url = cpars['http_data_server'] + 'fstatus'
         response = urllib2.urlopen(url)
         rs  = ReadServer(response.read())
-        return rs.run if rs.ok else 0
-    except:
-        return 0
+        if rs.ok:
+            return rs.run
+        else:
+            raise DriverError('Active run check error: ' + str(rs.err))
+    else:
+        raise DriverError('Run currently active; cannot determine run number')
 
 def checkSimbad(target, maxobj=5):
     """
     Sends off a request to Simbad to check whether a target is recognised.
-    Returns with a list of results. 
+    Returns with a list of results.
     """
     url   = 'http://simbad.u-strasbg.fr/simbad/sim-script'
     q     = 'set limit ' + str(maxobj) + \
@@ -3129,10 +3195,10 @@ def checkSimbad(target, maxobj=5):
         if data and line.startswith('Target:'):
             name,coords = line[7:].split(' | ')
             results.append(
-                {'Name' : name.strip(), 'Position' : coords.strip(), 
+                {'Name' : name.strip(), 'Position' : coords.strip(),
                  'Frame' : 'ICRS'})
     resp.close()
-    
+
     if error and len(results):
         print('drivers.check: Simbad: there appear to be some ' + \
                   'results but an error was unexpectedly raised.')
@@ -3141,11 +3207,11 @@ def checkSimbad(target, maxobj=5):
 
 class WinPairs (tk.Frame):
     """
-    Class to define a frame of multiple window pairs, 
+    Class to define a frame of multiple window pairs,
     contained within a gridded block that can be easily position.
     """
 
-    def __init__(self, master, xsls, xslmins, xslmaxs, xsrs, xsrmins, xsrmaxs, 
+    def __init__(self, master, xsls, xslmins, xslmaxs, xsrs, xsrmins, xsrmaxs,
                  yss, ysmins, ysmaxs, nxs, nys, xbfac, ybfac, checker):
         """
         Arguments:
@@ -3154,7 +3220,7 @@ class WinPairs (tk.Frame):
             container widget
 
           xsls, xslmins, xslmaxs :
-            initial X values of the leftmost columns of left-hand windows 
+            initial X values of the leftmost columns of left-hand windows
             along with minimum and maximum values (array-like)
 
           xsrs, xsrmins, xsrmaxs :
@@ -3179,15 +3245,15 @@ class WinPairs (tk.Frame):
           ybfac :
             array of unique y-binning factors
 
-          checker : 
+          checker :
             checker function to provide a global check and update in response
-            to any changes made to the values stored in a Window. Can be None. 
+            to any changes made to the values stored in a Window. Can be None.
 
-        It is assumed that the maximum X dimension is the same for both left 
+        It is assumed that the maximum X dimension is the same for both left
         and right windows and equal to xslmax-xslmin+1.
         """
 
-        npair = len(xsls)        
+        npair = len(xsls)
         checks = (xsls, xslmins, xslmaxs, xsrs, xsrmins, xsrmaxs, \
                       yss, ysmins, ysmaxs, nxs, nys)
         for check in checks:
@@ -3198,7 +3264,7 @@ class WinPairs (tk.Frame):
 
         tk.Frame.__init__(self, master)
 
-        # top part contains the binning factors and 
+        # top part contains the binning factors and
         # the number of active windows
         top = tk.Frame(self)
         top.pack(anchor=tk.W)
@@ -3255,12 +3321,12 @@ class WinPairs (tk.Frame):
             self.ys.append(
                 RangedInt(bottom, ys, ysmin, ysmax, checker, True, width=4))
             self.nx.append(
-                RangedMint(bottom, nx, 1, xslmax-xslmin+1, self.xbin, 
+                RangedMint(bottom, nx, 1, xslmax-xslmin+1, self.xbin,
                            checker, True, width=4))
             self.ny.append(
-                RangedMint(bottom, ny, 1, ysmax-ysmin+1, self.ybin, 
+                RangedMint(bottom, ny, 1, ysmax-ysmin+1, self.ybin,
                            checker, True, width=4))
-                           
+
             # arrange
             self.label[-1].grid(row=row,column=0)
             self.xsl[-1].grid(row=row,column=1)
@@ -3273,13 +3339,13 @@ class WinPairs (tk.Frame):
             nr  += 1
 
         # syncing button
-        self.sbutt = ActButton(bottom, 5, {}, self.sync, text='Sync')        
+        self.sbutt = ActButton(bottom, 5, {}, self.sync, text='Sync')
         self.sbutt.grid(row=row,column=0,columnspan=5,pady=10,sticky=tk.W)
         self.frozen = False
 
     def check(self):
         """
-        Checks the values of the window pairs. If any problems are found, it 
+        Checks the values of the window pairs. If any problems are found, it
         flags them by changing the background colour.
 
         Returns (status, synced)
@@ -3297,7 +3363,7 @@ class WinPairs (tk.Frame):
 
         # individual pair checks
         for xslw, xsrw, ysw, nxw, nyw in \
-                zip(self.xsl[:npair], self.xsr[:npair], self.ys[:npair], 
+                zip(self.xsl[:npair], self.xsr[:npair], self.ys[:npair],
                     self.nx[:npair], self.ny[:npair]):
             xslw.config(bg=COL['main'])
             xsrw.config(bg=COL['main'])
@@ -3333,17 +3399,17 @@ class WinPairs (tk.Frame):
                 xsrw.config(bg=COL['error'])
                 status = False
 
-            # Are the windows synchronised? This means that they would 
-            # be consistent with the pixels generated were the whole CCD 
-            # to be binned by the same factors. If relevant values are not 
-            # set, we count that as "synced" because the purpose of this is 
+            # Are the windows synchronised? This means that they would
+            # be consistent with the pixels generated were the whole CCD
+            # to be binned by the same factors. If relevant values are not
+            # set, we count that as "synced" because the purpose of this is
             # to enable / disable the sync button and we don't want it to be
             # enabled just because xs or ys are not set.
             synced = True if xsl is None or xsr is None or \
                 ys is None or nx is None or ny is None or \
                 ((xsl - 1) % xbin == 0 and (xsr - 1) % xbin == 0 \
                      and (ys - 1) % ybin == 0) else synced
-            
+
             # Range checks
             if xsl is None or nx is None or xsl + nx - 1 > xslw.imax:
                 xslw.config(bg=COL['error'])
@@ -3357,8 +3423,8 @@ class WinPairs (tk.Frame):
                 ysw.config(bg=COL['error'])
                 status = False
 
-        # Pair overlap checks. Compare one pair with the next one upstream 
-        # (if there is one). Only bother if we have survived so far, which 
+        # Pair overlap checks. Compare one pair with the next one upstream
+        # (if there is one). Only bother if we have survived so far, which
         # saves a lot of checks
         if status:
             n1 = 0
@@ -3366,14 +3432,14 @@ class WinPairs (tk.Frame):
 
                 ys1  = ysw1.value()
                 ny1  = nyw1.value()
-            
+
                 n1 += 1
 
                 ysw2, nyw2 = self.ys[n1], self.ny[n1]
 
                 ys2  = ysw2.value()
                 ny2  = nyw2.value()
-                
+
                 if ys1 + ny1 > ys2:
                     ysw2.config(bg=COL['error'])
                     status = False
@@ -3387,11 +3453,11 @@ class WinPairs (tk.Frame):
             self.sbutt.config(bg=COL['warn'])
 
         return status
-    
+
     def enable(self):
         npair = self.npair.value()
         for label, xsl, xsr, ys, nx, ny in \
-                zip(self.label[:npair], self.xsl[:npair], self.xsr[:npair], 
+                zip(self.label[:npair], self.xsl[:npair], self.xsr[:npair],
                     self.ys[:npair], self.nx[:npair], self.ny[:npair]):
             label.config(state='normal')
             xsl.enable()
@@ -3401,7 +3467,7 @@ class WinPairs (tk.Frame):
             ny.enable()
 
         for label, xsl, xsr, ys, nx, ny in \
-                zip(self.label[npair:], self.xsl[npair:], self.xsr[npair:], 
+                zip(self.label[npair:], self.xsl[npair:], self.xsr[npair:],
                     self.ys[npair:], self.nx[npair:], self.ny[npair:]):
             label.config(state='disable')
             xsl.disable()
@@ -3419,13 +3485,13 @@ class WinPairs (tk.Frame):
             ys.disable()
             nx.disable()
             ny.disable()
-    
+
     def sync(self):
         """
-        Synchronise the settings. This means that the pixel start 
-        values are shifted downwards so that they are synchronised 
-        with a full-frame binned version. This does nothing if the 
-        binning factors == 1. 
+        Synchronise the settings. This means that the pixel start
+        values are shifted downwards so that they are synchronised
+        with a full-frame binned version. This does nothing if the
+        binning factors == 1.
         """
 
         # needs some mods for ultracam ??
@@ -3467,7 +3533,7 @@ class WinPairs (tk.Frame):
         """
         npair = self.npair.value()
         for label, xsl, xsr, ys, nx, ny in \
-                zip(self.label[:npair], self.xsl[:npair], self.xsr[:npair], 
+                zip(self.label[:npair], self.xsl[:npair], self.xsr[:npair],
                     self.ys[:npair], self.nx[:npair], self.ny[:npair]):
             label.config(state='normal')
             xsl.enable()
@@ -3477,7 +3543,7 @@ class WinPairs (tk.Frame):
             ny.enable()
 
         for label, xsl, xsr, ys, nx, ny in \
-                zip(self.label[npair:], self.xsl[npair:], self.xsr[npair:], 
+                zip(self.label[npair:], self.xsl[npair:], self.xsr[npair:],
                     self.ys[npair:], self.nx[npair:], self.ny[npair:]):
             label.config(state='disable')
             xsl.disable()
@@ -3485,13 +3551,13 @@ class WinPairs (tk.Frame):
             ys.disable()
             nx.disable()
             ny.disable()
-        
+
         self.frozen = False
         self.check()
 
     def __iter__(self):
         """
-        Generator to allow looping through through the window pairs. 
+        Generator to allow looping through through the window pairs.
         Successive calls return xsl, xsr, ys, nx, ny for each pair
         """
         n = 0
@@ -3517,7 +3583,7 @@ class Windows (tk.Frame):
             container widget
 
           xss, xsmins, xsmaxs :
-            initial X values of the leftmost column of window(s) 
+            initial X values of the leftmost column of window(s)
             along with minimum and maximum values (array-like)
 
           yss, ysmins, ysmaxs :
@@ -3538,12 +3604,12 @@ class Windows (tk.Frame):
           ybfac :
             set of y-binning factors
 
-          checker : 
+          checker :
             checker function to provide a global check and update in response
-            to any changes made to the values stored in a Window. Can be None. 
+            to any changes made to the values stored in a Window. Can be None.
         """
 
-        nwin = len(xss)        
+        nwin = len(xss)
         checks = (xss, xsmins, xsmaxs, yss, ysmins, ysmaxs, nxs, nys)
         for check in checks:
             if nwin != len(check):
@@ -3552,7 +3618,7 @@ class Windows (tk.Frame):
 
         tk.Frame.__init__(self, master)
 
-        # top part contains the binning factors and the number 
+        # top part contains the binning factors and the number
         # of active windows
         top = tk.Frame(self)
         top.pack(anchor=tk.W)
@@ -3605,12 +3671,12 @@ class Windows (tk.Frame):
             self.ys.append(
                 RangedInt(bottom, ys, ysmin, ysmax, checker, True, width=4))
             self.nx.append(
-                RangedMint(bottom, nx, 1, xsmax-xsmin+1, 
+                RangedMint(bottom, nx, 1, xsmax-xsmin+1,
                            self.xbin, checker, True, width=4))
             self.ny.append(
-                RangedMint(bottom, ny, 1, ysmax-ysmin+1, 
+                RangedMint(bottom, ny, 1, ysmax-ysmin+1,
                            self.ybin, checker, True, width=4))
-                           
+
             # arrange
             self.label[-1].grid(row=row,column=0)
             self.xs[-1].grid(row=row,column=1)
@@ -3621,14 +3687,14 @@ class Windows (tk.Frame):
             row += 1
             nr  += 1
 
-        self.sbutt = ActButton(bottom, 5, {}, self.sync, text='Sync')        
+        self.sbutt = ActButton(bottom, 5, {}, self.sync, text='Sync')
         self.sbutt.grid(row=row,column=0,columnspan=5,pady=6,sticky=tk.W)
         self.frozen = False
 
     def check(self):
         """
-        Checks the values of the windows. If any problems are found, it 
-        flags them by changing the background colour. Only active
+        Checks the values of the windows. If any problems are found,
+        it flags them by changing the background colour. Only active
         windows are checked.
 
         Returns status, flag for whether parameters are viable.
@@ -3643,7 +3709,7 @@ class Windows (tk.Frame):
 
         # individual window checks
         for xsw, ysw, nxw, nyw in \
-                zip(self.xs[:nwin], self.ys[:nwin], 
+                zip(self.xs[:nwin], self.ys[:nwin],
                     self.nx[:nwin], self.ny[:nwin]):
 
             xsw.config(bg=COL['main'])
@@ -3668,18 +3734,18 @@ class Windows (tk.Frame):
                 nyw.config(bg=COL['error'])
                 status = False
 
-            # Are the windows synchronised? This means that they 
-            # would be consistent with the pixels generated were 
+            # Are the windows synchronised? This means that they
+            # would be consistent with the pixels generated were
             # the whole CCD to be binned by the same factors
-            # If relevant values are not set, we count that as 
-            # "synced" because the purpose of this is to enable 
+            # If relevant values are not set, we count that as
+            # "synced" because the purpose of this is to enable
             # / disable the sync button and we don't want it to be
             # enabled just because xs or ys are not set.
             synced = True if \
                 xs is None or ys is None or nx is None or ny is None or \
                 ((xs - 1) % xbin == 0 and (ys - 1) % ybin == 0) \
                 else synced
-            
+
             # Range checks
             if xs is None or nx is None or xs + nx - 1 > xsw.imax:
                 xsw.config(bg=COL['error'])
@@ -3689,7 +3755,7 @@ class Windows (tk.Frame):
                 ysw.config(bg=COL['error'])
                 status = False
 
-        # Overlap checks. Compare each window with the next one, requiring 
+        # Overlap checks. Compare each window with the next one, requiring
         # no y overlap and that the second is higher than the first
         if status:
             n1 = 0
@@ -3697,7 +3763,7 @@ class Windows (tk.Frame):
 
                 ys1  = ysw1.value()
                 ny1  = nyw1.value()
-            
+
                 n1 += 1
                 ysw2, nyw2 = self.ys[n1], self.ny[n1]
 
@@ -3720,12 +3786,12 @@ class Windows (tk.Frame):
             print('not synced')
 
         return status
-    
+
     def enable(self):
         print('enabling windows')
         nwin = self.nwin.value()
         for label, xs, ys, nx, ny in \
-                zip(self.label[:nwin], self.xs[:nwin], self.ys[:nwin], 
+                zip(self.label[:nwin], self.xs[:nwin], self.ys[:nwin],
                     self.nx[:nwin], self.ny[:nwin]):
             label.config(state='normal')
             xs.enable()
@@ -3734,7 +3800,7 @@ class Windows (tk.Frame):
             ny.enable()
 
         for label, xs, ys, nx, ny in \
-                zip(self.label[nwin:], self.xs[nwin:], self.ys[nwin:], 
+                zip(self.label[nwin:], self.xs[nwin:], self.ys[nwin:],
                     self.nx[nwin:], self.ny[nwin:]):
             label.config(state='disable')
             xs.disable()
@@ -3754,9 +3820,9 @@ class Windows (tk.Frame):
 
     def sync(self, *args):
         """
-        Synchronise the settings. This means that the pixel start 
-        values are shifted downwards so that they are synchronised 
-        with a full-frame binned version. This does nothing if the 
+        Synchronise the settings. This means that the pixel start
+        values are shifted downwards so that they are synchronised
+        with a full-frame binned version. This does nothing if the
         binning factor == 1
         """
         print('syncing windows ',args)
@@ -3795,7 +3861,7 @@ class Windows (tk.Frame):
         print('unfreezing windows')
         nwin = self.nwin.value()
         for label, xs, ys, nx, ny in \
-                zip(self.label[:nwin], self.xs[:nwin], self.ys[:nwin], 
+                zip(self.label[:nwin], self.xs[:nwin], self.ys[:nwin],
                     self.nx[:nwin], self.ny[:nwin]):
             label.config(state='normal')
             xs.enable()
@@ -3804,20 +3870,20 @@ class Windows (tk.Frame):
             ny.enable()
 
         for label, xs, ys, nx, ny in \
-                zip(self.label[nwin:], self.xs[nwin:], self.ys[nwin:], 
+                zip(self.label[nwin:], self.xs[nwin:], self.ys[nwin:],
                     self.nx[nwin:], self.ny[nwin:]):
             label.config(state='disable')
             xs.disable()
             ys.disable()
             nx.disable()
             ny.disable()
-        
+
         self.frozen = False
         self.check()
 
     def __iter__(self):
         """
-        Generator to allow looping through through the window values. 
+        Generator to allow looping through through the window values.
         Successive calls return xs, ys, nx, ny for each window
         """
         n = 0
