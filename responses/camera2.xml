@@ -1,0 +1,52 @@
+<?xml version="1.0"?>
+<response>
+  <camera_status>
+    <observatory_status>
+      <name>Thai National Observatory, Doi Inthanon, Thailand</name>
+      <telescope>Thai National Observatory 2.4m</telescope>
+    </observatory_status>
+    <instrument_status>
+      <name>Ultraspec</name>
+      <type>camera</type>
+      <detector_status name="Ultraspec" type="L3CCD">
+        <chip_status name="CCD201" type="L3CCD-201" columns="1072" rows="1072" xshift="0.000000" yshift="0.000000" xscale="1.000000" yscale="1.000000" rotation="0.000000" fpunits="pixels"/>
+      </detector_status>
+      <application_status id="PCI Boot" dsp="YES" loaded="NO"/>
+      <application_status id="PCI Exec" dsp="YES" loaded="NO"/>
+      <application_status id="SDSU Boot" dsp="YES" loaded="NO"/>
+      <application_status id="SDSU Exec" dsp="YES" loaded="YES" name="ccd201_winbin_cfg" version="2.0" coff="ccd201_winbin_dsp.xml"/>
+      <parameter_status location="EXEC" name="DWELL" type="int" access="readwrite" value="10007"/>
+      <parameter_status location="EXEC" name="NUM_EXPS" type="int" access="readwrite" value="-1"/>
+      <parameter_status location="EXEC" name="LED_FLSH" type="int" access="readwrite" value="0"/>
+      <parameter_status location="EXEC" name="X1_START" type="int" access="readwrite" value="17"/>
+      <parameter_status location="EXEC" name="X1_SIZE" type="int" access="readwrite" value="1056"/>
+      <parameter_status location="EXEC" name="Y1_START" type="int" access="readwrite" value="1"/>
+      <parameter_status location="EXEC" name="Y1_SIZE" type="int" access="readwrite" value="1072"/>
+      <parameter_status location="EXEC" name="X2_START" type="int" access="readwrite" value="1"/>
+      <parameter_status location="EXEC" name="X2_SIZE" type="int" access="readwrite" value="0"/>
+      <parameter_status location="EXEC" name="Y2_START" type="int" access="readwrite" value="1"/>
+      <parameter_status location="EXEC" name="Y2_SIZE" type="int" access="readwrite" value="0"/>
+      <parameter_status location="EXEC" name="X3_START" type="int" access="readwrite" value="1"/>
+      <parameter_status location="EXEC" name="X3_SIZE" type="int" access="readwrite" value="0"/>
+      <parameter_status location="EXEC" name="Y3_START" type="int" access="readwrite" value="1"/>
+      <parameter_status location="EXEC" name="Y3_SIZE" type="int" access="readwrite" value="0"/>
+      <parameter_status location="EXEC" name="X4_START" type="int" access="readwrite" value="1"/>
+      <parameter_status location="EXEC" name="X4_SIZE" type="int" access="readwrite" value="0"/>
+      <parameter_status location="EXEC" name="Y4_START" type="int" access="readwrite" value="1"/>
+      <parameter_status location="EXEC" name="Y4_SIZE" type="int" access="readwrite" value="0"/>
+      <parameter_status location="EXEC" name="X_BIN" type="int" access="readwrite" value="1"/>
+      <parameter_status location="EXEC" name="Y_BIN" type="int" access="readwrite" value="1"/>
+      <parameter_status location="EXEC" name="EN_CLR" type="int" access="readwrite" value="1"/>
+      <parameter_status location="EXEC" name="HV_GAIN" type="int" access="readwrite" value="0"/>
+      <parameter_status location="EXEC" name="OUTPUT" type="int" access="readwrite" value="0"/>
+      <parameter_status location="EXEC" name="SPEED" type="int" access="readwrite" value="1"/>
+      <parameter_status location="EXEC" name="X_SIZE" type="int" access="readwrite" value="1132032"/>
+      <parameter_status location="EXEC" name="Y_SIZE" type="int" access="readwrite" value="1"/>
+      <parameter_status location="EXEC" name="END_PARAMTR" type="int" access="readwrite" value="14254069"/>
+    </instrument_status>
+  </camera_status>
+  <source>Camera server</source>
+  <debug responsenumber="12"/>
+  <status software="OK" camera="OK" errnum="0"/>
+  <state camera="UNKNOWN" identifier="0"/>
+</response>

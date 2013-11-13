@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<response>
+  <source>Filesave data handler</source>
+  <status software="OK" errnum="0"/>
+  <state server="IDLE" identifier="0"/>
+  <lastfile path="/data/run083"/>
+</response>
