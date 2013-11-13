@@ -16,6 +16,7 @@ command.
 import argparse, os
 import Tkinter as tk
 import tkFont
+import tkMessageBox
 import logging
 import Queue
 import threading
@@ -212,8 +213,7 @@ class GUI(tk.Tk):
     def ask_quit(self):
         cpars, clog = self.share['cpars'], self.share['clog']
         if cpars['confirm_on_quit']:
-            if not tkMessageBox.askokcancel(
-                'Do you really want to quit usdriver?'):
+            if not tkMessageBox.askokcancel('Quit', 'Really quit usdriver?'):
                 clog.log.warn('Quit usdriver cancelled.\n')
             else:
                 if self.wheel.connected:
