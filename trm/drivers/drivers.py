@@ -146,7 +146,7 @@ def loadCpars(fp):
         'INSTRUMENT_APP' : 'string', 'POWER_ON' : 'string',
         'FOCAL_PLANE_SLIDE' : 'string', 'TELINS_NAME' : 'string',
         'REQUIRE_RUN_PARAMS' : 'boolean', 'ACCESS_TCS' : 'boolean',
-        'HTTP_FILE_SERVER' : 'string'}
+        'HTTP_FILE_SERVER' : 'string', 'CONFIRM_ON_QUIT' : 'boolean'}
 
     for key, value in SINGLE_ITEMS.iteritems():
         if value == 'boolean':
@@ -1470,13 +1470,13 @@ class Start(ActButton):
                     gotPos = True
                 except Exception, err:
                     print(err)
-                    if not tkMessageBox.askokcancel(
+                    if not tkMessageBox.askokcancel('TCS error',
                         'Could not get RA, Dec from telescope.\n' +
                         'Continue?'):
                         clog.log.warn('Start operation cancelled\n')
                     gotPos = False
             else:
-                if not tkMessageBox.askokcancel(
+                if not tkMessageBox.askokcancel('TCS error',
                     'No TCS routine for telescope/instrument = ' +
                     cpars['telins_name'] + '\n' +
                     'Could not get RA, Dec from telescope.\n' + 'Continue?'):
@@ -1486,16 +1486,19 @@ class Start(ActButton):
         # Couple of safety checks
         if cpars['expert_level'] == 0 and cpars['confirm_hv_gain_on'] and \
                 ipars.avalanche() and ipars.avgain.value() > 0:
+
             if not tkMessageBox.askokcancel(
-                'Avalanche gain is on at level = ' + \
-                    ipars.avgain.value() + '\n' + 'Continue?'):
+                'Avalanche','Avalanche gain is on at level = ' +
+                ipars.avgain.value() + '\n' + 'Continue?'):
                 clog.log.warn('Start operation cancelled\n')
                 return False
 
         if cpars['expert_level'] == 0 and cpars['confirm_on_change'] and \
                 self.target is not None and self.target != rpars.target.value():
-             if not tkMessageBox.askokcancel('Target name has changed\n' +
-                                             'Continue?'):
+
+             if not tkMessageBox.askokcancel(
+                 'Confirm target', 'Target name has changed\n' +
+                 'Continue?'):
                 clog.log.warn('Start operation cancelled\n')
                 return False
 
@@ -1685,8 +1688,6 @@ class ReadServer(object):
     """
 
     def __init__(self, resp):
-        print('Server response = ' + resp)
-
         # Store the entire response
         self.root = ET.fromstring(resp)
 
@@ -1701,6 +1702,15 @@ class ReadServer(object):
 
         self.camera = cfind.text.find('Camera') > -1
 
+        # strip excess stuff
+        camstat = self.root.find('camera_status')
+        if camstat is not None:
+            self.root.remove(camstat)
+
+        filestat = self.root.find('filesave_status')
+        if filestat is not None:
+            self.root.remove(filestat)
+
         # Work out whether it was happy
         sfind = self.root.find('status')
         if sfind is None:
@@ -1709,14 +1719,15 @@ class ReadServer(object):
             self.state = None
             return
 
-        self.ok  = True
-        self.err = ''
-        for key, value in sfind.attrib.iteritems():
-            if value != 'OK':
-                self.ok  = False
-                self.err = key + ' is listed as ' + value
+        att = sfind.attrib
+        if 'software' in att and 'errnum' in att:
+            self.ok = att['software'] == 'OK'
+            if self.ok:
+                self.err = ''
+            else:
+                self.err = 'server errnum = ' + str(att['errnum'])
 
-        # Determine state of the camera
+        # Determine state of the camera / data server
         sfind = self.root.find('state')
         if sfind is None:
             self.ok     = False
@@ -1730,9 +1741,11 @@ class ReadServer(object):
             self.state = sfind.attrib['server']
 
         # Find current run number (set it to 0 if we fail)
+        # this only works for  the 'fstatus' command as
+        # opposed to 'status' for which the above works
         sfind = self.root.find('lastfile')
-        if sfind is not None:
-            self.run = int(sfind.attrib['path'][:3])
+        if sfind is not None and 'path' in sfind.attrib:
+            self.run = int(sfind.attrib['path'][-3:])
         else:
             self.run = 0
 
@@ -2126,13 +2139,13 @@ class PowerOn(ActButton):
                     n += 1
                     time.sleep(1)
 
-                if isRunActive():
+                if isRunActive(cpars):
                     clog.log.warn(
                         'Timed out waiting for power on run to ' + \
                             'de-activate; cannot initialise run number. ' + \
                             'Tell trm if this happens')
                 else:
-                    o['info'].currentrun.set(getRunNumber())
+                    o['info'].currentrun.set(getRunNumber(cpars,rlog,True))
             except Exception, err:
                 clog.log.warn(\
                     'Failed to determine run number at start of run\n')
@@ -2562,36 +2575,6 @@ class Timer(tk.Label):
             self.after_cancel(self.id)
         self.id = None
 
-class CurrentRun(tk.Label):
-    """
-    Run indicator checks every second with the server
-    """
-    def __init__(self, master, share):
-        tk.Label.__init__(self, master, text='UNDEF')
-        self.share = share
-
-    def set(self, rnum):
-        """
-        Sets the run number to rnum
-        """
-        self.configure(text='%03d' % (rnum,))
-
-    def addone(self, rnum):
-        """
-        Adds one to the run number
-        """
-        self.set(int(self.get())+1)
-
-    def update(self):
-        """
-        Runs the run number checker, once per second.
-        """
-        o = self.share
-        cpars = o['cpars']
-        run = getRunNumber(cpars)
-        self.configure(text='%03d' % (run,))
-        self.after(1000, self.run)
-
 class FocalPlaneSlide(tk.LabelFrame):
     """
     Self-contained widget to deal with the focal plane slide
@@ -2698,7 +2681,7 @@ class InfoFrame(tk.LabelFrame):
         tk.LabelFrame.__init__(self, master,
                                text='Run & Tel status', padx=4, pady=4)
 
-        self.run     = CurrentRun(self, share)
+        self.run     = tk.Label(self, text='UNDEF')
         self.frame   = tk.Label(self,text='UNDEF')
         self.timer   = Timer(self)
         self.cadence = tk.Label(self,text='UNDEF')
@@ -2790,12 +2773,13 @@ class InfoFrame(tk.LabelFrame):
         once every 10 seconds.
         """
 
-        if 'astro' not in self.share:
+        o = self.share
+        if 'astro' not in o:
             self.after(100, self.update)
             return
 
-        cpars, clog, astro = self.share['cpars'], \
-            self.share['clog'], self.share['astro']
+        cpars, clog, rlog, astro = o['cpars'], \
+            o['clog'], o['rlog'], o['astro']
 
         if cpars['access_tcs']:
             if cpars['telins_name'] == 'TNO-USPEC':
@@ -2924,8 +2908,28 @@ class InfoFrame(tk.LabelFrame):
                     print(err)
 
         # get run number (set by the 'Start' button')
-        # get frame number (need FileServer to be running
-        # url = cpars['http_file_server'] + run + '?action=get_num_frame
+        try:
+            if not isRunActive(cpars, rlog):
+                run = getRunNumber(cpars, rlog, True)
+                self.run.configure(text='{0:03d}'.format(run))
+        except Exception, err:
+            clog.log.debug('Error occurred trying to set run\n')
+            clog.log.debug(str(err) + '\n')
+
+        try:
+            run = int(self.run.cget('text'))
+            rstr = 'run{0:03d}'.format(run)
+            url = cpars['http_file_server'] + rstr + '?action=get_num_frames'
+            response = urllib2.urlopen(url)
+            rstr = response.read()
+            ind = rstr.find('nframes="')
+            if ind > -1:
+                ind += 9
+                nframe = int(rstr[ind:ind+rstr[ind:].find('"')])
+                self.frame.configure(text='{0:d}'.format(nframe))
+        except Exception, err:
+            clog.log.debug('Error occurred trying to set frame\n')
+            clog.log.debug(str(err) + '\n')
 
         # get the current filter, if the wheel is defined
         # poll at 5x slower rate than the frame
@@ -3144,7 +3148,7 @@ class AstroFrame(tk.LabelFrame):
 
 # various helper routines
 
-def isRunActive():
+def isRunActive(cpars, rlog):
     """
     Polls the data server to see if a run is active
     """
@@ -3153,31 +3157,40 @@ def isRunActive():
     rs  = ReadServer(response.read())
     rlog.log.debug('Data server response =\n' + rs.resp() + '\n')
     if not rs.ok:
-        raise DriverError('Active run check error: ' + str(rs.err))
+        raise DriverError('isRunActive error: ' + str(rs.err))
 
     if rs.state == 'IDLE':
         return False
     elif rs.state == 'BUSY':
         return True
     else:
-        raise DriverError('Active run check error, state = ' + rs.state)
+        raise DriverError('isRunActive error, state = ' + rs.state)
 
-def getRunNumber(cpars):
+def getRunNumber(cpars, rlog, nocheck=False):
     """
     Polls the data server to find the current run number. Throws
     exceptions if it can't determine it.
+
+    cpars : dictionary of configuration parameters
+
+    nocheck : determines whether a check for an active run is made
+            nocheck=False is safe, but runs 'isRunActive' which
+            might not be needed if you have called this already.
+            nocheck=True avoids the isRunActive but runs the risk
+            of polling for the run of an active run which cannot
+            be done.
     """
 
-    if isRunActive():
+    if nocheck or isRunActive(cpars, rlog):
         url = cpars['http_data_server'] + 'fstatus'
         response = urllib2.urlopen(url)
         rs  = ReadServer(response.read())
         if rs.ok:
             return rs.run
         else:
-            raise DriverError('Active run check error: ' + str(rs.err))
+            raise DriverError('getRunNumber error: ' + str(rs.err))
     else:
-        raise DriverError('Run currently active; cannot determine run number')
+        raise DriverError('getRunNumber error')
 
 def checkSimbad(target, maxobj=5):
     """
