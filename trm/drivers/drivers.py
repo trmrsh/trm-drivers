@@ -2118,20 +2118,26 @@ class PowerOn(ActButton):
             o['Power off'].enable()
             self.disable()
 
-            # now check the run number -- lifted from Java code; the wait
-            # for the power on application to finish may not be needed
-            n = 0
-            while isRunActive() and n < 5:
-                n += 1
-                time.sleep(1)
+            try:
+                # now check the run number -- lifted from Java code; the wait
+                # for the power on application to finish may not be needed
+                n = 0
+                while isRunActive() and n < 5:
+                    n += 1
+                    time.sleep(1)
 
-            if isRunActive():
-                clog.log.warn(
-                    'Timed out waiting for power on run to ' + \
-                        'de-activate; cannot initialise run number. ' + \
-                        'Tell trm if this happens')
-            else:
-                o['info'].currentrun.set(getRunNumber())
+                if isRunActive():
+                    clog.log.warn(
+                        'Timed out waiting for power on run to ' + \
+                            'de-activate; cannot initialise run number. ' + \
+                            'Tell trm if this happens')
+                else:
+                    o['info'].currentrun.set(getRunNumber())
+            except Exception, err:
+                clog.log.warn(\
+                    'Failed to determine run number at start of run\n')
+                clog.log.warn(str(err) + '\n')
+                o['info'].currentrun.configure(text='UNDEF')
             return True
         else:
             clog.log.warn('Power on failed\n')
