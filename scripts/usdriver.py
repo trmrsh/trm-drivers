@@ -58,19 +58,13 @@ class GUI(tk.Tk):
         instpars  = uspec.InstPars(self, share)
         share.update({'instpars' : instpars})
 
-        print('created instpars')
-
         # Run setup data frame
         runpars = uspec.RunPars(self, share)
         share.update({'runpars' : runpars})
 
-        print('created runpars')
-
         # The information frame (run and frame number, exposure time)
         info = drvs.InfoFrame(self, share)
         share.update({'info' : info})
-
-        print('created info')
 
         # Container frame for switch options, observe, focal plane slide and
         # setup widgets
@@ -143,6 +137,10 @@ class GUI(tk.Tk):
         settingsMenu.add_checkbutton(
             label='Access TCS',
             var=drvs.Boolean('access_tcs',cpars))
+
+        settingsMenu.add_checkbutton(
+            label='Servers on',
+            var=drvs.Boolean('cdf_servers_on',cpars))
 
         # Add to menubar
         menubar.add_cascade(label='Settings', menu=settingsMenu)
