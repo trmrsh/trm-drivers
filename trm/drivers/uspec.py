@@ -260,10 +260,11 @@ class InstPars(tk.LabelFrame):
         # allow posting according to whether the parameters are ok
         # update count and S/N estimates as well
         if status:
-            observe.post.enable()
+            if cpars['cdf_servers_on'] and not drvs.isRunActive(cpars, rlog):
+                observe.start.enable()
             cframe.update()
         else:
-            observe.post.disable()
+            observe.start.disable()
 
         return status
 
@@ -652,7 +653,7 @@ class RunPars(tk.LabelFrame):
         return (ok,msg)
 
 # Observing section. First a helper routine needed
-# by the 'Save' and 'Post' buttons
+# by the 'Save' and 'Start' buttons
 
 def createXML(post, cpars, ipars, rpars, clog, rlog):
     """
@@ -862,73 +863,165 @@ def createXML(post, cpars, ipars, rpars, clog, rlog):
     # finally return with the XML
     return root
 
-class Post(drvs.ActButton):
+class Start(drvs.ActButton):
     """
-    Class defining the 'Post' button's operation
+    Class defining the 'Start' button's operation. This carries out
+    both the old Post and Start buttons' operation in one. This involves:
+
+    -- checking that the instrument and run parameters are OK
+    -- (optionally) querying when the target has changed or avalanche gain on
+    -- (optionally) looking for TCS information
+    -- creating the application from a template given current settings
+    -- posting it to the servers
+    -- starting the run
+    -- setting buttons appropriately
+    -- starting the exposure timer.
     """
 
     def __init__(self, master, width, share):
         """
         master   : containing widget
         width    : width of button
-        share    : other objects 'cpars', 'instpars', 'runpars', 'clog', 'rlog'
-        """        
-        drvs.ActButton.__init__(self, master, width, share, text='Post')
+        share    : dictionary with configuration parameters and the loggers
+        """
+
+        drvs.ActButton.__init__(
+            self, master, width, share, bg=drvs.COL['start'], text='Start')
+        self.target = None
 
     def act(self):
         """
-        Carries out the action associated with Post button
+        Carries out the action associated with Start button
         """
 
+        # some shorthand
         o = self.share
-        cpars, ipars, rpars, clog, rlog = \
-            o['cpars'], o['instpars'], o['runpars'], o['clog'], o['rlog']
+        cpars, ipars, rpars, clog, rlog, info = \
+            o['cpars'], o['instpars'], o['runpars'], o['clog'], \
+            o['rlog'], o['info']
 
-        clog.log.info('\nPosting application to servers\n')
-        
-        # check instrument parameters
+        # Check the instrument parameters
         if not ipars.check():
-            clog.log.warn('Invalid instrument parameters; post failed.\n')
-            tkMessageBox.showwarning('Post failure',
-                                     'Instrument parameters are invalid.')
+            clog.log.warn('Invalid instrument parameters.\n')
+            tkMessageBox.showwarning('Start failure',
+                                     'Please check the instrument setup.')
             return False
 
-        # check run parameters
+        # Check the run parameters
         rok, msg = rpars.check()
         if not rok:
-            clog.log.warn('Invalid run parameters; post failed.\n')
+            clog.log.warn('Invalid run parameters.\n')
             clog.log.warn(msg + '\n')
-            tkMessageBox.showwarning('Post failure',
-                                     'Run parameters are invalid\n' + msg)
+            tkMessageBox.showwarning('Start failure',
+                                     'Please check the run parameters.\n' + msg)
             return False
 
+        # Confirm when avalanche gain is on
+        if cpars['expert_level'] == 0 and cpars['confirm_hv_gain_on'] and \
+                ipars.avalanche() and ipars.avgain.value() > 0:
+
+            if not tkMessageBox.askokcancel(
+                'Avalanche','Avalanche gain is on at level = ' +
+                ipars.avgain.value() + '\n' + 'Continue?'):
+                clog.log.warn('Start operation cancelled\n')
+                return False
+
+        # Confirm when target name has changed
+        if cpars['expert_level'] == 0 and cpars['confirm_on_change'] and \
+                self.target is not None and self.target != rpars.target.value():
+
+            if not tkMessageBox.askokcancel(
+                'Confirm target', 'Target name has changed\n' +
+                 'Continue?'):
+                clog.log.warn('Start operation cancelled\n')
+                return False
+
         try:
-            # Get XML from template (specific to instrument)
+            # Get XML from template and modify according to the current settings
             root = createXML(True, cpars, ipars, rpars, clog, rlog)
 
-            # Post to server
-            if drvs.postXML(root, cpars, clog, rlog):
-                clog.log.info('Posted application to servers\n')
+            if cpars['access_tcs']:
+                # get positional info from telescope
+                if cpars['telins_name'] == 'TNO-USPEC':
+                    try:
+                        ra,dec,pa,focus,engpa = tcs.getTntTcs()
+                        # add it into XML
+                        uconfig    = root.find('user')
+                        ra         = ET.SubElement(uconfig, 'RA')
+                        ra.text    = '{0:9.5f}'.format(ra)
+                        dec        = ET.SubElement(uconfig, 'Dec')
+                        dec.text   = '{0:+10.5f}'.format(dec)
+                        pa         = ET.SubElement(uconfig, 'PA')
+                        pa.text    = '{0:6.2f}'.format(pa)
+                        focus      = ET.SubElement(uconfig, 'Focus')
+                        focus.text = '{0:+6.2f}'.format(focus)
+                        epa        = ET.SubElement(uconfig, 'Eng. PA')
+                        epa.text   = '{0:+7.2f}'.format(epa)
+                    except Exception, err:
+                        print(err)
+                        if not tkMessageBox.askokcancel(
+                            'TCS error',
+                            'Could not get RA, Dec from telescope.\n' +
+                            'Continue?'):
+                            clog.log.warn('Start operation cancelled\n')
+                            return False
+                else:
+                    if not tkMessageBox.askokcancel(
+                        'TCS error',
+                        'No TCS routine for telescope/instrument = ' +
+                        cpars['telins_name'] + '\n' +
+                        'Could not get RA, Dec from telescope.\n' + 
+                        'Continue?'):
+                        clog.log.warn('Start operation cancelled\n')
+                        return False
 
-                # Modify buttons
-                self.enable()
-                o['Start'].enable()
-                o['Stop'].disable()
-                o['Post'].enable()
-                o['Filter'].disable()
-                o['setup'].resetSDSUhard.disable()
-                o['setup'].resetSDSUsoft.disable()
-                o['setup'].resetPCI.disable()
-                o['setup'].setupServers.disable()
-                o['setup'].powerOn.disable()
-                o['setup'].powerOff.disable()
-                return True
+            # Post the XML it to the server
+            clog.log.info('\nPosting application to the servers\n')        
+
+            if drvs.postXML(root, cpars, clog, rlog):
+                clog.log.info('Post successful; starting run\n')
+ 
+
+                if execCommand('GO', cpars, clog, rlog):
+                    # start the exposure timer
+                    info.timer.start()
+
+                    clog.log.info('Run started\n')
+
+                    # configure buttons
+                    self.disable()
+                    o['Stop'].enable()
+                    o['Load'].disable()
+                    o['Unfreeze'].disable()
+                    o['setup'].resetSDSUhard.disable()
+                    o['setup'].resetSDSUsoft.disable()
+                    o['setup'].resetPCI.disable()
+                    o['setup'].setupServers.disable()
+                    o['setup'].powerOn.disable()
+                    o['setup'].powerOff.disable()
+
+                    # freeze instrument parameters
+                    ipars.freeze()
+
+                    # update the run number
+                    try:
+                        run  = int(info.run.get())
+                        run += 1
+                        info.run.configure(text='{0:03d}'.format(run))
+                    except Exception, err:
+                        clog.info.warn('Failed to update run number')
+
+                    return True
+                else:
+                    clog.log.warn('Failed to start run\n')
+                    return False
             else:
-                clog.log.warn('Failed to post application to servers\n')
+                clog.log.warn('Failed to post the application\n')
                 return False
 
         except Exception, err:
-            clog.log.warn('Failed to post application to servers\n')
+            clog.log.warn('Failed to start run\n')
+            clog.log.warn(str(err) + '\n')
             return False
 
 class Load(drvs.ActButton):
@@ -1216,15 +1309,13 @@ class Observe(tk.LabelFrame):
         self.load     = Load(self, width, share)
         self.save     = Save(self, width, share)
         self.unfreeze = Unfreeze(self, width, share)
-        self.post     = Post(self, width, share)
-        self.start    = drvs.Start(self, width, share)
+        self.start    = Start(self, width, share)
         self.stop     = drvs.Stop(self, width, share)
 
         # pass all buttons to each other
         share['Load']     = self.load
         share['Save']     = self.save
         share['Unfreeze'] = self.unfreeze
-        share['Post']     = self.post
         share['Start']    = self.start
         share['Stop']     = self.stop
 
@@ -1234,12 +1325,10 @@ class Observe(tk.LabelFrame):
         self.load.grid(row=0,column=0)
         self.save.grid(row=1,column=0)
         self.unfreeze.grid(row=2,column=0)
-        self.post.grid(row=0,column=1)
-        self.start.grid(row=1,column=1)
-        self.stop.grid(row=2,column=1)
+        self.start.grid(row=0,column=1)
+        self.stop.grid(row=1,column=1)
 
         # Define initial status
-        self.post.disable()
         self.start.disable()
         self.stop.disable()
 
@@ -1256,7 +1345,6 @@ class Observe(tk.LabelFrame):
             self.load.setNonExpert()
             self.save.setNonExpert()
             self.unfreeze.setNonExpert()
-            self.post.setNonExpert()
             self.start.setNonExpert()
             self.stop.setNonExpert()
 
@@ -1264,7 +1352,6 @@ class Observe(tk.LabelFrame):
             self.load.setExpert()
             self.save.setExpert()
             self.unfreeze.setExpert()
-            self.post.setExpert()
             self.start.setExpert()
             self.stop.setExpert()
 
