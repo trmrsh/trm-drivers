@@ -134,7 +134,7 @@ def loadCpars(fp):
 
     # names / types of simple single value items needing no changes.
     SINGLE_ITEMS = {\
-        'RTPLOT_SERVER_ON' : 'boolean', 'ULTRACAM_SERVERS_ON' : 'boolean',
+        'RTPLOT_SERVER_ON' : 'boolean', 'CDF_SERVERS_ON' : 'boolean',
         'EXPERT_LEVEL' : 'integer', 'FILE_LOGGING_ON' : 'boolean',
         'HTTP_CAMERA_SERVER' : 'string', 'HTTP_DATA_SERVER' : 'string',
         'APP_DIRECTORY' : 'string', 'TEMPLATE_FROM_SERVER' : 'boolean',
@@ -146,7 +146,8 @@ def loadCpars(fp):
         'INSTRUMENT_APP' : 'string', 'POWER_ON' : 'string',
         'FOCAL_PLANE_SLIDE' : 'string', 'TELINS_NAME' : 'string',
         'REQUIRE_RUN_PARAMS' : 'boolean', 'ACCESS_TCS' : 'boolean',
-        'HTTP_FILE_SERVER' : 'string', 'CONFIRM_ON_QUIT' : 'boolean'}
+        'HTTP_FILE_SERVER' : 'string', 'CONFIRM_ON_QUIT' : 'boolean',
+        'MDIST_WARN' : 'float'}
 
     for key, value in SINGLE_ITEMS.iteritems():
         if value == 'boolean':
@@ -1330,6 +1331,10 @@ def postXML(root, cpars, clog, rlog):
     """
     clog.log.debug('Entering postXML\n')
 
+    if not cpars['cdf_servers_on']:
+        clog.log.warn('postXML: cdf_servers_on set to False\n')
+        return False
+
     # Write setup to an xml string
     sxml = ET.tostring(root)
 
@@ -1436,107 +1441,6 @@ class ActButton(tk.Button):
         Override in derived classes
         """
         self.callback()
-
-class Start(ActButton):
-    """
-    Class defining the 'Start' button's operation
-    """
-
-    def __init__(self, master, width, share):
-        """
-        master   : containing widget
-        width    : width of button
-        share    : dictionary with configuration parameters and the loggers
-        """
-
-        ActButton.__init__(
-            self, master, width, share, bg=COL['start'], text='Start')
-        self.target = None
-
-    def act(self):
-        """
-        Carries out the action associated with Start button
-        """
-
-        o = self.share
-        cpars, ipars, rpars, clog, rlog, info = \
-            o['cpars'], o['instpars'], o['runpars'], o['clog'], \
-            o['rlog'], o['info']
-
-        if cpars['access_tcs']:
-            if cpars['telins_name'] == 'TNO-USPEC':
-                try:
-                    ra,dec,pa,focus,engpa = tcs.getTntTcs()
-                    gotPos = True
-                except Exception, err:
-                    print(err)
-                    if not tkMessageBox.askokcancel('TCS error',
-                        'Could not get RA, Dec from telescope.\n' +
-                        'Continue?'):
-                        clog.log.warn('Start operation cancelled\n')
-                    gotPos = False
-            else:
-                if not tkMessageBox.askokcancel('TCS error',
-                    'No TCS routine for telescope/instrument = ' +
-                    cpars['telins_name'] + '\n' +
-                    'Could not get RA, Dec from telescope.\n' + 'Continue?'):
-                    clog.log.warn('Start operation cancelled\n')
-                gotPos = False
-
-        # Couple of safety checks
-        if cpars['expert_level'] == 0 and cpars['confirm_hv_gain_on'] and \
-                ipars.avalanche() and ipars.avgain.value() > 0:
-
-            if not tkMessageBox.askokcancel(
-                'Avalanche','Avalanche gain is on at level = ' +
-                ipars.avgain.value() + '\n' + 'Continue?'):
-                clog.log.warn('Start operation cancelled\n')
-                return False
-
-        if cpars['expert_level'] == 0 and cpars['confirm_on_change'] and \
-                self.target is not None and self.target != rpars.target.value():
-
-             if not tkMessageBox.askokcancel(
-                 'Confirm target', 'Target name has changed\n' +
-                 'Continue?'):
-                clog.log.warn('Start operation cancelled\n')
-                return False
-
-        if execCommand('GO', cpars, clog, rlog):
-            clog.log.info('Run started\n')
-
-            # update buttons
-            self.disable()
-            o['Stop'].enable()
-            o['Post'].disable()
-            o['Load'].disable()
-            o['Unfreeze'].disable()
-            o['setup'].resetSDSUhard.disable()
-            o['setup'].resetSDSUsoft.disable()
-            o['setup'].resetPCI.disable()
-            o['setup'].setupServers.disable()
-            o['setup'].powerOn.disable()
-            o['setup'].powerOff.disable()
-
-            # freeze instrument parameters
-            ipars.freeze()
-
-            # update the run number
-            info.currentrun.addone()
-
-            # update the positional info
-            if gotPos:
-                info.ra.config(text='{0:f} '.format(ra/15.))
-                info.dec.config(text='{0:f} '.format(dec))
-                info.pa.config(text='{0:f} '.format(pa))
-
-            # start the exposure timer
-            o['info'].timer.start()
-
-            return True
-        else:
-            clog.log.warn('Failed to start run\n')
-            return False
 
 class Stop(ActButton):
     """
@@ -1784,6 +1688,10 @@ def execCommand(command, cpars, clog, rlog):
     Returns True/False according to whether the command
     succeeded or not.
     """
+    if not cpars['cdf_servers_on']:
+        clog.log.warn('execCommand: cdf_servers_on set to False')
+        return False
+
     try:
         url = cpars['http_camera_server'] + cpars['http_path_exec'] + \
             '?' + command
@@ -1828,7 +1736,12 @@ def execServer(name, app, cpars, clog, rlog):
 
     Returns True/False according to success or otherwise
     """
+    if not cpars['cdf_servers_on']:
+        clog.log.warn('execServer: cdf_servers_on set to False\n')
+        return False
+
     print(cpars['http_camera_server'], cpars['http_path_config'], '?', app)
+
     if name == 'camera':
         url = cpars['http_camera_server'] + cpars['http_path_config'] + \
             '?' + app
@@ -2883,10 +2796,10 @@ class InfoFrame(tk.LabelFrame):
                     self.airmass.configure(text='{0:<4.2f}'.format(
                             1./math.sin(star.alt)))
 
-                    # distance to the moon. Warn if < 20 degrees from it.
+                    # distance to the moon. Warn if too close (configurable) to it.
                     md = math.degrees(ephem.separation(astro.moon,star))
                     self.mdist.configure(text='{0:<7.2f}'.format(md))
-                    if md < 20.:
+                    if md < cpars['mdist_warn']:
                         self.mdist.configure(bg=COL['warn'])
                     else:
                         self.mdist.configure(bg=COL['main'])
@@ -2907,29 +2820,27 @@ class InfoFrame(tk.LabelFrame):
                     self.mdist.configure(text='UNDEF')
                     print(err)
 
-        # get run number (set by the 'Start' button')
-        try:
-            if not isRunActive(cpars, rlog):
-                run = getRunNumber(cpars, rlog, True)
-                self.run.configure(text='{0:03d}'.format(run))
-        except Exception, err:
-            clog.log.debug('Error occurred trying to set run\n')
-            clog.log.debug(str(err) + '\n')
+        if cpars['cdf_servers_on']:
 
-        try:
-            run = int(self.run.cget('text'))
-            rstr = 'run{0:03d}'.format(run)
-            url = cpars['http_file_server'] + rstr + '?action=get_num_frames'
-            response = urllib2.urlopen(url)
-            rstr = response.read()
-            ind = rstr.find('nframes="')
-            if ind > -1:
-                ind += 9
-                nframe = int(rstr[ind:ind+rstr[ind:].find('"')])
-                self.frame.configure(text='{0:d}'.format(nframe))
-        except Exception, err:
-            clog.log.debug('Error occurred trying to set frame\n')
-            clog.log.debug(str(err) + '\n')
+            # get run number (set by the 'Start' button')
+            try:
+                if not isRunActive(cpars, rlog):
+                    run = getRunNumber(cpars, rlog, True)
+                    self.run.configure(text='{0:03d}'.format(run))
+
+                run = int(self.run.cget('text'))
+                rstr = 'run{0:03d}'.format(run)
+                url = cpars['http_file_server'] + rstr + '?action=get_num_frames'
+                response = urllib2.urlopen(url)
+                rstr = response.read()
+                ind = rstr.find('nframes="')
+                if ind > -1:
+                    ind += 9
+                    nframe = int(rstr[ind:ind+rstr[ind:].find('"')])
+                    self.frame.configure(text='{0:d}'.format(nframe))
+            except Exception, err:
+                clog.log.debug('Error occurred trying to set run or frame\n')
+                clog.log.debug(str(err) + '\n')
 
         # get the current filter, if the wheel is defined
         # poll at 5x slower rate than the frame
@@ -3152,19 +3063,22 @@ def isRunActive(cpars, rlog):
     """
     Polls the data server to see if a run is active
     """
-    url = cpars['http_data_server'] + 'status'
-    response = urllib2.urlopen(url)
-    rs  = ReadServer(response.read())
-    rlog.log.debug('Data server response =\n' + rs.resp() + '\n')
-    if not rs.ok:
-        raise DriverError('isRunActive error: ' + str(rs.err))
-
-    if rs.state == 'IDLE':
-        return False
-    elif rs.state == 'BUSY':
-        return True
+    if not cpars['cdf_servers_on']:
+        url = cpars['http_data_server'] + 'status'
+        response = urllib2.urlopen(url, timeout=2)
+        rs  = ReadServer(response.read())
+        rlog.log.debug('Data server response =\n' + rs.resp() + '\n')
+        if not rs.ok:
+            raise DriverError('isRunActive error: ' + str(rs.err))
+    
+        if rs.state == 'IDLE':
+            return False
+        elif rs.state == 'BUSY':
+            return True
+        else:
+            raise DriverError('isRunActive error, state = ' + rs.state)
     else:
-        raise DriverError('isRunActive error, state = ' + rs.state)
+        raise DriverError('isRunActive error: cdf_servers_on = False')
 
 def getRunNumber(cpars, rlog, nocheck=False):
     """
@@ -3180,6 +3094,9 @@ def getRunNumber(cpars, rlog, nocheck=False):
             of polling for the run of an active run which cannot
             be done.
     """
+
+    if not cpars['cdf_servers_on']:
+        raise DriverError('getRunNumber error: cdf_servers_on is set to False')
 
     if nocheck or isRunActive(cpars, rlog):
         url = cpars['http_data_server'] + 'fstatus'
