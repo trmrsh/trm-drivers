@@ -13,10 +13,12 @@ some operations are not possible of course.
 Installation
 ------------
 
-The software is written as much as possible to make use of core Python 
-components. The one third-party requirement is pyephem 
-(http://rhodesmill.org/pyephem/), a package for astronomical calculations.
-Once you have installed this, the usual::
+The software is written as much as possible to make use of core Python
+components. The third-party requirements are pyephem
+(http://rhodesmill.org/pyephem/), a package for astronomical calculations,
+and pyserial (http://pyserial.sourceforge.net/) for talking to serial ports.
+
+Once you have installed these, install with the usual::
 
  python setup.py install
 
