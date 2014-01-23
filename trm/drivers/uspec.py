@@ -9,6 +9,7 @@ import Tkinter as tk
 import tkFont, tkMessageBox, tkFileDialog
 import xml.etree.ElementTree as ET
 import os
+import urllib2
 import drivers as drvs
 import filterwheel as fwheel
 import math
@@ -684,7 +685,7 @@ def createXML(post, cpars, ipars, rpars, clog, rlog):
     if cpars['template_from_server']:
         # get template from server
         url = cpars['http_camera_server'] + cpars['http_path_get'] + '?' + \
-            cpars['http_search_attr_name'] + '='  + cpars['templates'][app]
+            cpars['http_search_attr_name'] + '='  + cpars['templates'][app]['app']
         if cpars['debug']:
             print ('DEBUG: url = ' + url)
         sxml = urllib2.urlopen(url).read()
@@ -693,7 +694,7 @@ def createXML(post, cpars, ipars, rpars, clog, rlog):
         # get template from local file
         if cpars['debug']:
             print ('DEBUG: directory = ' + cpars['template_directory'])
-        lfile = os.path.join(cpars['template_directory'], 
+        lfile = os.path.join(cpars['template_directory'],
                              cpars['templates'][app]['app'])
         if cpars['debug']:
             print ('DEBUG: local file = ' + lfile)
@@ -706,7 +707,7 @@ def createXML(post, cpars, ipars, rpars, clog, rlog):
     for param in cconfig.findall('set_parameter'):
         pdict[param.attrib['ref']] = param.attrib
 
-    # Set them. This is designed so that missing 
+    # Set them. This is designed so that missing
     # parameters will cause exceptions to be raised.
 
     # Number of exposures
@@ -1247,6 +1248,7 @@ class Save(drvs.ActButton):
             return False
 
         # Get XML from template
+        print('cpars=',cpars['templates'])
         root = createXML(False, cpars, ipars, rpars, clog, rlog)
 
         # Save to disk

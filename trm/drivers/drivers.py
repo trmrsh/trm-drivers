@@ -206,7 +206,7 @@ def loadCpars(fp):
     cpars['templates'] = dict( \
         (arr[0],{'pairs' : arr[1], 'app' : arr[2], 'id' : arr[3]}) \
             for arr in zip(labels,pairs,apps,ids))
-
+    print(cpars['templates'])
     # Next line is so that we know the order defined in the file
     cpars['template_labels'] = labels
 
@@ -2509,7 +2509,7 @@ class FocalPlaneSlide(tk.LabelFrame):
                                  command=lambda: self.wrap('block'))
 
         self.goto     = tk.Button(self, fg='black', text='goto', width=width,
-                                  command=lambda: self.wrap('restore'))
+                                  command=lambda: self.wrap('goto'))
         self.gval     = IntegerEntry(self, 1100., None, True, width=4)
         self.position = tk.Button(self, fg='black', text='position', width=width,
                                   command=lambda: self.wrap('position'))
@@ -2562,7 +2562,7 @@ class FocalPlaneSlide(tk.LabelFrame):
         else:
             print('focal plane slide command already underway')
 
-    def action(self, comm):
+    def action(self, *comm):
         """
         Send a command to the focal plane slide
         """
@@ -2570,9 +2570,9 @@ class FocalPlaneSlide(tk.LabelFrame):
         cpars   = o['cpars']
 
         # place command here
-        
+
         print(comm)
-        if comm == 'position':
+        if comm[0] == 'position':
             t = threading.Thread(target=self.slide.report_position())
         else:
             print('Command = ' + comm + ' not implemented yet.\n')
