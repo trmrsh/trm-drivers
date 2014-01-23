@@ -37,12 +37,12 @@ UNIT             = 1
 PERIPHERAL_ID    = 0
 POTENTIOM_OFF    = 8
 POTENTIOM_ON     = 0
-    
+
 TRUE             = 1
 FALSE            = 0
 
-# the next define ranges for the movement in terms of 
-#microsteps, millimetres and pixels
+# the next define ranges for the movement in terms of
+# microsteps, millimetres and pixels
 MIN_MS           = 0
 MAX_MS           = 672255
 MM_PER_MS        = 0.00015619
@@ -69,11 +69,18 @@ MIN_TIMEOUT      = 2
 MAX_TIMEOUT      = 70
 
 class Slide(object):
-    
-    def __init__(self,port='/dev/slide'):
+
+    def __init__(self,log=None,port='/dev/slide'):
+        """
+        Creates a Slide. Arguments::
+
+         log  : a logger to display results
+         port : port device representing the slide
+        """
         self.port = port
         self.default_timeout = MIN_TIMEOUT
         self.connected = False
+        self.log = log
 
     def _open_port(self):
         try:
@@ -97,7 +104,7 @@ class Slide(object):
                 raise SlideError('did not send 6 bytes to slide')
         else:
             raise SlideError('cannot send bytes to an unconnected slide')
-    
+
     def _readBytes(self,timeout):
         if self.connected:
             self.ser.timeout = timeout
@@ -117,7 +124,7 @@ class Slide(object):
 
     def _encodeByteArr(self,intArr):
         if len(intArr) != 6:
-            raise SlideError('must send 6 bytes to slide: cannot send ' + 
+            raise SlideError('must send 6 bytes to slide: cannot send ' +
                              repr(intArr))
         return bytearray(intArr)
 
@@ -130,14 +137,18 @@ class Slide(object):
             time_estimate = (MAX_STEP_TIME + MIN_STEP_TIME)*nacc/2 + \
                 MIN_STEP_TIME*(nstep-nacc)
         if time_estimate > 5:
-            print('Rough estimate of time to perform command = %d seconds' 
+            print('Rough estimate of time to perform command = %d seconds'
                   % int(time_estimate))
+            if self.log is not None:
+                self.log.info(
+                    'Rough estimate of time to perform command = %d seconds'
+                    % int(time_estimate))
 
         timeout = time_estimate+2
         timeout = timeout if timeout > MIN_TIMEOUT else MIN_TIMEOUT
         timeout = timeout if timeout < MAX_TIMEOUT else MAX_TIMEOUT
         return timeout
-        
+
     def _getPosition(self):
         """
         returns current position of the slide in microsteps
@@ -152,7 +163,7 @@ class Slide(object):
         self._close_port()
         pos = self._decodeCommandData(byteArr)
         return pos
-        
+
     def _hasBeenHomed(self):
         """
         returns true if the slide has been homed and has a calibrated
@@ -167,20 +178,20 @@ class Slide(object):
         self._close_port()
         if byteArr[1] == ERROR:
             raise SlideError('Error trying to get the setting byte')
-        
+
         # if 7th bit is set, we have been homed
         if byteArr[2] & 128:
             return True
         else:
             return False
-        
+
     def _move_absolute(self,nstep):
         """
         move to a defined position in microsteps
         """
         if nstep < MIN_MS or nstep > MAX_MS:
             raise SlideError("Attempting to set position = %d ms," + \
-                                 " which is out of range %d to %d" % 
+                                 " which is out of range %d to %d" %
                              (nstep,MIN_MS,MAX_MS) )
         start_pos = self._getPosition()
         timeout = self._compute_timeout(nstep-start_pos)
@@ -208,7 +219,7 @@ class Slide(object):
         attempt_pos = start_pos+nstep
         if attempt_pos < MIN_MS or attempt_pos > MAX_MS:
             raise SlideError("Attempting to set position = %d ms," + \
-                                 " which is out of range %d to %d" % 
+                                 " which is out of range %d to %d" %
                              (nstep,MIN_MS,MAX_MS) )
         timeout = self._compute_timeout(nstep)
 
@@ -223,7 +234,7 @@ class Slide(object):
         self._sendByteArr(byteArr,self.default_timeout)
         byteArr = self._readBytes(timeout=timeout)
         self._close_port()
-        self.report_position()        
+        self.report_position()
 
     def home(self):
         """
@@ -236,6 +247,8 @@ class Slide(object):
             timeout = self._compute_timeout(start_pos)
         else:
             print('device position undefined: setting max timeout')
+            if self.log is not None:
+                self.log.info('device position undefined: setting max timeout\n')
             timeout = MAX_TIMEOUT
 
         byteArr = self._encodeByteArr([UNIT,HOME,NULL,NULL,NULL,NULL])
@@ -247,7 +260,8 @@ class Slide(object):
         if byteArr[1] == ERROR:
             raise SlideError('Error occurred setting to the home position')
         print('Slide returned to home position')
-        
+        if self.log is not None:
+            self.log.info('Slide returned to home position\n')
 
     def reset(self):
         """
@@ -255,11 +269,11 @@ class Slide(object):
         on again. The position of the slide will be lost and a home will be
         needed
         """
-        byteArr = self._encodeByteArr([UNIT,RESET,NULL,NULL,NULL,NULL]) 
-        if not self.connected: 
+        byteArr = self._encodeByteArr([UNIT,RESET,NULL,NULL,NULL,NULL])
+        if not self.connected:
             self._open_port()
-        self._sendByteArr(byteArr,self.default_timeout) 
-        byteArr = self._readBytes(timeout=self.default_timeout) 
+        self._sendByteArr(byteArr,self.default_timeout)
+        byteArr = self._readBytes(timeout=self.default_timeout)
         self._close_port()
         return byteArr
 
@@ -275,11 +289,13 @@ class Slide(object):
         self._sendByteArr(byteArr,self.default_timeout)
         byteArr = self._readBytes(timeout=self.default_timeout)
         self._close_port()
+        if self.log is not None:
+            self.log.info('finished restore\n')
         return byteArr
 
     def disable(self):
         """
-        carry out the disable command. disables the potentiometer preventing 
+        carry out the disable command. disables the potentiometer preventing
         manual adjustment of the device
         """
         byteArr = self._encodeByteArr([UNIT,SET_MODE,POTENTIOM_OFF,
@@ -289,11 +305,13 @@ class Slide(object):
         self._sendByteArr(byteArr,self.default_timeout)
         byteArr = self._readBytes(timeout=self.default_timeout)
         self._close_port()
+        if self.log is not None:
+            self.log.info('manual adjustment disabled\n')
         return byteArr
 
     def enable(self):
         """
-        carry out the enable command. enables the potentiometer allowing 
+        carry out the enable command. enables the potentiometer allowing
         manual adjustment of the device
         """
         byteArr = self._encodeByteArr([UNIT,SET_MODE,POTENTIOM_ON,
@@ -303,6 +321,8 @@ class Slide(object):
         self._sendByteArr(byteArr,self.default_timeout)
         byteArr = self._readBytes(timeout=self.default_timeout)
         self._close_port()
+        if self.log is not None:
+            self.log.info('manual adjustment enabled\n')
         return byteArr
 
     def stop(self):
@@ -317,13 +337,14 @@ class Slide(object):
             raise SlideError('Error stopping the slide')
         else:
             print('Slide Stopped')
+            if self.log is not None:
+                self.log.info('slide stopped\n')
             self.report_position()
 
     def park(self):
-        # what is the park value in MS?
-        nstep = MIN_MS + int( (MAX_MS-MIN_MS)*
-                              (PARK_POS-MIN_PX)/(MAX_PX-MIN_PX) + 0.5 )
-        self._move_absolute(nstep)
+        self.move_absolute(PARK_POS, 'px')
+        if self.log is not None:
+            self.log.info('slide parked\n')
 
     def move_relative(self,amount,units):
         """
@@ -346,6 +367,8 @@ class Slide(object):
             nstep = int( (MAX_MS-MIN_MS)*amount / (MAX_MM-MIN_MM) + 0.5 )
 
         self._move_relative(nstep)
+        if self.log is not None:
+            self.log.info('moved slide by ' + str(amount) + ' ' + units + '\n')
 
     def move_absolute(self,amount,units):
         '''move the slide to an absolute position.
@@ -368,6 +391,8 @@ class Slide(object):
                                   (amount-MIN_MM) / (MAX_MM-MIN_MM) + 0.5 )
 
         self._move_absolute(nstep)
+        if self.log is not None:
+            self.log.info('moved slide to ' + str(amount) + ' ' + units + '\n')
 
     def report_position(self):
         pos = self._getPosition()
@@ -375,3 +400,5 @@ class Slide(object):
         pos_px = MIN_PX + (MAX_PX-MIN_PX)*(pos-MIN_MS)/(MAX_MS-MIN_MS)
         print("Current position = %d ms, %f mm, %f pixels" %
               (pos,pos_mm,pos_px))
+        if self.log is not None:
+            self.log.info('Current position = {0:f} pixels\n'.format(pos_px))
