@@ -2500,29 +2500,34 @@ class FocalPlaneSlide(tk.LabelFrame):
         """
         tk.LabelFrame.__init__(
             self, master, text='Focal plane slide',padx=10,pady=10)
+
+        # Top for table of buttons
+        top = tk.Frame(self)
+
         width = 8
-        self.home     = tk.Button(self, fg='black', text='home',  width=width,
+        self.home     = tk.Button(top, fg='black', text='home',  width=width,
                                   command=lambda: self.wrap('home'))
-        self.park     = tk.Button(self, fg='black', text='park',  width=width,
+        self.park     = tk.Button(top, fg='black', text='park',  width=width,
                                   command=lambda: self.wrap('park'))
-        self.block    = tk.Button(self, fg='black', text='block', width=width,
+        self.block    = tk.Button(top, fg='black', text='block', width=width,
                                  command=lambda: self.wrap('block'))
 
-        self.goto     = tk.Button(self, fg='black', text='goto', width=width,
-                                  command=lambda: self.wrap('goto'))
-        self.gval     = IntegerEntry(self, 1100., None, True, width=4)
-        self.position = tk.Button(self, fg='black', text='position', width=width,
+        self.gval     = IntegerEntry(top, 1100., None, True, width=4)
+        self.goto     = tk.Button(top, fg='black', text='goto', width=width,
+                                  command=lambda: self.wrap('goto',self.gval.value()))
+
+        self.position = tk.Button(top, fg='black', text='position', width=width,
                                   command=lambda: self.wrap('position'))
-        self.reset   = tk.Button(self, fg='black', text='reset', width=width,
+        self.reset   = tk.Button(top, fg='black', text='reset', width=width,
                                  command=lambda: self.wrap('reset'))
-        self.stop    = tk.Button(self, fg='black', text='stop', width=width,
+        self.stop    = tk.Button(top, fg='black', text='stop', width=width,
                                  command=lambda: self.wrap('stop'))
 #
-#        self.enable  = tk.Button(self, fg='black', text='enable', width=width,
+#        self.enable  = tk.Button(top, fg='black', text='enable', width=width,
 #                                 command=lambda: self.wrap('enable'))
-#        self.disable = tk.Button(self, fg='black', text='disable', width=width,
+#        self.disable = tk.Button(top, fg='black', text='disable', width=width,
 #                                 command=lambda: self.wrap('disable'))
-        self.restore = tk.Button(self, fg='black', text='restore', width=width,
+        self.restore = tk.Button(top, fg='black', text='restore', width=width,
                                  command=lambda: self.wrap('restore'))
 
         self.home.grid(row=0,column=0)
@@ -2539,12 +2544,39 @@ class FocalPlaneSlide(tk.LabelFrame):
         self.restore.grid(row=2,column=1)
         self.stop.grid(row=2,column=2)
 
+        top.pack(pady=5)
+
+        # make a region to display results of
+        # slide commands
+        bot = tk.Frame(self)
+        scrollbar = tk.Scrollbar(bot)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        console = tk.Text(bot, height=6, width=40, bg=COL['log'],
+                          yscrollcommand=scrollbar.set)
+        console.configure(state=tk.DISABLED)
+        console.pack(side=tk.LEFT)
+        scrollbar.config(command=console.yview)
+
+        # make a handler for GUIs
+        ltgh = LoggingToGUI(console)
+
+        # define the formatting
+        #        logging.Formatter.converter = time.gmtime
+        formatter = logging.Formatter('%(message)s')
+        ltgh.setFormatter(formatter)
+
+        # make a logger and set the handler
+        self.log = logging.getLogger('Slide log')
+        self.log.addHandler(ltgh)
+        bot.pack(pady=5)
+
+        # Finish off
         self.where   = 'UNDEF'
         self.running = False
         self.share   = share
-        self.slide   = slide.Slide()
+        self.slide   = slide.Slide(self.log)
 
-    def wrap(self, comm):
+    def wrap(self, *comm):
         """
         Carries out an action wrapping it in a thread so that
         we don't have to sit around waiting for completion.
@@ -2553,31 +2585,50 @@ class FocalPlaneSlide(tk.LabelFrame):
             o = self.share
             cpars, clog = o['cpars'], o['clog']
             clog.log.info('Focal plane slide operation started:\n')
-            clog.log.info(comm + '\n')
+            clog.log.info(' '.join(comm) + '\n')
             t = threading.Thread(target=lambda: self.action(comm))
             t.daemon = True
             t.start()
             self.running = True
             self.check()
         else:
-            print('focal plane slide command already underway')
+            print('a focal plane slide command is already underway')
 
-    def action(self, *comm):
+    def action(self, comm):
         """
         Send a command to the focal plane slide
         """
         o       = self.share
         cpars   = o['cpars']
 
-        # place command here
-
         print(comm)
-        if comm[0] == 'position':
+        if comm[0] == 'home':
+            t = threading.Thread(target=self.slide.home())
+        elif comm[0] == 'park':
+            t = threading.Thread(target=self.slide.park())
+        elif comm[0] == 'block':
+            t = threading.Thread(target=self.slide.move_absolute(-100,'px'))
+        elif comm[0] == 'position':
             t = threading.Thread(target=self.slide.report_position())
+        elif comm[0] == 'reset':
+            t = threading.Thread(target=self.slide.reset())
+        elif comm[0] == 'restore':
+            t = threading.Thread(target=self.slide.restore())
+        elif comm[0] == 'enable':
+            t = threading.Thread(target=self.slide.enable())
+        elif comm[0] == 'disable':
+            t = threading.Thread(target=self.slide.disable())
+        elif comm[0] == 'stop':
+            t = threading.Thread(target=self.slide.stop())
+        elif comm[0] == 'goto':
+            if comm[1] is not None:
+                t = threading.Thread(target=self.slide.move_absolute(comm[1],'px'))
+            else:
+                print('must enter an integer pixel position for mask first')
         else:
-            print('Command = ' + comm + ' not implemented yet.\n')
+            print('Command = ' + str(comm) + ' not implemented yet.\n')
 
-        self.where = comm
+        self.where = comm[0]
 
        # flag to tell the check routine to stop
         self.running = False
@@ -3078,7 +3129,7 @@ def isRunActive(cpars, rlog):
         rlog.log.debug('Data server response =\n' + rs.resp() + '\n')
         if not rs.ok:
             raise DriverError('isRunActive error: ' + str(rs.err))
-    
+
         if rs.state == 'IDLE':
             return False
         elif rs.state == 'BUSY':
