@@ -30,6 +30,7 @@ import ephem
 
 # mine
 import tcs
+import slide
 
 # Zeropoints (days) of MJD, unix time and ephem,
 # number of seconds in a day
@@ -2499,24 +2500,28 @@ class FocalPlaneSlide(tk.LabelFrame):
         """
         tk.LabelFrame.__init__(
             self, master, text='Focal plane slide',padx=10,pady=10)
-        width = 7
-        self.home    = tk.Button(self, fg='black', text='home',  width=width,
-                                 command=lambda: self.wrap('home'))
-        self.park    = tk.Button(self, fg='black', text='park',  width=width,
-                                 command=lambda: self.wrap('park'))
-        self.block   = tk.Button(self, fg='black', text='block', width=width,
+        width = 8
+        self.home     = tk.Button(self, fg='black', text='home',  width=width,
+                                  command=lambda: self.wrap('home'))
+        self.park     = tk.Button(self, fg='black', text='park',  width=width,
+                                  command=lambda: self.wrap('park'))
+        self.block    = tk.Button(self, fg='black', text='block', width=width,
                                  command=lambda: self.wrap('block'))
 
-        self.goto    = tk.Button(self, fg='black', text='goto', width=width,
-                                 command=lambda: self.wrap('restore'))
-        self.gval    = IntegerEntry(self, 1100., None, True, width=width)
+        self.goto     = tk.Button(self, fg='black', text='goto', width=width,
+                                  command=lambda: self.wrap('restore'))
+        self.gval     = IntegerEntry(self, 1100., None, True, width=4)
+        self.position = tk.Button(self, fg='black', text='position', width=width,
+                                  command=lambda: self.wrap('position'))
         self.reset   = tk.Button(self, fg='black', text='reset', width=width,
                                  command=lambda: self.wrap('reset'))
-
-        self.enable  = tk.Button(self, fg='black', text='enable', width=width,
-                                 command=lambda: self.wrap('enable'))
-        self.disable = tk.Button(self, fg='black', text='disable', width=width,
-                                 command=lambda: self.wrap('disable'))
+        self.stop    = tk.Button(self, fg='black', text='stop', width=width,
+                                 command=lambda: self.wrap('stop'))
+#
+#        self.enable  = tk.Button(self, fg='black', text='enable', width=width,
+#                                 command=lambda: self.wrap('enable'))
+#        self.disable = tk.Button(self, fg='black', text='disable', width=width,
+#                                 command=lambda: self.wrap('disable'))
         self.restore = tk.Button(self, fg='black', text='restore', width=width,
                                  command=lambda: self.wrap('restore'))
 
@@ -2526,15 +2531,18 @@ class FocalPlaneSlide(tk.LabelFrame):
 
         self.goto.grid(row=1,column=0)
         self.gval.grid(row=1,column=1)
-        self.reset.grid(row=1,column=2)
-
-        self.enable.grid(row=2,column=0)
-        self.disable.grid(row=2,column=1)
-        self.restore.grid(row=2,column=2)
+        self.position.grid(row=1,column=2)
+        self.reset.grid(row=2,column=0)
+#
+#        self.enable.grid(row=2,column=0)
+#        self.disable.grid(row=2,column=1)
+        self.restore.grid(row=2,column=1)
+        self.stop.grid(row=2,column=2)
 
         self.where   = 'UNDEF'
         self.running = False
         self.share   = share
+        self.slide   = slide.Slide()
 
     def wrap(self, comm):
         """
@@ -2544,11 +2552,8 @@ class FocalPlaneSlide(tk.LabelFrame):
         if not self.running:
             o = self.share
             cpars, clog = o['cpars'], o['clog']
-            if comm == 'block':
-                comm = 'pos=-100px'
-            command = [cpars['focal_plane_slide'],comm]
             clog.log.info('Focal plane slide operation started:\n')
-            clog.log.info(' '.join(command) + '\n')
+            clog.log.info(comm + '\n')
             t = threading.Thread(target=lambda: self.action(comm))
             t.daemon = True
             t.start()
@@ -2563,11 +2568,14 @@ class FocalPlaneSlide(tk.LabelFrame):
         """
         o       = self.share
         cpars   = o['cpars']
-        command = [cpars['focal_plane_slide'],comm]
 
         # place command here
-        time.sleep(10)
-        subprocess.call(command)
+        
+        print(comm)
+        if comm == 'position':
+            subprocess.call(self.slide.report_position())
+        else:
+            print('Command = ' + comm + ' not implemented yet.\n')
 
         self.where = comm
 
