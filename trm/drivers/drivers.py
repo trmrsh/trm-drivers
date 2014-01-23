@@ -2573,7 +2573,7 @@ class FocalPlaneSlide(tk.LabelFrame):
         
         print(comm)
         if comm == 'position':
-            subprocess.call(self.slide.report_position())
+            t = threading.Thread(target=self.slide.report_position())
         else:
             print('Command = ' + comm + ' not implemented yet.\n')
 
