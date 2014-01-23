@@ -324,11 +324,11 @@ class Slide(object):
         nstep = MIN_MS + int( (MAX_MS-MIN_MS)*
                               (PARK_POS-MIN_PX)/(MAX_PX-MIN_PX) + 0.5 )
         self._move_absolute(nstep)
-        
+
     def move_relative(self,amount,units):
         """
         move the slide by a relative amount.
-        
+
         Available units are:
         MS - microsteps
         PX - pixels
@@ -368,10 +368,10 @@ class Slide(object):
                                   (amount-MIN_MM) / (MAX_MM-MIN_MM) + 0.5 )
 
         self._move_absolute(nstep)
-            
+
     def report_position(self):
         pos = self._getPosition()
         pos_mm = MIN_MM + (MAX_MM-MIN_MM)*(pos-MIN_MS)/(MAX_MS-MIN_MS)
         pos_px = MIN_PX + (MAX_PX-MIN_PX)*(pos-MIN_MS)/(MAX_MS-MIN_MS)
-        print("Current position = %d ms, %f mm, %f pixels" % 
+        print("Current position = %d ms, %f mm, %f pixels" %
               (pos,pos_mm,pos_px))
