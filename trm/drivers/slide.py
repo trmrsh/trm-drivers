@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 """
 Class to talk to the focal plane slide
 
