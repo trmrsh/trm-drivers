@@ -261,7 +261,7 @@ class InstPars(tk.LabelFrame):
         # allow posting according to whether the parameters are ok
         # update count and S/N estimates as well
         if status:
-            if cpars['cdf_servers_on'] and not drvs.isRunActive(cpars, rlog):
+            if cpars['cdf_servers_on'] and not drvs.isRunActive(cpars):
                 observe.start.enable()
             cframe.update()
         else:
@@ -283,7 +283,6 @@ class InstPars(tk.LabelFrame):
         self.number.disable()
         self.wframe.freeze()
         self.pframe.freeze()
-        self.sync.configure(state='disable')
         self.frozen = True
 
     def unfreeze(self):
@@ -811,7 +810,7 @@ def createXML(post, cpars, ipars, rpars, clog, rlog):
         pdict['X2_SIZE']['value']  = str(nx // xbin)
         pdict['Y1_START']['value'] = str(ys)
         pdict['Y1_SIZE']['value']  = str(ny // ybin)
-        npix = 2.*(nx // xbin)*(ny // ybin)
+        npix = 2*(nx // xbin)*(ny // ybin)
          
     pdict['X_SIZE']['value']  = str(npix)
     pdict['Y_SIZE']['value']  = '1'
@@ -840,9 +839,9 @@ def createXML(post, cpars, ipars, rpars, clog, rlog):
             try:
                 url = cpars['http_camera_server'] + cpars['http_path_exec'] + \
                     '?RM,X,0x2E'
-                clog.log.info('execCommand, command = "' + command + '"\n')
+                clog.log.info('exec = "' + url + '"\n')
                 response = urllib2.urlopen(url)
-                rs  = ReadServer(response.read())
+                rs  = drvs.ReadServer(response.read())
                 rlog.log.info('Camera response =\n' + rs.resp() + '\n')        
                 if rs.ok:
                     clog.log.info('Response from camera server was OK\n')
@@ -983,7 +982,7 @@ class Start(drvs.ActButton):
                 clog.log.info('Post successful; starting run\n')
  
 
-                if execCommand('GO', cpars, clog, rlog):
+                if drvs.execCommand('GO', cpars, clog, rlog):
                     # start the exposure timer
                     info.timer.start()
 
@@ -1006,11 +1005,12 @@ class Start(drvs.ActButton):
 
                     # update the run number
                     try:
-                        run  = int(info.run.get())
+                        print('will update run number')
+                        run  = int(info.run.cget('text'))
                         run += 1
                         info.run.configure(text='{0:03d}'.format(run))
                     except Exception, err:
-                        clog.info.warn('Failed to update run number')
+                        clog.log.warn('Failed to update run number')
 
                     return True
                 else:
