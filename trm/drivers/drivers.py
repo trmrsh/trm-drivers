@@ -145,7 +145,7 @@ def loadCpars(fp):
         'HTTP_PATH_GET' : 'string', 'HTTP_PATH_EXEC' : 'string',
         'HTTP_PATH_CONFIG' : 'string', 'HTTP_SEARCH_ATTR_NAME' : 'string',
         'INSTRUMENT_APP' : 'string', 'POWER_ON' : 'string',
-        'FOCAL_PLANE_SLIDE' : 'string', 'TELINS_NAME' : 'string',
+        'TELINS_NAME' : 'string',
         'REQUIRE_RUN_PARAMS' : 'boolean', 'ACCESS_TCS' : 'boolean',
         'HTTP_FILE_SERVER' : 'string', 'CONFIRM_ON_QUIT' : 'boolean',
         'MDIST_WARN' : 'float'}
@@ -1341,10 +1341,10 @@ def postXML(root, cpars, clog, rlog):
 
     # Send the xml to the camera server
     url = cpars['http_camera_server'] + cpars['http_path_config']
-    clog.log.debug('Camera URL =',url,'\n')
+    clog.log.debug('Camera URL = ' + url +'\n')
 
     opener = urllib2.build_opener()
-    clog.log.debug('content length =',len(sxml),'\n')
+    clog.log.debug('content length = ' + str(len(sxml)) + '\n')
     req = urllib2.Request(url, data=sxml, headers={'Content-type': 'text/xml'})
     response = opener.open(req, timeout=5)
     csr	 = ReadServer(response.read())
@@ -1355,7 +1355,7 @@ def postXML(root, cpars, clog, rlog):
 
     # Send the xml to the data server
     url = cpars['http_data_server'] + cpars['http_path_config']
-    clog.log.debug('Data server URL =',url,'\n')
+    clog.log.debug('Data server URL = ' + url + '\n')
     req = urllib2.Request(url, data=sxml, headers={'Content-type': 'text/xml'})
     response = opener.open(req, timeout=5) # ?? need to check whether this is needed
     fsr	 = ReadServer(response.read())
@@ -1474,7 +1474,6 @@ class Stop(ActButton):
             # modify buttons
             self.disable()
             o['Start'].disable()
-            o['Post'].enable()
             o['setup'].resetSDSUhard.enable()
             o['setup'].resetSDSUsoft.enable()
             o['setup'].resetPCI.disable()
@@ -1690,7 +1689,7 @@ def execCommand(command, cpars, clog, rlog):
     succeeded or not.
     """
     if not cpars['cdf_servers_on']:
-        clog.log.warn('execCommand: cdf_servers_on set to False')
+        clog.log.warn('execCommand: cdf_servers_on set to False\n')
         return False
 
     try:
@@ -1821,7 +1820,6 @@ class ResetSDSUhard(ActButton):
             self.disable()
             o['observe'].start.disable()
             o['observe'].stop.disable()
-            o['observe'].post.disable()
             o['Reset SDSU software'].disable()
             o['Reset PCI'].enable()
             o['Setup servers'].disable()
@@ -1864,7 +1862,6 @@ class ResetSDSUsoft(ActButton):
             self.disable()
             o['observe'].start.disable()
             o['observe'].stop.disable()
-            o['observe'].post.disable()
             o['Reset SDSU hardware'].disable()
             o['Reset PCI'].enable()
             o['Setup servers'].disable()
@@ -1905,10 +1902,9 @@ class ResetPCI(ActButton):
             self.disable()
             o['observe'].start.disable()
             o['observe'].stop.disable()
-            o['observe'].post.enable()
             o['Reset SDSU hardware'].enable()
             o['Reset SDSU software'].enable()
-            o['Setup server'].enable()
+            o['Setup servers'].enable()
             o['Power on'].disable()
             o['Power off'].disable()
             return True
@@ -1945,11 +1941,10 @@ class SystemReset(ActButton):
             # alter buttons here
             o['observe'].start.disable()
             o['observe'].stop.disable()
-            o['observe'].post.disable()
             o['Reset SDSU hardware'].disable()
             o['Reset SDSU software'].disable()
             o['Reset PCI'].enable()
-            o['Setup server'].disable()
+            o['Setup servers'].disable()
             o['Power off'].disable()
             o['Power on'].disable()
             return True
@@ -1985,7 +1980,7 @@ class SetupServers(ActButton):
                 execServer(
             'camera', cpars['instrument_app'], cpars, clog, rlog) and \
             execServer('data', tapp, cpars, clog, rlog) and \
-            execServer('data', cpars['instrument_app'], cpars, cLog, rLog):
+            execServer('data', cpars['instrument_app'], cpars, clog, rlog):
 
             clog.log.info('Setup servers succeeded\n')
 
@@ -1993,7 +1988,6 @@ class SetupServers(ActButton):
             self.disable()
             o['observe'].start.disable()
             o['observe'].stop.disable()
-            o['observe'].post.disable()
             o['Reset SDSU hardware'].enable()
             o['Reset SDSU software'].enable()
             o['Reset PCI'].disable()
@@ -2035,13 +2029,12 @@ class PowerOn(ActButton):
             clog.log.info('Power on successful\n')
 
             # change other buttons
-            o['observe'].start.disable()
+            o['observe'].start.enable()
             o['observe'].stop.disable()
-            o['observe'].post.enable()
             o['Reset SDSU hardware'].enable()
             o['Reset SDSU software'].enable()
             o['Reset PCI'].disable()
-            o['Setup server'].disable()
+            o['Setup servers'].disable()
             o['Power off'].enable()
             self.disable()
 
@@ -2049,7 +2042,7 @@ class PowerOn(ActButton):
                 # now check the run number -- lifted from Java code; the wait
                 # for the power on application to finish may not be needed
                 n = 0
-                while isRunActive() and n < 5:
+                while isRunActive(cpars) and n < 5:
                     n += 1
                     time.sleep(1)
 
@@ -2059,12 +2052,12 @@ class PowerOn(ActButton):
                             'de-activate; cannot initialise run number. ' + \
                             'Tell trm if this happens')
                 else:
-                    o['info'].currentrun.set(getRunNumber(cpars,rlog,True))
+                    o['info'].run.configure(text='{0:03d}'.format(getRunNumber(cpars,rlog,True)))
             except Exception, err:
                 clog.log.warn(\
                     'Failed to determine run number at start of run\n')
                 clog.log.warn(str(err) + '\n')
-                o['info'].currentrun.configure(text='UNDEF')
+                o['info'].run.configure(text='UNDEF')
             return True
         else:
             clog.log.warn('Power on failed\n')
@@ -2087,7 +2080,7 @@ class PowerOff(ActButton):
 
     def act(self):
         """
-        Power on action
+        Power off action
         """
         # shortening
         o = self.share
@@ -2106,7 +2099,6 @@ class PowerOff(ActButton):
             # alter other buttons
             o['observe'].start.disable()
             o['observe'].stop.disable()
-            o['observe'].post.disable()
             o['Reset SDSU hardware'].enable()
             o['Reset SDSU software'].enable()
             o['Reset PCI'].disable()
@@ -2462,11 +2454,15 @@ class RtplotServer (SocketServer.TCPServer):
 
 class Timer(tk.Label):
     """
-    Timer class. Updates every second.
+    Run Timer class. Updates @10Hz, checks
+    run status @1Hz. Switches button statuses
+    when the run stops.
     """
-    def __init__(self, master):
+    def __init__(self, master, share):
         tk.Label.__init__(self, master, text='{0:<d} s'.format(0))
-        self.id = None
+        self.id    = None
+        self.share = share
+        self.count = 0
 
     def start(self):
         """
@@ -2478,10 +2474,29 @@ class Timer(tk.Label):
 
     def update(self):
         """
-        Updates @ 10Hz to give smooth running clock.
+        Updates @ 10Hz to give smooth running clock, checks
+        run status @1Hz to reduce load on servers.
         """
         delta = int(round(time.time()-self.startTime))
         self.configure(text='{0:<d} s'.format(delta))
+
+        self.count += 1
+        if self.count % 10 == 0:
+            o = self.share
+            cpars, clog = o['cpars'], o['clog']
+            if not isRunActive(cpars):
+                o['Start'].enable()
+                o['Stop'].disable()
+                o['setup'].resetSDSUhard.enable()
+                o['setup'].resetSDSUsoft.enable()
+                o['setup'].resetPCI.disable()
+                o['setup'].setupServers.disable()
+                o['setup'].powerOn.disable()
+                o['setup'].powerOff.enable()
+                clog.log.info('Run stopped')
+                self.stop()
+                return
+
         self.id = self.after(100, self.update)
 
     def stop(self):
@@ -2655,7 +2670,7 @@ class InfoFrame(tk.LabelFrame):
 
         self.run     = tk.Label(self, text='UNDEF')
         self.frame   = tk.Label(self,text='UNDEF')
-        self.timer   = Timer(self)
+        self.timer   = Timer(self, share)
         self.cadence = tk.Label(self,text='UNDEF')
         self.duty    = tk.Label(self,text='UNDEF')
         self.filt    = tk.Label(self,text='UNDEF')
@@ -2883,7 +2898,7 @@ class InfoFrame(tk.LabelFrame):
 
             # get run number (set by the 'Start' button')
             try:
-                if not isRunActive(cpars, rlog):
+                if not isRunActive(cpars):
                     run = getRunNumber(cpars, rlog, True)
                     self.run.configure(text='{0:03d}'.format(run))
 
@@ -3118,15 +3133,14 @@ class AstroFrame(tk.LabelFrame):
 
 # various helper routines
 
-def isRunActive(cpars, rlog):
+def isRunActive(cpars):
     """
     Polls the data server to see if a run is active
     """
-    if not cpars['cdf_servers_on']:
+    if cpars['cdf_servers_on']:
         url = cpars['http_data_server'] + 'status'
         response = urllib2.urlopen(url, timeout=2)
         rs  = ReadServer(response.read())
-        rlog.log.debug('Data server response =\n' + rs.resp() + '\n')
         if not rs.ok:
             raise DriverError('isRunActive error: ' + str(rs.err))
 
@@ -3157,7 +3171,7 @@ def getRunNumber(cpars, rlog, nocheck=False):
     if not cpars['cdf_servers_on']:
         raise DriverError('getRunNumber error: cdf_servers_on is set to False')
 
-    if nocheck or isRunActive(cpars, rlog):
+    if nocheck or isRunActive(cpars):
         url = cpars['http_data_server'] + 'fstatus'
         response = urllib2.urlopen(url)
         rs  = ReadServer(response.read())
@@ -3513,7 +3527,9 @@ class WinPairs (tk.Frame):
         """
         Freeze all settings so they can't be altered
         """
-        for xsl, xsr, ys, nx, ny in self:
+        for xsl, xsr, ys, nx, ny in \
+                zip(self.xsl, self.xsr,
+                    self.ys, self.nx, self.ny):
             xsl.disable()
             xsr.disable()
             ys.disable()
@@ -3840,8 +3856,8 @@ class Windows (tk.Frame):
         """
         Freeze all settings so they can't be altered
         """
-        print('freezing windows')
-        for xs, ys, nx, ny in self:
+        for xs, ys, nx, ny in \
+                zip(self.xs, self.ys, self.nx, self.ny):
             xs.disable()
             ys.disable()
             nx.disable()
