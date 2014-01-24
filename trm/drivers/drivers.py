@@ -2898,22 +2898,53 @@ class InfoFrame(tk.LabelFrame):
 
             # get run number (set by the 'Start' button')
             try:
+                # if no run is active, get run number from
+                # ultracam servers
                 if not isRunActive(cpars):
                     run = getRunNumber(cpars, rlog, True)
                     self.run.configure(text='{0:03d}'.format(run))
 
-                run = int(self.run.cget('text'))
+                # get the value of the run being displayed, regardless
+                # of whether we just managed to update it
+                rtxt = self.run.cget('text')
+
+                # if the value comes back as undefined, try to work
+                # out the run number from the FileServer directory
+                # listing
+                if rtxt == 'UNDEF':
+                    url = cpars['http_file_server'] + '?action=dir'
+                    response = urllib2.urlopen(url)
+                    resp = response.read()
+
+                    # parse response from server
+                    ldir = resp.split('<li>')
+                    runs = [entry[entry.find('>run')+1:entry.find('>run')+7] \
+                            for entry in ldir \
+                            if entry.find('getdata">run') > -1]
+                    runs.sort()
+                    rtxt = runs[-1][3:]
+                    run = int(rtxt)
+                    self.run.configure(text='{0:03d}'.format(run))
+                else:
+                    run = int(rtxt)
+
+                # OK, we have managed to get the run number
                 rstr = 'run{0:03d}'.format(run)
-                url = cpars['http_file_server'] + rstr + '?action=get_num_frames'
-                response = urllib2.urlopen(url)
-                rstr = response.read()
-                ind = rstr.find('nframes="')
-                if ind > -1:
-                    ind += 9
-                    nframe = int(rstr[ind:ind+rstr[ind:].find('"')])
-                    self.frame.configure(text='{0:d}'.format(nframe))
+                try:
+                    url = cpars['http_file_server'] + rstr + \
+                          '?action=get_num_frames'
+                    response = urllib2.urlopen(url)
+                    rstr = response.read()
+                    ind = rstr.find('nframes="')
+                    if ind > -1:
+                        ind += 9
+                        nframe = int(rstr[ind:ind+rstr[ind:].find('"')])
+                        self.frame.configure(text='{0:d}'.format(nframe))
+                except Exception, err:
+                    self.frame.configure(text='UNDEF')
+                    print('Error trying to set frame: ' + str(err) + '\n')
             except Exception, err:
-                clog.log.debug('Error occurred trying to set run or frame\n')
+                clog.log.debug('Error occurred trying to set run\n')
                 clog.log.debug(str(err) + '\n')
 
         # get the current filter, if the wheel is defined
