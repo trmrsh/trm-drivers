@@ -1035,8 +1035,8 @@ class Load(drvs.ActButton):
         """
         master  : containing widget
         width   : width of button
-        share   : dictionary of other objects. Must have 'instpars' the 
-                  instrument setup parameters (windows etc), and 'runpars' 
+        share   : dictionary of other objects. Must have 'instpars' the
+                  instrument setup parameters (windows etc), and 'runpars'
                   the run parameters (target name etc)
         """
         drvs.ActButton.__init__(self, master, width, share, text='Load')
