@@ -2499,7 +2499,7 @@ class FocalPlaneSlide(tk.LabelFrame):
         master  : containing widget
         """
         tk.LabelFrame.__init__(
-            self, master, text='Focal plane slide',padx=10,pady=10)
+            self, master, text='Focal plane slide',padx=10,pady=4)
 
         # Top for table of buttons
         top = tk.Frame(self)
@@ -2544,14 +2544,14 @@ class FocalPlaneSlide(tk.LabelFrame):
         self.restore.grid(row=2,column=1)
         self.stop.grid(row=2,column=2)
 
-        top.pack(pady=5)
+        top.pack(pady=2)
 
         # make a region to display results of
         # slide commands
         bot = tk.Frame(self)
         scrollbar = tk.Scrollbar(bot)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        console = tk.Text(bot, height=6, width=40, bg=COL['log'],
+        console = tk.Text(bot, height=5, width=45, bg=COL['log'],
                           yscrollcommand=scrollbar.set)
         console.configure(state=tk.DISABLED)
         console.pack(side=tk.LEFT)
@@ -2568,7 +2568,7 @@ class FocalPlaneSlide(tk.LabelFrame):
         # make a logger and set the handler
         self.log = logging.getLogger('Slide log')
         self.log.addHandler(ltgh)
-        bot.pack(pady=5)
+        bot.pack(pady=2)
 
         # Finish off
         self.where   = 'UNDEF'
@@ -3097,17 +3097,17 @@ class AstroFrame(tk.LabelFrame):
                 self.astro.configure(
                     text=time.strftime('%H:%M:%S',time.gmtime(ntime)))
 
-                # re-compute moon
-                self.obs.pressure = 1010.
-                self.moon.compute(self.obs)
-                self.moonra.configure(text='{0}'.format(self.moon.ra))
-                self.moondec.configure(text='{0}'.format(self.moon.dec))
-                self.moonalt.configure(\
-                    text='{0:+03d} deg'.format(
-                        int(round(math.degrees(self.moon.alt)))))
-                self.moonphase.configure(\
-                    text='{0:02d} %'.format(
-                        int(round(100.*self.moon.moon_phase))))
+            # re-compute moon
+            self.obs.pressure = 1010.
+            self.moon.compute(self.obs)
+            self.moonra.configure(text='{0}'.format(self.moon.ra))
+            self.moondec.configure(text='{0}'.format(self.moon.dec))
+            self.moonalt.configure(\
+                                   text='{0:+03d} deg'.format(
+                                       int(round(math.degrees(self.moon.alt)))))
+            self.moonphase.configure(\
+                                     text='{0:02d} %'.format(
+                                         int(round(100.*self.moon.moon_phase))))
 
         # update counter
         self.counter += 1
