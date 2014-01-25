@@ -392,10 +392,22 @@ class Slide(object):
         if self.log is not None:
             self.log.info('moved slide to ' + str(amount) + ' ' + units + '\n')
 
+    def return_position(self):
+        """
+        Returns position in microsteps, mm and pixels. Returns
+        (ms,mm,px)
+        """
+        pos_ms = self._getPosition()
+        pos_mm = MIN_MM + (MAX_MM-MIN_MM)*(pos_ms-MIN_MS)/(MAX_MS-MIN_MS)
+        pos_px = MIN_PX + (MAX_PX-MIN_PX)*(pos_ms-MIN_MS)/(MAX_MS-MIN_MS)
+        return (pos_ms, pos_mm, pos_px)
+
     def report_position(self):
-        pos = self._getPosition()
-        pos_mm = MIN_MM + (MAX_MM-MIN_MM)*(pos-MIN_MS)/(MAX_MS-MIN_MS)
-        pos_px = MIN_PX + (MAX_PX-MIN_PX)*(pos-MIN_MS)/(MAX_MS-MIN_MS)
+        """
+        Reports position in microsteps, mm and pixels. Returns
+        (ms,mm,px)
+        """
+        pos_ms,pos_mm,pos_px = self.return_position()
         print("Current position = %d ms, %f mm, %f pixels" %
               (pos,pos_mm,pos_px))
         if self.log is not None:
