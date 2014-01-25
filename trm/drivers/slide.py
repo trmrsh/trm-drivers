@@ -137,11 +137,9 @@ class Slide(object):
             time_estimate = (MAX_STEP_TIME + MIN_STEP_TIME)*nacc/2 + \
                 MIN_STEP_TIME*(nstep-nacc)
         if time_estimate > 5:
-            print('Rough estimate of time to perform command = %d seconds'
-                  % int(time_estimate))
             if self.log is not None:
                 self.log.info(
-                    'Rough estimate of time to perform command = %d seconds'
+                    'Time to perform command = %d seconds\n'
                     % int(time_estimate))
 
         timeout = time_estimate+2
