@@ -2964,6 +2964,20 @@ class InfoFrame(tk.LabelFrame):
                     clog.info.warn('Failed to get filter for Run & Tel\n')
                     clog.info.warn(str(err) + '\n')
 
+        # get the slide position
+        # poll at 5x slower rate than the frame
+        if self.count % 5 == 0:
+            try:
+                pos_ms,pos_mm,pos_px = self.slide.return_position()
+                self.fpslide.configure(text='{0:d}'.format(int(round(pos_px))))
+                if pos_px < 1050.:
+                    self.fpslide.configure(bg=COL['warn'])
+                else:
+                    self.fpslide.configure(bg=COL['main'])
+            except:
+                self.fpslide.configure(text='UNDEF')
+                self.fpslide.configure(bg=COL['warn'])
+
         # run every 2 seconds
         self.count += 1
         self.after(2000, self.update)
