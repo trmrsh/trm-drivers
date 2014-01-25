@@ -1333,7 +1333,7 @@ def postXML(root, cpars, clog, rlog):
     clog.log.debug('Entering postXML\n')
 
     if not cpars['cdf_servers_on']:
-        clog.log.warn('postXML: cdf_servers_on set to False\n')
+        clog.log.warn('postXML: servers are not active\n')
         return False
 
     # Write setup to an xml string
@@ -1689,7 +1689,7 @@ def execCommand(command, cpars, clog, rlog):
     succeeded or not.
     """
     if not cpars['cdf_servers_on']:
-        clog.log.warn('execCommand: cdf_servers_on set to False\n')
+        clog.log.warn('execCommand: servers are not active\n')
         return False
 
     try:
@@ -1737,7 +1737,7 @@ def execServer(name, app, cpars, clog, rlog):
     Returns True/False according to success or otherwise
     """
     if not cpars['cdf_servers_on']:
-        clog.log.warn('execServer: cdf_servers_on set to False\n')
+        clog.log.warn('execServer: servers are not active\n')
         return False
 
     print(cpars['http_camera_server'], cpars['http_path_config'], '?', app)
@@ -2522,42 +2522,44 @@ class FocalPlaneSlide(tk.LabelFrame):
         width = 8
         self.home     = tk.Button(top, fg='black', text='home',  width=width,
                                   command=lambda: self.wrap('home'))
-        self.park     = tk.Button(top, fg='black', text='park',  width=width,
-                                  command=lambda: self.wrap('park'))
         self.block    = tk.Button(top, fg='black', text='block', width=width,
                                  command=lambda: self.wrap('block'))
+        self.unblock  = tk.Button(top, fg='black', text='unblock',  width=width,
+                                  command=lambda: self.wrap('unblock'))
+
 
         self.gval     = IntegerEntry(top, 1100., None, True, width=4)
         self.goto     = tk.Button(top, fg='black', text='goto', width=width,
-                                  command=lambda: self.wrap('goto',self.gval.value()))
+                                  command=lambda: self.wrap('goto',
+                                                            self.gval.value()))
 
         self.position = tk.Button(top, fg='black', text='position', width=width,
                                   command=lambda: self.wrap('position'))
-        self.reset   = tk.Button(top, fg='black', text='reset', width=width,
-                                 command=lambda: self.wrap('reset'))
-        self.stop    = tk.Button(top, fg='black', text='stop', width=width,
-                                 command=lambda: self.wrap('stop'))
+#        self.reset   = tk.Button(top, fg='black', text='reset', width=width,
+#                                 command=lambda: self.wrap('reset'))
+#        self.stop    = tk.Button(top, fg='black', text='stop', width=width,
+#                                 command=lambda: self.wrap('stop'))
 #
 #        self.enable  = tk.Button(top, fg='black', text='enable', width=width,
 #                                 command=lambda: self.wrap('enable'))
 #        self.disable = tk.Button(top, fg='black', text='disable', width=width,
 #                                 command=lambda: self.wrap('disable'))
-        self.restore = tk.Button(top, fg='black', text='restore', width=width,
-                                 command=lambda: self.wrap('restore'))
+#        self.restore = tk.Button(top, fg='black', text='restore', width=width,
+#                                 command=lambda: self.wrap('restore'))
 
         self.home.grid(row=0,column=0)
-        self.park.grid(row=0,column=1)
-        self.block.grid(row=0,column=2)
+        self.block.grid(row=0,column=1)
+        self.unblock.grid(row=0,column=2)
 
         self.goto.grid(row=1,column=0)
         self.gval.grid(row=1,column=1)
         self.position.grid(row=1,column=2)
-        self.reset.grid(row=2,column=0)
+#        self.reset.grid(row=2,column=0)
 #
 #        self.enable.grid(row=2,column=0)
 #        self.disable.grid(row=2,column=1)
-        self.restore.grid(row=2,column=1)
-        self.stop.grid(row=2,column=2)
+#        self.restore.grid(row=2,column=1)
+#        self.stop.grid(row=2,column=2)
 
         top.pack(pady=2)
 
@@ -2600,7 +2602,7 @@ class FocalPlaneSlide(tk.LabelFrame):
             o = self.share
             cpars, clog = o['cpars'], o['clog']
             clog.log.info('Focal plane slide operation started:\n')
-            clog.log.info(' '.join(comm) + '\n')
+            clog.log.info(' '.join(comm[0]) + '\n')
             t = threading.Thread(target=lambda: self.action(comm))
             t.daemon = True
             t.start()
@@ -2619,8 +2621,8 @@ class FocalPlaneSlide(tk.LabelFrame):
         print(comm)
         if comm[0] == 'home':
             t = threading.Thread(target=self.slide.home())
-        elif comm[0] == 'park':
-            t = threading.Thread(target=self.slide.park())
+        elif comm[0] == 'unblock':
+            t = threading.Thread(target=self.slide.move_absolute(1100,'px'))
         elif comm[0] == 'block':
             t = threading.Thread(target=self.slide.move_absolute(-100,'px'))
         elif comm[0] == 'position':
@@ -3182,7 +3184,7 @@ def isRunActive(cpars):
         else:
             raise DriverError('isRunActive error, state = ' + rs.state)
     else:
-        raise DriverError('isRunActive error: cdf_servers_on = False')
+        raise DriverError('isRunActive error: servers are not active')
 
 def getRunNumber(cpars, rlog, nocheck=False):
     """
@@ -3200,7 +3202,7 @@ def getRunNumber(cpars, rlog, nocheck=False):
     """
 
     if not cpars['cdf_servers_on']:
-        raise DriverError('getRunNumber error: cdf_servers_on is set to False')
+        raise DriverError('getRunNumber error: servers are not active')
 
     if nocheck or isRunActive(cpars):
         url = cpars['http_data_server'] + 'fstatus'
