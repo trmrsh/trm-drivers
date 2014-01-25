@@ -597,7 +597,7 @@ class RunPars(tk.LabelFrame):
         # data type
         row += 1
         self.dtype = drvs.Radio(self, RunPars.DTYPES, 3, values=RunPars.DVALS)
-        self.dtype.set('undef') 
+        self.dtype.set('undef')
         self.dtype.grid(row=row,column=column,sticky=tk.W)
 
         self.share = share
@@ -663,7 +663,7 @@ def createXML(post, cpars, ipars, rpars, clog, rlog):
 
     Arguments:
 
-      post      : True if posting an application. This is a safety 
+      post      : True if posting an application. This is a safety
                   feature to avoid querying the camera server during a run.
       cpars     : configuration parameters
       ipars     : windows etc
@@ -684,7 +684,8 @@ def createXML(post, cpars, ipars, rpars, clog, rlog):
     if cpars['template_from_server']:
         # get template from server
         url = cpars['http_camera_server'] + cpars['http_path_get'] + '?' + \
-            cpars['http_search_attr_name'] + '='  + cpars['templates'][app]['app']
+              cpars['http_search_attr_name'] + \
+              '=' + cpars['templates'][app]['app']
         if cpars['debug']:
             print ('DEBUG: url = ' + url)
         sxml = urllib2.urlopen(url).read()
@@ -760,7 +761,7 @@ def createXML(post, cpars, ipars, rpars, clog, rlog):
             pdict['X' + str(nw+1) + '_SIZE']['value']  = str(nx // xbin)
             pdict['Y' + str(nw+1) + '_SIZE']['value']  = str(ny // ybin)
             npix += (nx // xbin)*(ny // ybin)
- 
+
         for nw in xrange(nwin,4):
             pdict['X' + str(nw+1) + '_START']['value'] = '1'
             pdict['Y' + str(nw+1) + '_START']['value'] = '1'
@@ -802,7 +803,7 @@ def createXML(post, cpars, ipars, rpars, clog, rlog):
         if xsl > xsr:
             xsr, xsl = xsl, xsr
 
-        # note we make X dimensions same for each window 
+        # note we make X dimensions same for each window
         # although this is not strictly required
         pdict['X1_START']['value'] = str(xsl)
         pdict['X2_START']['value'] = str(xsr)
@@ -811,7 +812,7 @@ def createXML(post, cpars, ipars, rpars, clog, rlog):
         pdict['Y1_START']['value'] = str(ys)
         pdict['Y1_SIZE']['value']  = str(ny // ybin)
         npix = 2*(nx // xbin)*(ny // ybin)
-         
+
     pdict['X_SIZE']['value']  = str(npix)
     pdict['Y_SIZE']['value']  = '1'
 
@@ -829,12 +830,14 @@ def createXML(post, cpars, ipars, rpars, clog, rlog):
     comm.text  = rpars.comment.value()
     dtype      = ET.SubElement(uconfig, 'dtype')
     dtype.text = rpars.dtype.value()
-    
+    filtr      = ET.SubElement(uconfig, 'filter')
+    filtr.text = rpars.filter.value()
+
     if post:
         if not hasattr(createXML, 'revision'):
             # test for the revision number, only the first time we post
             # to avoid sending a command to the camera while it is going.
-            # need to do a pre-post before reading otherwise memory won't 
+            # need to do a pre-post before reading otherwise memory won't
             # have been set
             try:
                 url = cpars['http_camera_server'] + cpars['http_path_exec'] + \
@@ -842,7 +845,7 @@ def createXML(post, cpars, ipars, rpars, clog, rlog):
                 clog.log.info('exec = "' + url + '"\n')
                 response = urllib2.urlopen(url)
                 rs  = drvs.ReadServer(response.read())
-                rlog.log.info('Camera response =\n' + rs.resp() + '\n')        
+                rlog.log.info('Camera response =\n' + rs.resp() + '\n')
                 if rs.ok:
                     clog.log.info('Response from camera server was OK\n')
                     csfind = rs.root.find('command_status')
@@ -970,23 +973,22 @@ class Start(drvs.ActButton):
                         'TCS error',
                         'No TCS routine for telescope/instrument = ' +
                         cpars['telins_name'] + '\n' +
-                        'Could not get RA, Dec from telescope.\n' + 
+                        'Could not get RA, Dec from telescope.\n' +
                         'Continue?'):
                         clog.log.warn('Start operation cancelled\n')
                         return False
 
             # Post the XML it to the server
-            clog.log.info('\nPosting application to the servers\n')        
+            clog.log.info('\nPosting application to the servers\n')
 
             if drvs.postXML(root, cpars, clog, rlog):
                 clog.log.info('Post successful; starting run\n')
- 
 
                 if drvs.execCommand('GO', cpars, clog, rlog):
                     # start the exposure timer
                     info.timer.start()
 
-                    clog.log.info('Run started\n')
+                    clog.log.info('Run started on target = ' + rpars.target.value() + '\n')
 
                     # configure buttons
                     self.disable()
@@ -1048,7 +1050,7 @@ class Load(drvs.ActButton):
 
         fname = tkFileDialog.askopenfilename(
             defaultextension='.xml', filetypes=[('xml files', '.xml'),])
-        if not fname: 
+        if not fname:
             share['clog'].warn('Aborted load from disk')
             return False
 
@@ -1069,7 +1071,7 @@ class Load(drvs.ActButton):
 
         xbin, ybin = int(pdict['X_BIN']), int(pdict['Y_BIN'])
 
-        # Set them. 
+        # Set them.
         ipars, rpars = self.share['instpars'], self.share['runpars']
 
         # Number of exposures
@@ -1092,8 +1094,8 @@ class Load(drvs.ActButton):
         speed = pdict['SPEED']
         ipars.readSpeed.set('Slow' if \
                                 speed == '0' else 'Medium' if speed == '1' \
-                                else 'Fast') 
-        
+                                else 'Fast')
+
         if app == 'Windows':
             # Clear or not
             ipars.clear.set(pdict['EN_CLR'])
@@ -1130,7 +1132,7 @@ class Load(drvs.ActButton):
                     else:
                         xsv  = max(1, xsv + nchop - 16)
                     nxv -= nchop
-                        
+
                     print(xsv,ysv,nxv,nyv)
                     w.xs[nw].set(xsv)
                     w.ys[nw].set(ysv)
@@ -1202,8 +1204,8 @@ class Load(drvs.ActButton):
         rpars.pi.set(getUser(user,'PI'))
         rpars.observers.set(getUser(user,'Observers'))
         rpars.comment.set(getUser(user,'comment'))
-#        rpars.dtype.set(getUser(user,'dtype'))
-        rpars.dtype.set(getUser(user,'flags'))
+        rpars.dtype.set(getUser(user,'dtype'))
+        rpars.filter.set(getUser(user,'filter'))
 
         return True
 
