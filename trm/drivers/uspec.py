@@ -67,7 +67,7 @@ class InstPars(tk.LabelFrame):
     def __init__(self, master, share):
         """
         master : enclosing widget
-        share  : dictionary of other objects needed by this widget. 
+        share  : dictionary of other objects needed by this widget.
                  These are 'observe' and 'cpars'
         """
         tk.LabelFrame.__init__(self, master, text='Instrument parameters', 
@@ -118,10 +118,10 @@ class InstPars(tk.LabelFrame):
         # Exposure delay
         elevel = share['cpars']['expert_level']
         if elevel == 0:
-            self.expose = drvs.Expose(lhs, 0.0007, 0.0007, 1677.7207, 
+            self.expose = drvs.Expose(lhs, 0.0007, 0.0007, 1677.7207,
                                       self.check, width=7)
         else:
-            self.expose = drvs.Expose(lhs, 0., 0., 1677.7207, 
+            self.expose = drvs.Expose(lhs, 0., 0., 1677.7207,
                                       self.check, width=7)
         self.expose.grid(row=5,column=1,pady=2,sticky=tk.W)
 
@@ -161,7 +161,7 @@ class InstPars(tk.LabelFrame):
         ny     = (50,)
         xbfac  = (1,2,3,4,5,6,8)
         ybfac  = (1,2,3,4,5,6,8)
-        self.pframe = drvs.WinPairs(rhs, xsl, xslmin, xslmax, xsr, xsrmin, 
+        self.pframe = drvs.WinPairs(rhs, xsl, xslmin, xslmax, xsr, xsrmin,
                                     xsrmax, ys, ysmin, ysmax, nx, ny,
                                     xbfac, ybfac, self.check)
 
@@ -199,17 +199,14 @@ class InstPars(tk.LabelFrame):
         Finally it checks that the windows are synchronised and sets the
         status of the 'Sync' button accordingly.
 
-        Returns True/False according to whether the settings are judged to be 
+        Returns True/False according to whether the settings are judged to be
         OK. True means they are thought to be in a fit state to be sent to the
-        camera. 
+        camera.
 
         This can only be run once the 'observe' and 'cpars' are defined.
         """
         o = self.share
         cpars, observe, cframe = o['cpars'], o['observe'], o['cframe']
-
-        if not self.frozen: 
-            self.wframe.enable()
 
         # Switch visible widget according to the application
         if self.isDrift():
@@ -609,46 +606,47 @@ class RunPars(tk.LabelFrame):
         nature of the problem if the flag is False.
         """
 
-        o = self.share
-        clog, rlog = o['clog'], o['rlog']
-
         ok  = True
         msg = ''
-        dtype = self.dtype.value()
-        if dtype not in RunPars.DVALS:
-            ok = False
-            msg += 'No data type has been defined\n'
 
-        if self.target.ok():
-            self.target.entry.config(bg=drvs.COL['main'])
-        else:
-            self.target.entry.config(bg=drvs.COL['error'])
-            ok = False
-            msg += 'Target name field cannot be blank\n'
+        o = self.share
+        cpars, clog, rlog = o['cpars'], o['clog'], o['rlog']
+        if cpars['require_run_params']:
+            dtype = self.dtype.value()
+            if dtype not in RunPars.DVALS:
+                ok = False
+                msg += 'No data type has been defined\n'
 
-        if dtype == 'data caution' or \
-                dtype == 'data' or dtype == 'technical':
-
-            if self.progid.ok():
-                self.progid.config(bg=drvs.COL['main'])
+            if self.target.ok():
+                self.target.entry.config(bg=drvs.COL['main'])
             else:
-                self.progid.config(bg=drvs.COL['error'])
-                ok   = False
-                msg += 'Programme ID field cannot be blank\n'
+                self.target.entry.config(bg=drvs.COL['error'])
+                ok = False
+                msg += 'Target name field cannot be blank\n'
 
-            if self.pi.ok():
-                self.pi.config(bg=drvs.COL['main'])
+            if dtype == 'data caution' or \
+               dtype == 'data' or dtype == 'technical':
+
+                if self.progid.ok():
+                    self.progid.config(bg=drvs.COL['main'])
+                else:
+                    self.progid.config(bg=drvs.COL['error'])
+                    ok   = False
+                    msg += 'Programme ID field cannot be blank\n'
+
+                if self.pi.ok():
+                    self.pi.config(bg=drvs.COL['main'])
+                else:
+                    self.pi.config(bg=drvs.COL['error'])
+                    ok   = False
+                    msg += 'Principal Investigator field cannot be blank\n'
+
+            if self.observers.ok():
+                self.observers.config(bg=drvs.COL['main'])
             else:
-                self.pi.config(bg=drvs.COL['error'])
+                self.observers.config(bg=drvs.COL['error'])
                 ok   = False
-                msg += 'Principal Investigator field cannot be blank\n'
-
-        if self.observers.ok():
-            self.observers.config(bg=drvs.COL['main'])
-        else:
-            self.observers.config(bg=drvs.COL['error'])
-            ok   = False
-            msg += 'Observers field cannot be blank'
+                msg += 'Observers field cannot be blank'
 
         return (ok,msg)
 
@@ -916,7 +914,7 @@ class Start(drvs.ActButton):
             clog.log.warn('Invalid run parameters.\n')
             clog.log.warn(msg + '\n')
             tkMessageBox.showwarning('Start failure',
-                                     'Please check the run parameters.\n' + msg)
+                                     'Please check the run parameters:\n' + msg)
             return False
 
         # Confirm when avalanche gain is on
@@ -988,13 +986,14 @@ class Start(drvs.ActButton):
                     # start the exposure timer
                     info.timer.start()
 
-                    clog.log.info('Run started on target = ' + rpars.target.value() + '\n')
+                    clog.log.info('Run started on target = ' + \
+                                  rpars.target.value() + '\n')
 
                     # configure buttons
                     self.disable()
                     o['Stop'].enable()
                     o['Load'].disable()
-                    o['Unfreeze'].disable()
+                    o['Unfreeze'].enable()
                     o['setup'].resetSDSUhard.disable()
                     o['setup'].resetSDSUsoft.disable()
                     o['setup'].resetPCI.disable()
@@ -1219,12 +1218,12 @@ class Save(drvs.ActButton):
         """
         master  : containing widget
         width   : width of button
-        share   : dictionary of other objects. Must have 'cpars' the 
-                  configuration parameters, 'instpars' the instrument 
-                  setup parameters (windows etc), and 'runpars' the 
+        share   : dictionary of other objects. Must have 'cpars' the
+                  configuration parameters, 'instpars' the instrument
+                  setup parameters (windows etc), and 'runpars' the
                   run parameters (target name etc), 'clog' and 'rlog'
         """
-        drvs.ActButton.__init__(self, master, width, share, text='Save')        
+        drvs.ActButton.__init__(self, master, width, share, text='Save')
 
     def act(self):
         """
@@ -1267,7 +1266,7 @@ class Save(drvs.ActButton):
 
 class Unfreeze(drvs.ActButton):
     """
-    Class defining the 'Unfreeze' button's operation. 
+    Class defining the 'Unfreeze' button's operation.
     """
 
     def __init__(self, master, width, share):
@@ -1292,16 +1291,16 @@ class Observe(tk.LabelFrame):
     """
     Observe Frame. Collects together buttons that fire off the commands needed
     during observing. These have in common interaction with external objects,
-    such as loading data from disk, or sending data to servers. All of these 
+    such as loading data from disk, or sending data to servers. All of these
     need callback routines which are hidden within this class.
     """
-    
+
     def __init__(self, master, share):
         """
         master : container widget
-        share   : dictionary of other objects. Must have 'cpars' the 
-                  configuration parameters, 'instpars' the instrument 
-                  setup parameters (windows etc), and 'runpars' the 
+        share   : dictionary of other objects. Must have 'cpars' the
+                  configuration parameters, 'instpars' the instrument
+                  setup parameters (windows etc), and 'runpars' the
                   run parameters (target name etc), 'clog' and 'rlog'
         """
 
@@ -1335,6 +1334,7 @@ class Observe(tk.LabelFrame):
         # Define initial status
         self.start.disable()
         self.stop.disable()
+        self.unfreeze.disable()
 
         # Implement expert level
         self.setExpertLevel(share['cpars']['expert_level'])
