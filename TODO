@@ -1,0 +1,26 @@
+Things to do:
+
+1) Hold mouse for continuous change
+
+2) PI, ID --> calib and grey out for calibrations.
+
+3) Filter box needs an extra line displaying the current filter
+
+4) Drop down menu should be set to the current filter
+
+5) Set filter in run & tel
+
+6) Stop irritating message about run after servers, before initialise.
+
+7) unfreeze always greyed out -- FIXED
+
+8) binning and number of windows not frozen when they should be -- FIXED
+
+9) need to set default directory for saving xml
+
+10) save setup on closing down.
+
+11) reverse sign on hour angle
+
+12) Override run parameter checks -- FIXED
+
