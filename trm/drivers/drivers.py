@@ -1375,7 +1375,7 @@ class ActButton(tk.Button):
     flag tracks the (potential) activity status allowing it to be
     reset. The 'expert' flag controls whether the activity status
     will be overridden. The button starts out in non-expert mode by
-    default. This can be switches with setExpert, setNonExpert.
+    default. This can be switched with setExpert, setNonExpert.
     """
 
     def __init__(self, master, width, share, callback=None, **kwargs):
@@ -1408,8 +1408,8 @@ class ActButton(tk.Button):
 
     def disable(self):
         """
-        Disable the button, if in non-expert mode,
-        unset its activity flag come-what-may
+        Disable the button, if in non-expert mode;
+        unset its activity flag come-what-may.
         """
         if not self._expert:
             self.configure(state='disable')
@@ -1421,16 +1421,13 @@ class ActButton(tk.Button):
         regardless of its activity status.
         """
         self._expert = True
-        print('1 setExpert activity flag =',self._active)
         self.configure(state='normal')
-        print('2 setExpert activity flag =',self._active)
 
     def setNonExpert(self):
         """
         Turns off 'expert' status whereby to allow a button to be disabled
         """
         self._expert = False
-        print('setNonExpert activity flag =',self._active)
         if self._active:
             self.enable()
         else:
@@ -3510,38 +3507,6 @@ class WinPairs (tk.Frame):
 
         return status
 
-    def enable(self):
-        npair = self.npair.value()
-        for label, xsl, xsr, ys, nx, ny in \
-                zip(self.label[:npair], self.xsl[:npair], self.xsr[:npair],
-                    self.ys[:npair], self.nx[:npair], self.ny[:npair]):
-            label.config(state='normal')
-            xsl.enable()
-            xsr.enable()
-            ys.enable()
-            nx.enable()
-            ny.enable()
-
-        for label, xsl, xsr, ys, nx, ny in \
-                zip(self.label[npair:], self.xsl[npair:], self.xsr[npair:],
-                    self.ys[npair:], self.nx[npair:], self.ny[npair:]):
-            label.config(state='disable')
-            xsl.disable()
-            xsr.disable()
-            ys.disable()
-            nx.disable()
-            ny.disable()
-
-    def disable(self):
-        for label, xsl, xsr, ys, nx, ny in \
-                zip(self.label, self.xsl, self.xsr, self.ys, self.nx, self.ny):
-            label.config(state='disable')
-            xsl.disable()
-            xsr.disable()
-            ys.disable()
-            nx.disable()
-            ny.disable()
-
     def sync(self):
         """
         Synchronise the settings. This means that the pixel start
@@ -3572,7 +3537,7 @@ class WinPairs (tk.Frame):
 
     def freeze(self):
         """
-        Freeze all settings so they can't be altered
+        Freeze (disable) all settings so they can't be altered
         """
         for xsl, xsr, ys, nx, ny in \
                 zip(self.xsl, self.xsr,
@@ -3582,12 +3547,15 @@ class WinPairs (tk.Frame):
             ys.disable()
             nx.disable()
             ny.disable()
-        self.sbutt.config(state='disable')
+        self.npair.disable()
+        self.xbin.disable()
+        self.ybin.disable()
+        self.sbutt.disable()
         self.frozen = True
 
     def unfreeze(self):
         """
-        Unfreeze all settings
+        Unfreeze all settings so that they can be altered
         """
         npair = self.npair.value()
         for label, xsl, xsr, ys, nx, ny in \
@@ -3609,6 +3577,11 @@ class WinPairs (tk.Frame):
             ys.disable()
             nx.disable()
             ny.disable()
+
+        self.npair.enable()
+        self.xbin.enable()
+        self.ybin.enable()
+        self.sbutt.enable()
 
         self.frozen = False
         self.check()
@@ -3757,7 +3730,7 @@ class Windows (tk.Frame):
 
         Returns status, flag for whether parameters are viable.
         """
-        print('checking windows')
+
         status = True
         synced = False
 
@@ -3832,7 +3805,6 @@ class Windows (tk.Frame):
                     ysw2.config(bg=COL['error'])
                     status = False
 
-        print('almost checked')
         if synced:
             self.sbutt.config(bg=COL['main'])
             self.sbutt.disable()
@@ -3844,37 +3816,6 @@ class Windows (tk.Frame):
             print('not synced')
 
         return status
-
-    def enable(self):
-        print('enabling windows')
-        nwin = self.nwin.value()
-        for label, xs, ys, nx, ny in \
-                zip(self.label[:nwin], self.xs[:nwin], self.ys[:nwin],
-                    self.nx[:nwin], self.ny[:nwin]):
-            label.config(state='normal')
-            xs.enable()
-            ys.enable()
-            nx.enable()
-            ny.enable()
-
-        for label, xs, ys, nx, ny in \
-                zip(self.label[nwin:], self.xs[nwin:], self.ys[nwin:],
-                    self.nx[nwin:], self.ny[nwin:]):
-            label.config(state='disable')
-            xs.disable()
-            ys.disable()
-            nx.disable()
-            ny.disable()
-
-    def disable(self):
-        print('disabling windows')
-        for label, xs, ys, nx, ny in \
-                zip(self.label, self.xs, self.ys, self.nx, self.ny):
-            label.config(state='disable')
-            xs.disable()
-            ys.disable()
-            nx.disable()
-            ny.disable()
 
     def sync(self, *args):
         """
@@ -3909,7 +3850,10 @@ class Windows (tk.Frame):
             ys.disable()
             nx.disable()
             ny.disable()
-        self.sbutt.config(state='disable')
+        self.npair.disable()
+        self.xbin.disable()
+        self.ybin.disable()
+        self.sbutt.disable()
         self.frozen = True
 
     def unfreeze(self):
@@ -3936,6 +3880,10 @@ class Windows (tk.Frame):
             nx.disable()
             ny.disable()
 
+        self.npair.enable()
+        self.xbin.enable()
+        self.ybin.enable()
+        self.sbutt.enable()
         self.frozen = False
         self.check()
 
