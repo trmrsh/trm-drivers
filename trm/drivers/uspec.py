@@ -11,7 +11,6 @@ import xml.etree.ElementTree as ET
 import os
 import urllib2
 import drivers as drvs
-import filterwheel as fwheel
 import math
 
 # Timing, gain, noise parameters lifted from java usdriver
@@ -33,8 +32,8 @@ AVALANCHE_PIXELS = 1072
 AVALANCHE_GAIN_9   = 1200.0  # dimensionless gain, hvgain=9
 AVALANCHE_SATURATE = 80000   # electrons
 
-# avalanche gains assume HVGain = 9. We can adapt this later when we decide 
-# how gain should be set at TNO. Might be better to make gain a function if 
+# avalanche gains assume HVGain = 9. We can adapt this later when we decide
+# how gain should be set at TNO. Might be better to make gain a function if
 # we allow 0 < HVgain < 9 (SL)
 
 GAIN_NORM_FAST = 0.8    # electrons per count
@@ -47,7 +46,7 @@ GAIN_AV_SLOW   = 0.0016 # electrons per count
 # Note - avalanche RNO assume HVGain = 9. We can adapt this later when we
 # decide how gain should be set at TNO. Might be better to make RNO a function
 # if we allow 0 < HVgain < 9 (SL)
-   
+
 RNO_NORM_FAST  =  4.8 # electrons per pixel
 RNO_NORM_MED   =  2.8 # electrons per pixel
 RNO_NORM_SLOW  =  2.2 # electrons per pixel
@@ -70,7 +69,7 @@ class InstPars(tk.LabelFrame):
         share  : dictionary of other objects needed by this widget.
                  These are 'observe' and 'cpars'
         """
-        tk.LabelFrame.__init__(self, master, text='Instrument parameters', 
+        tk.LabelFrame.__init__(self, master, text='Instrument parameters',
                                padx=10, pady=10)
 
         # left hand side
@@ -87,7 +86,7 @@ class InstPars(tk.LabelFrame):
         tk.Label(lhs, text='Num. exposures  ').grid(row=6,column=0, sticky=tk.W)
 
         # Application (mode)
-        self.app = drvs.Radio(lhs, ('Wins', 'Drift'), 2, self.check, 
+        self.app = drvs.Radio(lhs, ('Wins', 'Drift'), 2, self.check,
                                  ('Windows', 'Drift'))
         self.app.grid(row=0,column=1,sticky=tk.W)
 
@@ -101,13 +100,13 @@ class InstPars(tk.LabelFrame):
         self.avalanche.pack(side=tk.LEFT)
         self.avgainLabel = tk.Label(aframe, text='gain ')
         self.avgainLabel.pack(side=tk.LEFT)
-        self.avgain = drvs.RangedInt(aframe, 0, 0, 9, self.check, 
+        self.avgain = drvs.RangedInt(aframe, 0, 0, 9, self.check,
                                      False, width=2)
         self.avgain.pack(side=tk.LEFT)
         aframe.grid(row=2,column=1,pady=2,sticky=tk.W)
 
         # Readout speed
-        self.readSpeed = drvs.Radio(lhs, ('S', 'M', 'F'), 3, 
+        self.readSpeed = drvs.Radio(lhs, ('S', 'M', 'F'), 3,
                                     self.check, ('Slow', 'Medium', 'Fast'))
         self.readSpeed.grid(row=3,column=1,pady=2,sticky=tk.W)
 
@@ -143,7 +142,7 @@ class InstPars(tk.LabelFrame):
         ny    = (1072,100,100,100)
         xbfac = (1,2,3,4,5,6,8)
         ybfac = (1,2,3,4,5,6,8)
-        self.wframe = drvs.Windows(rhs, xs, xsmin, xsmax, ys, ysmin, ysmax, 
+        self.wframe = drvs.Windows(rhs, xs, xsmin, xsmax, ys, ysmin, ysmax,
                                    nx, ny, xbfac, ybfac, self.check)
         self.wframe.grid(row=2,column=0,columnspan=3,sticky=tk.W+tk.N)
 
@@ -189,8 +188,7 @@ class InstPars(tk.LabelFrame):
                                  self.app.value() + ' not recognised.')
 
     def check(self, *args):
-        """
-        Callback function for running validity checks on the CCD
+        """Callback function for running validity checks on the CCD
         parameters. It spots and flags overlapping windows, windows with null
         parameters, windows with invalid dimensions given the binning
         factors. It sets the correct number of windows according to the
@@ -303,9 +301,9 @@ class InstPars(tk.LabelFrame):
         Returns a string suitable to sending off to rtplot when
         it asks for window parameters. Returns null string '' if
         the windows are not OK. This operates on the basis of
-        trying to send something back, even if it might not be 
+        trying to send something back, even if it might not be
         OK as a window setup. Note that we have to take care
-        here not to update any GUI components because this is 
+        here not to update any GUI components because this is
         called outside of the main thread.
         """
         try:
