@@ -159,9 +159,15 @@ class GUI(tk.Tk):
                 self.wc    = None
 
             def __call__(self):
+                clog = self.share['clog']
                 if self.wc is None or not self.wc.winfo_exists():
-                    self.wc = \
-                        filterwheel.WheelController(self.wheel, self.share)
+                    try:
+                        self.wc = filterwheel.WheelController(self.wheel, \
+                                                              self.share)
+                    except Exception, err:
+                        clog.log.warn('Failed to open filter control window\n')
+                        clog.log.warn('Error = ' + str(err) + '\n')
+                        self.wc = None
                 else:
                     clog = self.share['clog']
                     clog.log.info('There already is a wheel control window')
