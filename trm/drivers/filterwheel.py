@@ -15,8 +15,11 @@ import serial
 import drivers as drvs
 
 class FilterWheel(object):
+    """
+    Class to control the ULTRASPEC filterwheel.
+    """
 
-    def __init__(self,port='/dev/filterwheel',default_timeout=2):
+    def __init__(self,port='/dev/filterwheel', default_timeout=2):
         """
         initialise filter wheel object. doesnt actually connect
         """
@@ -64,7 +67,7 @@ class FilterWheel(object):
         retVal = self.ser.readline()
 
         # return command with leading and trailing whitespace removed
-        return retVal.lstrip().rstrip()
+        return retVal.strip()
 
     def close(self):
         """
@@ -157,6 +160,12 @@ class WheelController(tk.Toplevel):
                   run parameters (target name etc), 'clog' and 'rlog'
         """
 
+        # Try to connect to the wheel. Raises an Exception
+        # if no wheel available
+        if not wheel.connected:
+            wheel.connect()
+            wheel.init()
+
         width = 12
         tk.Toplevel.__init__(self)
         self.title('Filter selector')
@@ -165,46 +174,51 @@ class WheelController(tk.Toplevel):
         self.share = share
 
         cpars, clog = share['cpars'], share['clog']
-        try:
-            if not self.wheel.connected:
-                self.wheel.connect()
-                self.wheel.init()
-        except Exception, err:
-            clog.log.warn('Filter wheel error\n')
-            clog.log.warn(str(err) + '\n')
 
+        toplab = tk.Label(self,text='Current:')
+        toplab.grid(row=0,column=0)
+
+        self.filter.grid(row=1,column=0)
         self.filter = drvs.Choice(self, cpars['active_filter_names'],
                                   width=width-1)
-        self.filter.grid(row=0,column=0)
+        self.filter.grid(row=1,column=0)
 
         self.go     = drvs.ActButton(self, width, share, self._go, text='go')
-        self.go.grid(row=0, column=1)
+        self.go.grid(row=1, column=1)
 
         self.home   = drvs.ActButton(self, width, share, self._home,
                                      text='home wheel')
-        self.home.grid(row=1, column=0)
+        self.home.grid(row=2, column=0)
 
         self.init   = drvs.ActButton(self, width, share, self._init,
                                      text='init wheel')
-        self.init.grid(row=1, column=1)
+        self.init.grid(row=2, column=1)
 
         self.close   = drvs.ActButton(self, width, share, self._close,
                                       text='close wheel')
-        self.close.grid(row=2, column=1)
+        self.close.grid(row=3, column=1)
+
+        self.clog = clog
 
     def _go(self, *args):
         findex = self.filter.options.index(self.filter.value())+1
-        print('filter index desired =',findex)
+        self.clog.info('Moving to filter position = ' + str(findex) + '\n')
         self.wheel.goto(findex)
+        self.clog.info('Filter moved successfully\n')
 
     def _home(self, *args):
+        self.clog.info('Homing filter wheel ...\n')
         self.wheel.home()
+        self.clog.info('Filter homed\n')
 
     def _close(self, *args):
         self.wheel.close()
+        self.clog.info('Filter closed\n')
 
     def _init(self, *args):
+        self.clog.info('Initialising filter wheel ...\n')
         self.wheel.reboot()
+        self.clog.info('Filter wheel initialised\n')
 
 class FilterWheelError(Exception):
     pass
