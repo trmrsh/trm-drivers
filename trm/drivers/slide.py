@@ -409,6 +409,6 @@ class Slide(object):
         """
         pos_ms,pos_mm,pos_px = self.return_position()
         print("Current position = %d ms, %f mm, %f pixels" %
-              (pos,pos_mm,pos_px))
+              (pos_ms,pos_mm,pos_px))
         if self.log is not None:
             self.log.info('Current position = {0:6.1f} pixels\n'.format(pos_px))
