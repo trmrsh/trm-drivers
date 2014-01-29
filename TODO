@@ -24,3 +24,5 @@ Things to do:
 
 12) Override run parameter checks -- FIXED
 
+13) Filters need an edit menu and to save the new values to a standard
+    location, probably usdriver.conf
