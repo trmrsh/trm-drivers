@@ -921,7 +921,7 @@ class Start(drvs.ActButton):
 
             if not tkMessageBox.askokcancel(
                 'Avalanche','Avalanche gain is on at level = ' +
-                ipars.avgain.value() + '\n' + 'Continue?'):
+                str(ipars.avgain.value()) + '\n' + 'Continue?'):
                 clog.log.warn('Start operation cancelled\n')
                 return False
 

@@ -1470,7 +1470,7 @@ class Stop(ActButton):
 
             # modify buttons
             self.disable()
-            o['Start'].disable()
+            o['Start'].enable()
             o['setup'].resetSDSUhard.enable()
             o['setup'].resetSDSUsoft.enable()
             o['setup'].resetPCI.disable()
@@ -3850,7 +3850,7 @@ class Windows (tk.Frame):
             ys.disable()
             nx.disable()
             ny.disable()
-        self.npair.disable()
+        self.nwin.disable()
         self.xbin.disable()
         self.ybin.disable()
         self.sbutt.disable()
@@ -3880,7 +3880,7 @@ class Windows (tk.Frame):
             nx.disable()
             ny.disable()
 
-        self.npair.enable()
+        self.nwin.enable()
         self.xbin.enable()
         self.ybin.enable()
         self.sbutt.enable()
