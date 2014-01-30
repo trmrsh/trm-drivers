@@ -178,7 +178,6 @@ class WheelController(tk.Toplevel):
         toplab = tk.Label(self,text='Current:')
         toplab.grid(row=0,column=0)
 
-        self.filter.grid(row=1,column=0)
         self.filter = drvs.Choice(self, cpars['active_filter_names'],
                                   width=width-1)
         self.filter.grid(row=1,column=0)
