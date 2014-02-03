@@ -13,17 +13,60 @@ is exposing. Nothing is sent to the camera until you send the 'post'
 command.
 """
 
+# core
 import argparse, os
 import Tkinter as tk
-import tkFont
-import tkMessageBox
-import logging
-import Queue
-import threading
+import tkFont, tkMessageBox
+import logging, Queue, threading
+import xml.etree.ElementTree as ET
 
-import trm.drivers as drvs
-import trm.drivers.uspec as uspec
-import trm.drivers.filterwheel as filterwheel
+# my stuff
+import trm.drivers.globals     as g
+import trm.drivers.drivers     as drvs
+import trm.drivers.uspec       as uspec
+import trm.drivers.filterwheel as fwheel
+
+class SetWheel(object):
+    """
+    Callable object to define the command for
+    setting the filter wheel on the menu
+    """
+    def __init__(self, wheel):
+        self.wheel = wheel
+        self.wc    = None
+
+    def __call__(self):
+        if g.cpars['filter_wheel_on']:
+            if self.wc is None or not self.wc.winfo_exists():
+                try:
+                    self.wc = fwheel.WheelController(self.wheel)
+                except Exception, err:
+                    g.clog.log.warn('Failed to open filter control window\n')
+                    g.clog.log.warn('Error = ' + str(err) + '\n')
+                    self.wc = None
+            else:
+                g.clog.log.info('There already is a wheel control window')
+        else:
+            g.clog.log.warn('Filter wheel access is OFF; see settings.')
+
+class EditFilter(object):
+    """
+    Callable object to define the command for
+    editing the filters on the menu.
+    """
+    def __init__(self):
+        self.ef = None
+
+    def __call__(self):
+        if self.ef is None or not self.ef.winfo_exists():
+            try:
+                self.ef = fwheel.FilterEditor()
+            except Exception, err:
+                g.clog.log.warn('Failed to open filter editor window\n')
+                g.clog.log.warn('Error = ' + str(err) + '\n')
+                self.ef = None
+        else:
+            g.clog.log.info('There already is a filter editor window')
 
 class GUI(tk.Tk):
     """
@@ -31,7 +74,7 @@ class GUI(tk.Tk):
     them from the rtplot server.
     """
 
-    def __init__(self, cpars):
+    def __init__(self):
 
         # Create the main GUI
         tk.Tk.__init__(self)
@@ -43,74 +86,62 @@ class GUI(tk.Tk):
 
         # We now create the various container widgets. The order here
         # is mostly a case of the most basic first which often need to
-        # be passed to later ones. This cannot entirely be followed however
-        # see the 'share' dictionary below
+        # be passed to later ones. This is achived using the globals
+        # of the 'globals' sub-module.
 
-        # First the loggers, command and response
-        clog = drvs.LogDisplay(self, 5, 50, 'Command log')
-        rlog = drvs.LogDisplay(self, 5, 56, 'Response log')
+        # First the logging windows, command and response
+        g.clog = drvs.LogDisplay(self, 5, 50, 'Command log')
+        g.rlog = drvs.LogDisplay(self, 5, 56, 'Response log')
 
-        # dictionary of objects to share. Used to pass the widgets
-        # from one to another. Basically a thinly-disguised global
-        share = {'clog' : clog, 'rlog' : rlog, 'cpars' : cpars}
+        # Instrument parameters frame.
+        g.ipars = uspec.InstPars(self)
 
-        # Instrument setup frame.
-        instpars  = uspec.InstPars(self, share)
-        share.update({'instpars' : instpars})
-
-        # Run setup data frame
-        runpars = uspec.RunPars(self, share)
-        share.update({'runpars' : runpars})
+        # Run parameters frame
+        g.rpars = uspec.RunPars(self)
 
         # The information frame (run and frame number, exposure time)
-        info = drvs.InfoFrame(self, share)
-        share.update({'info' : info})
+        g.info = drvs.InfoFrame(self)
 
         # Container frame for switch options, observe, focal plane slide and
         # setup widgets
         topLhsFrame = tk.Frame(self)
 
         # Focal plane slide frame
-        fpslide = drvs.FocalPlaneSlide(topLhsFrame, share)
-        share.update({'fpslide' : fpslide})
+        g.fpslide = drvs.FocalPlaneSlide(topLhsFrame)
 
-        # Observe frame: needed for the setup frame so defined first.
-        observe = uspec.Observe(topLhsFrame, share)
-        share.update({'observe' : observe})
+        # Observing frame
+        g.observe = uspec.Observe(topLhsFrame)
 
-        # Setup frame. Pass the actions frame to it. This
-        # one is visible at the start.
-        setup = drvs.InstSetup(topLhsFrame, share)
-        share.update({'setup' : setup})
+        # Setup frame.
+        g.setup = drvs.InstSetup(topLhsFrame)
 
         # Count & S/N frame
-        count = uspec.CountsFrame(self, share)
-        share.update({'cframe' : count})
+        g.count = uspec.CountsFrame(self)
 
         # Astronomical information frame
-        astro = drvs.AstroFrame(self, share)
-        share.update({'astro' : astro})
+        g.astro = drvs.AstroFrame(self)
 
-        # Sub-frame to select between setup, observe, focal plane slide
-        switch = drvs.Switch(topLhsFrame, share)
+        # Switcher frame to select between setup, observe, focal plane slide
+        switch = drvs.Switch(topLhsFrame)
 
         # Pack vertically into the container frame
         switch.pack(pady=5,anchor=tk.W)
-        setup.pack(pady=5,anchor=tk.W)
+        g.setup.pack(pady=5,anchor=tk.W)
 
         # Format the left-hand side
         topLhsFrame.grid(row=0,column=0,sticky=tk.W+tk.N,padx=10,pady=10)
-        count.grid(row=1,column=0,sticky=tk.W+tk.N,padx=10,pady=10)
-        info.grid(row=2,column=0,sticky=tk.W+tk.N,padx=10,pady=10)
-        clog.grid(row=3,column=0,sticky=tk.W,padx=10,pady=10)
+        g.count.grid(row=1,column=0,sticky=tk.W+tk.N,padx=10,pady=10)
+        g.info.grid(row=2,column=0,sticky=tk.W+tk.N,padx=10,pady=10)
+        g.clog.grid(row=3,column=0,sticky=tk.W,padx=10,pady=10)
 
         # Right-hand side
-        instpars.grid(row=0,column=1,sticky=tk.W+tk.N,padx=10,pady=10)
-        runpars.grid(row=1,column=1,sticky=tk.W+tk.N,padx=10,pady=10)
-        astro.grid(row=2,column=1,sticky=tk.W+tk.N,padx=10,pady=10)
-        rlog.grid(row=3,column=1,sticky=tk.W,padx=10,pady=10)
+        g.ipars.grid(row=0,column=1,sticky=tk.W+tk.N,padx=10,pady=10)
+        g.rpars.grid(row=1,column=1,sticky=tk.W+tk.N,padx=10,pady=10)
+        g.astro.grid(row=2,column=1,sticky=tk.W+tk.N,padx=10,pady=10)
+        g.rlog.grid(row=3,column=1,sticky=tk.W,padx=10,pady=10)
 
-        # Top menubar
+        # Top menubar. Features a 'Quit' option, a menu of configuration
+        # settings, and a menu to access the filter wheel.
         menubar = tk.Menu(self)
         menubar.add_command(label="Quit", command=self.ask_quit)
 
@@ -118,75 +149,75 @@ class GUI(tk.Tk):
         settingsMenu = tk.Menu(menubar, tearoff=0)
 
         # level of expertise
-        expertMenu   = drvs.ExpertMenu(settingsMenu, cpars, observe, setup)
+        expertMenu   = drvs.ExpertMenu(settingsMenu, g.observe, g.setup, g.ipars)
         settingsMenu.add_cascade(label='Expert', menu=expertMenu)
 
         # Some boolean switches
         settingsMenu.add_checkbutton(
             label='Require run params',
-            var=drvs.Boolean('require_run_params',cpars))
+            var=drvs.Boolean('require_run_params'))
 
         settingsMenu.add_checkbutton(
             label='Confirm HV gain',
-            var=drvs.Boolean('confirm_hv_gain_on',cpars))
+            var=drvs.Boolean('confirm_hv_gain_on'))
 
         settingsMenu.add_checkbutton(
             label='Confirm target',
-            var=drvs.Boolean('confirm_on_change',cpars))
+            var=drvs.Boolean('confirm_on_change'))
 
         settingsMenu.add_checkbutton(
-            label='Access TCS',
-            var=drvs.Boolean('access_tcs',cpars))
+            label='TCS on',
+            var=drvs.Boolean('tcs_on'))
 
         settingsMenu.add_checkbutton(
             label='Servers on',
-            var=drvs.Boolean('cdf_servers_on',cpars))
+            var=drvs.Boolean('cdf_servers_on'))
+
+        settingsMenu.add_checkbutton(
+            label='Filter wheel on',
+            var=drvs.Boolean('filter_wheel_on'))
+
+        settingsMenu.add_checkbutton(
+            label='Focal plane slide on',
+            var=drvs.Boolean('focal_plane_slide_on'))
+
+        settingsMenu.add_checkbutton(
+            label='CCD temperature on',
+            var=drvs.Boolean('ccd_temperature_on'))
 
         # Add to menubar
         menubar.add_cascade(label='Settings', menu=settingsMenu)
 
+        # Now the filter menu
+        filterMenu = tk.Menu(menubar, tearoff=0)
+
         # Filter selector. First create a FilterWheel
-        self.wheel = filterwheel.FilterWheel()
+        g.wheel = fwheel.FilterWheel()
 
-        class SetFilter(object):
-            """
-            Callable object to define the command for
-            the Filters on the menu.
-            """
-            def __init__(self, wheel, share):
-                self.wheel = wheel
-                self.share = share
-                self.wc    = None
+        # create the SetWheel, attach to the Filters label.
+        # This allows you to change the filter
+        setwheel = SetWheel(g.wheel)
+        filterMenu.add_command(label='Change filter', command=setwheel)
 
-            def __call__(self):
-                clog = self.share['clog']
-                if self.wc is None or not self.wc.winfo_exists():
-                    try:
-                        self.wc = filterwheel.WheelController(self.wheel, \
-                                                              self.share)
-                    except Exception, err:
-                        clog.log.warn('Failed to open filter control window\n')
-                        clog.log.warn('Error = ' + str(err) + '\n')
-                        self.wc = None
-                else:
-                    clog = self.share['clog']
-                    clog.log.info('There already is a wheel control window')
+        # and the filter editor
+        filterMenu.add_command(label='Edit filters', command=lambda : fwheel.FilterEditor())
 
-        # create the SetFilter attach to the Filters label
-        setfilt = SetFilter(self.wheel, share)
-        menubar.add_command(label='Filters', command=setfilt)
+        menubar.add_cascade(label='Filters', menu=filterMenu)
 
         # Stick the menubar in place
         self.config(menu=menubar)
 
-        # Everything now defined, so we can run checks
-        instpars.check()
+        # All components defined. Try to load previously stored settings
+        self.store = os.path.join(os.path.expanduser('~'),'.usdriver.xml')
+        if os.path.isfile(self.store):
+            xml = ET.parse(self.store).getroot()
+            g.ipars.loadXML(xml)
+            g.rpars.loadXML(xml)
 
-        # Save some attributes for setting up the rtplot server
-        self.cpars    = cpars
-        self.instpars = instpars
+        # run instrument setting checks
+        g.ipars.check()
 
-        if cpars['rtplot_server_on']:
+        if g.cpars['rtplot_server_on']:
             # the rtplot server is tricky since it needs to run all the time
             # along with the GUI which brings in issues such as concurrency,
             # threads etc.
@@ -195,14 +226,11 @@ class GUI(tk.Tk):
                 t = threading.Thread(target=self.startRtplotServer, args=[q,])
                 t.daemon = True
                 t.start()
-                print('rtplot server started on port',
-                      cpars['rtplot_server_port'])
+                print('rtplot server started on port', g.cpars['rtplot_server_port'])
             except Exception, e:
                 print('Problem trying to start rtplot server:', e)
         else:
             print('rtplot server was not started')
-
-        self.share = share
 
     def startRtplotServer(self, x):
         """
@@ -210,20 +238,22 @@ class GUI(tk.Tk):
         It is at this point that we pass the window parameters
         to the server.
         """
-        self.server = drvs.RtplotServer(self.instpars,
-                                        self.cpars['rtplot_server_port'])
+        self.server = drvs.RtplotServer(g.ipars, g.cpars['rtplot_server_port'])
         self.server.run()
 
     def ask_quit(self):
-        cpars, clog = self.share['cpars'], self.share['clog']
-        if cpars['confirm_on_quit']:
-            if not tkMessageBox.askokcancel('Quit', 'Really quit usdriver?'):
-                clog.log.warn('Quit usdriver cancelled.\n')
-            else:
-                if self.wheel.connected:
-                    self.wheel.close()
-                    print('closed filter wheel')
-                self.destroy()
+        if g.cpars['confirm_on_quit'] and not tkMessageBox.askokcancel('Quit', 'Really quit usdriver?'):
+            g.clog.log.warn('Quit usdriver cancelled.\n')
+        else:
+            if g.wheel.connected:
+                g.wheel.close()
+                print('closed filter wheel')
+
+            # Save current settings
+            root = uspec.createXML(False)
+            ET.ElementTree(root).write(self.store)
+
+            self.destroy()
 
 if __name__ == '__main__':
 
@@ -242,15 +272,15 @@ if __name__ == '__main__':
         args = parser.parse_args()
 
         with open(args.cpars) as fp:
-            cpars = drvs.loadCpars(fp)
+            drvs.loadCpars(fp)
 
-        if cpars['debug']:
+        if g.cpars['debug']:
             logging.basicConfig(level=logging.DEBUG)
         else:
             logging.basicConfig(level=logging.INFO)
 
         # The main window.
-        gui = GUI(cpars)
+        gui = GUI()
         gui.mainloop()
 
         # be nice on exit

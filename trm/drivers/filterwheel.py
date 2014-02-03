@@ -12,6 +12,8 @@ Two main classes::
 """
 import Tkinter as tk
 import serial
+
+import globals as g
 import drivers as drvs
 
 class FilterWheel(object):
@@ -150,14 +152,9 @@ class WheelController(tk.Toplevel):
     a new window.
     """
 
-    def __init__(self, wheel, share):
+    def __init__(self, wheel):
         """
         wheel   : a FilterWheel instance representing the wheel
-
-        share   : dictionary of other objects. Must have 'cpars' the
-                          configuration parameters, 'instpars' the instrument
-                  setup parameters (windows etc), and 'runpars' the
-                  run parameters (target name etc), 'clog' and 'rlog'
         """
 
         # Try to connect to the wheel. Raises an Exception
@@ -169,55 +166,76 @@ class WheelController(tk.Toplevel):
         width = 12
         tk.Toplevel.__init__(self)
         self.title('Filter selector')
-
         self.wheel = wheel
-        self.share = share
-
-        cpars, clog = share['cpars'], share['clog']
 
         toplab = tk.Label(self,text='Current:')
         toplab.grid(row=0,column=0)
 
-        self.filter = drvs.Choice(self, cpars['active_filter_names'],
+        self.filter = drvs.Choice(self, g.cpars['active_filter_names'],
                                   width=width-1)
         self.filter.grid(row=1,column=0)
 
-        self.go     = drvs.ActButton(self, width, share, self._go, text='go')
+        self.go     = drvs.ActButton(self, width, self._go, text='go')
         self.go.grid(row=1, column=1)
 
-        self.home   = drvs.ActButton(self, width, share, self._home,
-                                     text='home wheel')
+        self.home   = drvs.ActButton(self, width, self._home, text='home wheel')
         self.home.grid(row=2, column=0)
 
-        self.init   = drvs.ActButton(self, width, share, self._init,
-                                     text='init wheel')
+        self.init   = drvs.ActButton(self, width, self._init, text='init wheel')
         self.init.grid(row=2, column=1)
 
-        self.close   = drvs.ActButton(self, width, share, self._close,
-                                      text='close wheel')
+        self.close   = drvs.ActButton(self, width, self._close, text='close wheel')
         self.close.grid(row=3, column=1)
-
-        self.clog = clog
 
     def _go(self, *args):
         findex = self.filter.options.index(self.filter.value())+1
-        self.clog.info('Moving to filter position = ' + str(findex) + '\n')
+        g.clog.info('Moving to filter position = ' + str(findex) + '\n')
         self.wheel.goto(findex)
-        self.clog.info('Filter moved successfully\n')
+        g.clog.info('Filter moved successfully\n')
 
     def _home(self, *args):
-        self.clog.info('Homing filter wheel ...\n')
+        g.clog.info('Homing filter wheel ...\n')
         self.wheel.home()
-        self.clog.info('Filter homed\n')
+        g.clog.info('Filter homed\n')
 
     def _close(self, *args):
         self.wheel.close()
-        self.clog.info('Filter closed\n')
+        g.clog.info('Filter closed\n')
 
     def _init(self, *args):
-        self.clog.info('Initialising filter wheel ...\n')
+        g.clog.info('Initialising filter wheel ...\n')
         self.wheel.reboot()
-        self.clog.info('Filter wheel initialised\n')
+        g.clog.info('Filter wheel initialised\n')
+
+class FilterEditor(tk.Toplevel):
+    """
+    Class to allow editing of the active filters. The list of *possible*
+    filters is set in the configuration file and any changes to the
+    available set must be edited directly there.
+    """
+
+    def __init__(self):
+
+        width = 12
+        tk.Toplevel.__init__(self)
+        self.title('Filter editor')
+
+        tk.Label(self,text='Old filter name:').grid(row=0,column=0)
+        self.old = drvs.Choice(self, g.cpars['active_filter_names'], width=width-1)
+        self.old.grid(row=0,column=1)
+
+        tk.Label(self,text='New filter name:').grid(row=1,column=0)
+        self.new  = drvs.Choice(self, g.cpars['filter_names'], width=width-1)
+        self.new.grid(row=1, column=1)
+
+        self.confirm  = drvs.ActButton(self, width, self._make_change, text='Confirm')
+        self.confirm.grid(row=2, column=0)
+
+    def _make_change(self, *args):
+        g.cpars['active_filter_names'][self.old.getIndex()] = self.new.value()
+        # need to reconfig the filters in RunPars; following does not work:
+        #g.rpars.filter = drvs.Radio(g.rpars, g.cpars['active_filter_names'], 6)
+        g.clog.log.info('Filter name changed: ' + self.old.value() + ' ---> ' + self.new.value())
 
 class FilterWheelError(Exception):
     pass

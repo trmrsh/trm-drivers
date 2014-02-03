@@ -1,89 +1,30 @@
 #!/usr/bin/env python
 
 """
-Python module supplying classes for instrument driver
-GUIs. This part contains items of generic use, such as
-PosInt  to multiple drivers.
+As far as possible drivers contains classes of generic use, such as
+PosInt for positive integer input. See e.g. 'uspec' for more instrument
+dependent components.
 """
 
 from __future__ import print_function
 import Tkinter as tk
-import tkFont
+import tkFont, tkFileDialog
 import xml.etree.ElementTree as ET
 import ConfigParser
-import tkFileDialog
-import urllib
-import urllib2
-import logging
-import time
-import BaseHTTPServer
-import SocketServer
-import threading
-import subprocess
-import time
+import urllib, urllib2
+import logging, time, datetime
+import BaseHTTPServer, SocketServer
+import threading, subprocess
 import math
-import datetime
 import json
 
-# thirparty
+# third party
 import ephem
 
 # mine
 import tcs
 import slide
-
-# Zeropoints (days) of MJD, unix time and ephem,
-# number of seconds in a day
-MJD0  = datetime.date(1858,11,17).toordinal()
-UNIX0 = datetime.date(1970,1,1).toordinal()
-EPH0  = datetime.date(1899,12,31).toordinal() + 0.5
-DAY   = 86400.
-
-# may need this at some point
-#proxy_support = urllib2.ProxyHandler({})
-#opener = urllib2.build_opener(proxy_support)
-#urllib2.install_opener(opener)
-
-# Colours
-COL = {\
-    'main' : '#d0d0ff',     # Colour for the surrounds
-    'text' : '#000050',     # Text colour
-    'debug' : '#a0a0ff',    # Text background for debug messages
-    'warn' : '#f0c050',     # Text background for warnings
-    'error' : '#ffa0a0',    # Text background for errors
-    'critical' : '#ff0000', # Text background for disasters
-    'start' : '#aaffaa',    # Start button colour
-    'stop' : '#ffaaaa',     # Stop button colour
-    'log' : '#e0d4ff',      # Logger windows
-    }
-
-# Telescope / instrument info. Most of this is do with estimating count rates
-TINS = {\
-    'TNO-USPEC' : {\
-        'latitude'   : '18 34',   # latitude DMS, North positive
-        'longitude'  : '98 28',   # longitude DMS, East positive
-        'elevation'  : 2457.,     # Elevation above sea level, metres
-        'app'        : 'tno.xml', # Application for the telescope
-        'plateScale' : 0.452,     # Arcsecs/unbinned pixel
-        'zerop'      : {\
-            'u' : 22.29, # update 06/11/13
-            'g' : 25.20,
-            'r' : 24.96,
-            'i' : 24.64,
-            'z' : 23.76
-            }
-        },
-    }
-
-# Sky brightness, mags/sq-arsec
-SKY = {\
-    'd' : {'u' : 22.4, 'g' : 22.2, 'r' : 21.4, 'i' : 20.7, 'z' : 20.3},
-    'g' : {'u' : 21.4, 'g' : 21.2, 'r' : 20.4, 'i' : 20.1, 'z' : 19.9},
-    'b' : {'u' : 18.4, 'g' : 18.2, 'r' : 17.4, 'i' : 17.9, 'z' : 18.3},
-    }
-
-# Extinction per unit airmass
-EXTINCTION = {'u' : 0.5, 'g' : 0.19, 'r' : 0.09, 'i' : 0.05, 'z' : 0.04}
+import globals as g
 
 def addStyle(root):
     """
@@ -110,20 +51,22 @@ def addStyle(root):
 
     # Default colours. Note there is a difference between
     # specifying 'background' with a capital B or lowercase b
-    root.option_add('*background', COL['main'])
-    root.option_add('*HighlightBackground', COL['main'])
-    root.config(background=COL['main'])
+    root.option_add('*background', g.COL['main'])
+    root.option_add('*HighlightBackground', g.COL['main'])
+    root.config(background=g.COL['main'])
 
 def loadCpars(fp):
     """
-    Loads a dictionary of configuration parameters given a file object
-    pointing to the configuration file. The configuration file consists
-    of a series of entries of the form:
+    Loads dictionary of configuration parameters given a file object pointing
+    to the configuration file. The configuration file consists of a series of
+    entries of the form:
 
     NAME : value
 
-    It returns a dictionary of the stored parameters, with values translated
-    to appropriate types. e.g. Yes/No values become boolean, etc.
+    The routine loads straight into the global cpars as a dictionary, with
+    values translated to appropriate types. e.g. Yes/No values become boolean,
+    etc. Note the names are converted to lowercase internally so this is
+    effectively case insensitive as far as the key values are concerned
     """
 
     # read the configuration parameters file
@@ -131,11 +74,13 @@ def loadCpars(fp):
     parser.readfp(fp)
 
     # intialise dictionary
-    cpars = {}
+    g.cpars = {}
 
     # names / types of simple single value items needing no changes.
     SINGLE_ITEMS = {\
         'RTPLOT_SERVER_ON' : 'boolean', 'CDF_SERVERS_ON' : 'boolean',
+        'FILTER_WHEEL_ON' : 'boolean', 'FOCAL_PLANE_SLIDE_ON' : 'boolean',
+        'CCD_TEMPERATURE_ON' : 'boolean', 'TCS_ON' : 'boolean',
         'EXPERT_LEVEL' : 'integer', 'FILE_LOGGING_ON' : 'boolean',
         'HTTP_CAMERA_SERVER' : 'string', 'HTTP_DATA_SERVER' : 'string',
         'APP_DIRECTORY' : 'string', 'TEMPLATE_FROM_SERVER' : 'boolean',
@@ -145,23 +90,22 @@ def loadCpars(fp):
         'HTTP_PATH_GET' : 'string', 'HTTP_PATH_EXEC' : 'string',
         'HTTP_PATH_CONFIG' : 'string', 'HTTP_SEARCH_ATTR_NAME' : 'string',
         'INSTRUMENT_APP' : 'string', 'POWER_ON' : 'string',
-        'TELINS_NAME' : 'string',
-        'REQUIRE_RUN_PARAMS' : 'boolean', 'ACCESS_TCS' : 'boolean',
+        'TELINS_NAME' : 'string', 'REQUIRE_RUN_PARAMS' : 'boolean',
         'HTTP_FILE_SERVER' : 'string', 'CONFIRM_ON_QUIT' : 'boolean',
         'MDIST_WARN' : 'float'}
 
     for key, value in SINGLE_ITEMS.iteritems():
         if value == 'boolean':
-            cpars[key.lower()] = parser.getboolean('All',key)
+            g.cpars[key.lower()] = parser.getboolean('All',key)
         elif value == 'string':
-            cpars[key.lower()] = parser.get('All',key)
+            g.cpars[key.lower()] = parser.get('All',key)
         elif value == 'integer':
-            cpars[key.lower()] = parser.getint('All',key)
+            g.cpars[key.lower()] = parser.getint('All',key)
         elif value == 'float':
-            cpars[key.lower()] = parser.getfloat('All',key)
+            g.cpars[key.lower()] = parser.getfloat('All',key)
 
     # quick check
-    if cpars['expert_level'] < 0 or cpars['expert_level'] > 2:
+    if g.cpars['expert_level'] < 0 or g.cpars['expert_level'] > 2:
         print('EXPERT_LEVEL must be one of 0, 1, or 2.')
         print('Please fix the configuration file = ' + fp.name)
         exit(1)
@@ -172,20 +116,20 @@ def loadCpars(fp):
         'UAC_DATABASE_HOST']
 
     for item in MULTI_ITEMS:
-        cpars[item.lower()] = [x.strip() for x in
+        g.cpars[item.lower()] = [x.strip() for x in
                                   parser.get('All',item).split(';')]
 
     # Check the filters
-    if not set(cpars['active_filter_names']) <= set(cpars['filter_names']):
+    if not set(g.cpars['active_filter_names']) <= set(g.cpars['filter_names']):
         print('One or more of the active filter names was not recognised.')
         print('Please fix the configuration file = ' + fp.name)
         exit(1)
 
     # Check the telescope/instrument combo
-    if cpars['telins_name'] not in TINS:
+    if g.cpars['telins_name'] not in g.TINS:
         print('Telescope/instrument combination = ' +
-              cpars['telins_name'] + ' not recognised.')
-        print('Current possibilities are : ' + str(TINS.keys().sort()))
+              g.cpars['telins_name'] + ' not recognised.')
+        print('Current possibilities are : ' + str(g.TINS.keys().sort()))
         print('Please fix the configuration file = ' + fp.name)
         exit(1)
 
@@ -203,14 +147,12 @@ def loadCpars(fp):
         print('Please fix the configuration file = ' + fp.name)
         exit(1)
 
-    cpars['templates'] = dict( \
+    g.cpars['templates'] = dict( \
         (arr[0],{'pairs' : arr[1], 'app' : arr[2], 'id' : arr[3]}) \
             for arr in zip(labels,pairs,apps,ids))
-    print(cpars['templates'])
-    # Next line is so that we know the order defined in the file
-    cpars['template_labels'] = labels
 
-    return cpars
+    # Next line is so that we know the order defined in the file
+    g.cpars['template_labels'] = labels
 
 class Boolean(tk.IntVar):
     """
@@ -218,24 +160,24 @@ class Boolean(tk.IntVar):
     configuration parameters to allow it to be interfaced with
     the menubar easily.
     """
-    def __init__(self, flag, cpars):
+    def __init__(self, flag):
         tk.IntVar.__init__(self)
-        self.set(cpars[flag])
+        self.set(g.cpars[flag])
         self.trace('w', self._update)
         self.flag = flag
-        self.cpars = cpars
 
     def _update(self, *args):
         if self.get():
-            self.cpars[self.flag] = True
+            g.cpars[self.flag] = True
         else:
-            self.cpars[self.flag] = False
+            g.cpars[self.flag] = False
 
 class IntegerEntry(tk.Entry):
     """
     Defines an Entry field which only accepts integer input.
     This is the base class for several varieties of integer
-    input fields.
+    input fields and defines much of the feel to do with holding
+    the mouse buttons down etc.
     """
 
     def __init__(self, master, ival, checker, blank, **kw):
@@ -261,6 +203,14 @@ class IntegerEntry(tk.Entry):
         self.checker = checker
         self.blank   = blank
         self.set_bind()
+
+        # Nasty stuff to do with holiding mouse
+        # buttons down
+        self._leftMousePressed        = False
+        self._shiftLeftMousePressed   = False
+        self._rightMousePressed       = False
+        self._shiftRightMousePressed  = False
+        self._mouseJustPressed        = True
 
     def validate(self, value):
         """
@@ -290,10 +240,8 @@ class IntegerEntry(tk.Entry):
         """
         Sets the current value equal to num
         """
-        print('set1: ',num,self._value)
         self._value = str(int(num))
         self._variable.set(self._value)
-        print('set2: ',num,self._value)
 
     def add(self, num):
         """
@@ -337,41 +285,116 @@ class IntegerEntry(tk.Entry):
         """
         Sets key bindings.
         """
-        self.bind('<Button-1>', lambda e : self.add(1))
-        self.bind('<Button-3>', lambda e : self.sub(1))
+        # Arrow keys and enter
         self.bind('<Up>', lambda e : self.add(1))
         self.bind('<Down>', lambda e : self.sub(1))
         self.bind('<Shift-Up>', lambda e : self.add(10))
         self.bind('<Shift-Down>', lambda e : self.sub(10))
         self.bind('<Control-Up>', lambda e : self.add(100))
         self.bind('<Control-Down>', lambda e : self.sub(100))
-        self.bind('<Double-Button-1>', self._dadd)
-        self.bind('<Double-Button-3>', self._dsub)
-        self.bind('<Shift-Button-1>', lambda e : self.add(10))
-        self.bind('<Shift-Button-3>', lambda e : self.sub(10))
-        self.bind('<Control-Button-1>', lambda e : self.add(100))
-        self.bind('<Control-Button-3>', lambda e : self.sub(100))
         self.bind('<Enter>', self._enter)
+
+        # Mouse buttons: bit complex since they don't automatically
+        # run in continuous mode like the arrow keys
+        self.bind("<ButtonPress-1>", self._leftMouseDown)
+        self.bind("<ButtonRelease-1>", self._leftMouseUp)
+        self.bind("<Shift-ButtonPress-1>", self._shiftLeftMouseDown)
+        self.bind("<Shift-ButtonRelease-1>", self._shiftLeftMouseUp)
+        self.bind('<Control-Button-1>', lambda e : self.add(100))
+
+        self.bind("<ButtonPress-3>", self._rightMouseDown)
+        self.bind("<ButtonRelease-3>", self._rightMouseUp)
+        self.bind("<Shift-ButtonPress-3>", self._shiftRightMouseDown)
+        self.bind("<Shift-ButtonRelease-3>", self._shiftRightMouseUp)
+        self.bind('<Control-Button-3>', lambda e : self.sub(100))
+
+    def _leftMouseDown(self, event):
+        self._leftMousePressed = True
+        self._mouseJustPressed = True
+        self._pollMouse()
+
+    def _leftMouseUp(self, event):
+        if self._leftMousePressed:
+            self._leftMousePressed = False
+            self.after_cancel(self.after_id)
+
+    def _shiftLeftMouseDown(self, event):
+        self._shiftLeftMousePressed = True
+        self._mouseJustPressed = True
+        self._pollMouse()
+
+    def _shiftLeftMouseUp(self, event):
+        if self._shiftLeftMousePressed:
+            self._shiftLeftMousePressed = False
+            self.after_cancel(self.after_id)
+
+    def _rightMouseDown(self, event):
+        self._rightMousePressed = True
+        self._mouseJustPressed = True
+        self._pollMouse()
+
+    def _rightMouseUp(self, event):
+        if self._rightMousePressed:
+            self._rightMousePressed = False
+            self.after_cancel(self.after_id)
+
+    def _shiftRightMouseDown(self, event):
+        self._shiftRightMousePressed = True
+        self._mouseJustPressed = True
+        self._pollMouse()
+
+    def _shiftRightMouseUp(self, event):
+        if self._shiftRightMousePressed:
+            self._shiftRightMousePressed = False
+            self.after_cancel(self.after_id)
+
+    def _pollMouse(self):
+        """
+        Polls @10Hz, with a slight delay at the
+        start.
+        """
+        if self._mouseJustPressed:
+            delay = 300
+            self._mouseJustPressed = False
+        else:
+            delay = 100
+
+        if self._leftMousePressed:
+            self.add(1)
+            self.after_id = self.after(delay, self._pollMouse)
+
+        if self._shiftLeftMousePressed:
+            self.add(10)
+            self.after_id = self.after(delay, self._pollMouse)
+
+        if self._rightMousePressed:
+            self.sub(1)
+            self.after_id = self.after(delay, self._pollMouse)
+
+        if self._shiftRightMousePressed:
+            self.sub(10)
+            self.after_id = self.after(delay, self._pollMouse)
 
     def set_unbind(self):
         """
         Unsets key bindings.
         """
-        self.unbind('<Button-1>')
-        self.unbind('<Button-3>')
         self.unbind('<Up>')
         self.unbind('<Down>')
         self.unbind('<Shift-Up>')
         self.unbind('<Shift-Down>')
         self.unbind('<Control-Up>')
         self.unbind('<Control-Down>')
-        self.unbind('<Double-Button-1>')
-        self.unbind('<Double-Button-3>')
+        self.unbind('<Enter>')
         self.unbind('<Shift-Button-1>')
         self.unbind('<Shift-Button-3>')
         self.unbind('<Control-Button-1>')
         self.unbind('<Control-Button-3>')
-        self.unbind('<Enter>')
+        self.unbind('<ButtonPress-1>')
+        self.unbind('<ButtonRelease-1>')
+        self.unbind('<ButtonPress-3>')
+        self.unbind('<ButtonRelease-3>')
+        self.unbind('<Up>')
 
     def _callback(self, *dummy):
         """
@@ -1127,7 +1150,7 @@ class TextEntry (tk.Entry):
         if callback is not None:
             self.val.trace('w', callback)
         tk.Entry.__init__(self, master, textvariable=self.val, \
-                              fg=COL['text'], bg=COL['main'], width=width)
+                              fg=g.COL['text'], bg=g.COL['main'], width=width)
 
         # Control input behaviour.
         self.bind('<Enter>', lambda e : self.focus())
@@ -1303,7 +1326,7 @@ def overlap(xl1,yl1,nx1,ny1,xl2,yl2,nx2,ny2):
     return (xl2 < xl1+nx1 and xl2+nx2 > xl1 and \
                 yl2 < yl1+ny1 and yl2+ny2 > yl1)
 
-def saveXML(root, clog):
+def saveXML(root):
     """
     Saves the current setup to disk.
 
@@ -1313,58 +1336,56 @@ def saveXML(root, clog):
     fname = tkFileDialog.asksaveasfilename(
         defaultextension='.xml', filetypes=[('xml files', '.xml'),])
     if not fname:
-        clog.log.warn('Aborted save to disk\n')
+        g.clog.log.warn('Aborted save to disk\n')
         return False
     tree = ET.ElementTree(root)
     tree.write(fname)
-    clog.log.info('Saved setup to' + fname + '\n')
+    g.clog.log.info('Saved setup to' + fname + '\n')
     return True
 
-def postXML(root, cpars, clog, rlog):
+def postXML(root):
     """
     Posts the current setup to the camera and data servers.
 
     root : (xml.etree.ElementTree.Element)
     The current setup.
 
-    cpars : (dict)
-    Configuration parameters inc. urls of servers
     """
-    clog.log.debug('Entering postXML\n')
+    g.clog.log.debug('Entering postXML\n')
 
-    if not cpars['cdf_servers_on']:
-        clog.log.warn('postXML: servers are not active\n')
+    if not g.cpars['cdf_servers_on']:
+        g.clog.log.warn('postXML: servers are not active\n')
         return False
 
     # Write setup to an xml string
     sxml = ET.tostring(root)
 
     # Send the xml to the camera server
-    url = cpars['http_camera_server'] + cpars['http_path_config']
-    clog.log.debug('Camera URL = ' + url +'\n')
+    url = g.cpars['http_camera_server'] + g.cpars['http_path_config']
+    g.clog.log.debug('Camera URL = ' + url +'\n')
 
     opener = urllib2.build_opener()
-    clog.log.debug('content length = ' + str(len(sxml)) + '\n')
+    g.clog.log.debug('content length = ' + str(len(sxml)) + '\n')
     req = urllib2.Request(url, data=sxml, headers={'Content-type': 'text/xml'})
     response = opener.open(req, timeout=5)
-    csr	 = ReadServer(response.read())
-    rlog.log.warn(csr.resp() + '\n')
+    csr = ReadServer(response.read())
+    g.rlog.log.warn(csr.resp() + '\n')
     if not csr.ok:
-        clog.log.warn('Camera response was not OK\n')
+        g.clog.log.warn('Camera response was not OK\n')
         return False
 
     # Send the xml to the data server
-    url = cpars['http_data_server'] + cpars['http_path_config']
-    clog.log.debug('Data server URL = ' + url + '\n')
+    url = g.cpars['http_data_server'] + g.cpars['http_path_config']
+    g.clog.log.debug('Data server URL = ' + url + '\n')
     req = urllib2.Request(url, data=sxml, headers={'Content-type': 'text/xml'})
     response = opener.open(req, timeout=5) # ?? need to check whether this is needed
-    fsr	 = ReadServer(response.read())
-    rlog.log.warn(fsr.resp() + '\n')
+    fsr = ReadServer(response.read())
+    g.rlog.log.warn(fsr.resp() + '\n')
     if not csr.ok:
-        clog.log.warn('Fileserver response was not OK\n')
+        g.clog.log.warn('Fileserver response was not OK\n')
         return False
 
-    clog.log.debug('Leaving postXML\n')
+    g.clog.log.debug('Leaving postXML\n')
     return True
 
 class ActButton(tk.Button):
@@ -1378,12 +1399,11 @@ class ActButton(tk.Button):
     default. This can be switched with setExpert, setNonExpert.
     """
 
-    def __init__(self, master, width, share, callback=None, **kwargs):
+    def __init__(self, master, width, callback=None, **kwargs):
         """
         master   : containing widget
         width    : width in characters of the button
-        share    : dictionary of other objects that might need to be accessed
-        callback : callback function
+        callback : function that is called when button is pressed
         bg       : background colour
         kwargs   : keyword arguments
         """
@@ -1394,7 +1414,6 @@ class ActButton(tk.Button):
         # _active indicates whether the button should be enabled or disabled
         # _expert indicates whether the activity state should be overridden so
         #         that the button is enabled in any case (if set True)
-        self.share    = share
         self.callback = callback
         self._active  = True
         self._expert  = False
@@ -1445,44 +1464,39 @@ class Stop(ActButton):
     Class defining the 'Stop' button's operation
     """
 
-    def __init__(self, master, width, share):
+    def __init__(self, master, width):
         """
         master   : containing widget
         width    : width of button
-        share    : dictionary with configuration parameters and the loggers
         """
-
-        ActButton.__init__(
-            self, master, width, share, bg=COL['stop'], text='Stop')
+        ActButton.__init__(self, master, width, bg=g.COL['stop'], text='Stop')
 
     def act(self):
         """
         Carries out the action associated with Stop button
         """
 
-        o = self.share
-        cpars, clog, rlog = o['cpars'], o['clog'], o['rlog']
+        g.clog.log.debug('Stop pressed\n')
 
-        clog.log.debug('Stop pressed\n')
+        if execCommand('EX,0'):
+            # Report that run has stopped
+            g.clog.log.info('Run stopped\n')
 
-        if execCommand('EX,0', cpars, clog, rlog):
-            clog.log.info('Run stopped\n')
-
-            # modify buttons
+            # Modify buttons
             self.disable()
-            o['Start'].enable()
-            o['setup'].resetSDSUhard.enable()
-            o['setup'].resetSDSUsoft.enable()
-            o['setup'].resetPCI.disable()
-            o['setup'].setupServers.disable()
-            o['setup'].powerOn.disable()
-            o['setup'].powerOff.enable()
+            g.observe.start.enable()
+            g.setup.resetSDSUhard.enable()
+            g.setup.resetSDSUsoft.enable()
+            g.setup.resetPCI.disable()
+            g.setup.setupServers.disable()
+            g.setup.powerOn.disable()
+            g.setup.powerOff.enable()
 
             # stop exposure meter
-            o['info'].timer.stop()
+            g.info.timer.stop()
             return True
         else:
-            clog.log.warn('Failed to stop run\n')
+            g.clog.log.warn('Failed to stop run\n')
             return False
 
 class Target(tk.Frame):
@@ -1493,7 +1507,7 @@ class Target(tk.Frame):
     according to the results. If no check has been made, it has
     a default colour.
     """
-    def __init__(self, master, share, callback=None):
+    def __init__(self, master, callback=None):
         tk.Frame.__init__(self, master)
 
         # Entry field, linked to a StringVar which is traced for
@@ -1501,19 +1515,18 @@ class Target(tk.Frame):
         self.val    = tk.StringVar()
         self.val.trace('w', self.modver)
         self.entry  = tk.Entry(
-            self, textvariable=self.val, fg=COL['text'],
-            bg=COL['main'], width=25)
+            self, textvariable=self.val, fg=g.COL['text'],
+            bg=g.COL['main'], width=25)
         self.entry.bind('<Enter>', lambda e : self.entry.focus())
 
         # Verification button which accesses simbad to see if
         # the target is recognised.
         self.verify = tk.Button(
             self, fg='black', width=8, text='Verify',
-            bg=COL['main'], command=self.act)
+            bg=g.COL['main'], command=self.act)
         self.entry.pack(side=tk.LEFT,anchor=tk.W)
         self.verify.pack(side=tk.LEFT,anchor=tk.W,padx=5)
         self.verify.config(state='disable')
-        self.share  = share
         self.callback = callback
 
     def value(self):
@@ -1539,10 +1552,10 @@ class Target(tk.Frame):
         Switches colour of verify button
         """
         if self.ok():
-            self.verify.config(bg=COL['main'])
+            self.verify.config(bg=g.COL['main'])
             self.verify.config(state='normal')
         else:
-            self.verify.config(bg=COL['main'])
+            self.verify.config(bg=g.COL['main'])
             self.verify.config(state='disable')
 
         if self.callback is not None:
@@ -1553,23 +1566,21 @@ class Target(tk.Frame):
         Carries out the action associated with Verify button
         """
 
-        o = self.share
-        clog, rlog = o['clog'], o['rlog']
         tname = self.val.get()
 
-        clog.log.debug('Checking "' + tname + '" with simbad\n')
+        g.clog.log.debug('Checking "' + tname + '" with simbad\n')
         ret = checkSimbad(tname)
         if len(ret) == 0:
-            self.verify.config(bg=COL['error'])
-            clog.log.warn('No matches to "' + tname + '" found\n')
+            self.verify.config(bg=g.COL['error'])
+            g.clog.log.warn('No matches to "' + tname + '" found\n')
         else:
-            self.verify.config(bg=COL['main'])
+            self.verify.config(bg=g.COL['main'])
             self.verify.config(state='disable')
-            rlog.log.info('Target verified OK\n')
-            rlog.log.info(
+            g.rlog.log.info('Target verified OK\n')
+            g.rlog.log.info(
                 'Found ' + str(len(ret)) + ' matches to "' + tname + '"\n')
             for entry in ret:
-                rlog.log.info(
+                g.rlog.log.info(
                     'Name: ' + entry['Name'] + ', position: ' +
                     entry['Position'] + '\n')
 
@@ -1653,7 +1664,7 @@ class ReadServer(object):
     def resp(self):
         return ET.tostring(self.root)
 
-def execCommand(command, cpars, clog, rlog):
+def execCommand(command):
     """
     Executes a command by sending it to the camera server
 
@@ -1661,15 +1672,6 @@ def execCommand(command, cpars, clog, rlog):
 
       command : (string)
            the command (see below)
-
-      cpars : (dict)
-           configuration parameters
-
-      clog :
-           logger of commands
-
-      rlog :
-           logger of responses
 
     Possible commands are:
 
@@ -1685,32 +1687,32 @@ def execCommand(command, cpars, clog, rlog):
     Returns True/False according to whether the command
     succeeded or not.
     """
-    if not cpars['cdf_servers_on']:
-        clog.log.warn('execCommand: servers are not active\n')
+    if not g.cpars['cdf_servers_on']:
+        g.clog.log.warn('execCommand: servers are not active\n')
         return False
 
     try:
-        url = cpars['http_camera_server'] + cpars['http_path_exec'] + \
+        url = g.cpars['http_camera_server'] + g.cpars['http_path_exec'] + \
             '?' + command
-        clog.log.info('execCommand, command = "' + command + '"\n')
+        g.clog.log.info('execCommand, command = "' + command + '"\n')
         response = urllib2.urlopen(url)
         rs  = ReadServer(response.read())
 
-        rlog.log.info('Camera response =\n' + rs.resp() + '\n')
+        g.rlog.log.info('Camera response =\n' + rs.resp() + '\n')
         if rs.ok:
-            clog.log.info('Response from camera server was OK\n')
+            g.clog.log.info('Response from camera server was OK\n')
             return True
         else:
-            clog.log.warn('Response from camera server was not OK\n')
-            clog.log.warn('Reason: ' + rs.err + '\n')
+            g.clog.log.warn('Response from camera server was not OK\n')
+            g.clog.log.warn('Reason: ' + rs.err + '\n')
             return False
     except urllib2.URLError, err:
-        clog.log.warn('execCommand failed\n')
-        clog.log.warn(str(err) + '\n')
+        g.clog.log.warn('execCommand failed\n')
+        g.clog.log.warn(str(err) + '\n')
 
     return False
 
-def execServer(name, app, cpars, clog, rlog):
+def execServer(name, app):
     """
     Sends application to a server
 
@@ -1722,44 +1724,35 @@ def execServer(name, app, cpars, clog, rlog):
       app : (string)
            the appication name
 
-      cpars : (dict)
-           configuration parameters
-
-      clog :
-          command log
-
-      rlog :
-          response log
-
     Returns True/False according to success or otherwise
     """
-    if not cpars['cdf_servers_on']:
-        clog.log.warn('execServer: servers are not active\n')
+    if not g.cpars['cdf_servers_on']:
+        g.clog.log.warn('execServer: servers are not active\n')
         return False
 
-    print(cpars['http_camera_server'], cpars['http_path_config'], '?', app)
+    print(g.cpars['http_camera_server'], g.cpars['http_path_config'], '?', app)
 
     if name == 'camera':
-        url = cpars['http_camera_server'] + cpars['http_path_config'] + \
+        url = g.cpars['http_camera_server'] + g.cpars['http_path_config'] + \
             '?' + app
     elif name == 'data':
-        url = cpars['http_data_server'] + cpars['http_path_config'] + '?' + app
+        url = g.cpars['http_data_server'] + g.cpars['http_path_config'] + '?' + app
     else:
         raise Exception('Server name = ' + name + ' not recognised.')
 
-    clog.log.debug('execServer, url = ' + url + '\n')
+    g.clog.log.debug('execServer, url = ' + url + '\n')
 
     response = urllib2.urlopen(url)
     rs  = ReadServer(response.read())
     if not rs.ok:
-        clog.log.warn('Response from ' + name + ' server not OK\n')
-        clog.log.warn('Reason: ' + rs.err + '\n')
+        g.clog.log.warn('Response from ' + name + ' server not OK\n')
+        g.clog.log.warn('Reason: ' + rs.err + '\n')
         return False
 
-    clog.log.debug('execServer command was successful\n')
+    g.clog.log.debug('execServer command was successful\n')
     return True
 
-def execRemoteApp(app, cpars, clog, rlog):
+def execRemoteApp(app):
     """
     Executes a remote application by sending it first to the
     camera and then to the data server.
@@ -1769,62 +1762,46 @@ def execRemoteApp(app, cpars, clog, rlog):
       app : (string)
            the application command (see below)
 
-      cpars : (dict)
-           configuration parameters
-
-      clog :
-          command log
-
-      rlog :
-          response log
-
     Returns True/False according to whether the command
     succeeded or not.
     """
 
-    return execServer('camera', app, cpars, clog, rlog) and \
-        execServer('data', app, cpars, clog, rlog)
+    return execServer('camera', app) and execServer('data', app)
 
 class ResetSDSUhard(ActButton):
     """
     Class defining the 'Reset SDSU hardware' button
     """
 
-    def __init__(self, master, width, share):
+    def __init__(self, master, width):
         """
         master   : containing widget
         width    : width of button
-        share    : dictionary of other objects
         """
-
-        ActButton.__init__(
-            self, master, width, share, text='Reset SDSU hardware')
+        ActButton.__init__(self, master, width, text='Reset SDSU hardware')
 
     def act(self):
         """
         Carries out the action associated with the Reset SDSU hardware button
         """
 
-        o = self.share
-        cpars, clog, rlog = o['cpars'], o['clog'], o['rlog']
+        g.clog.log.debug('Reset SDSU hardware pressed\n')
 
-        clog.log.debug('Reset SDSU hardware pressed\n')
-
-        if execCommand('RCO', cpars, clog, rlog):
-            clog.log.info('Reset SDSU hardware succeeded\n')
+        if execCommand('RCO'):
+            g.clog.log.info('Reset SDSU hardware succeeded\n')
 
             # adjust buttons
             self.disable()
-            o['observe'].start.disable()
-            o['observe'].stop.disable()
-            o['Reset SDSU software'].disable()
-            o['Reset PCI'].enable()
-            o['Setup servers'].disable()
-            o['Power on'].disable()
-            o['Power off'].disable()
+            g.observe.start.disable()
+            g.observe.stop.disable()
+            g.setup.resetSDSUsoft.disable()
+            g.setup.resetPCI.enable()
+            g.setup.setupServers.disable()
+            g.setup.powerOn.disable()
+            g.setup.powerOff.disable()
             return True
         else:
-            clog.log.warn('Reset SDSU hardware failed\n')
+            g.clog.log.warn('Reset SDSU hardware failed\n')
             return False
 
 class ResetSDSUsoft(ActButton):
@@ -1832,41 +1809,35 @@ class ResetSDSUsoft(ActButton):
     Class defining the 'Reset SDSU software' button
     """
 
-    def __init__(self, master, width, share):
+    def __init__(self, master, width):
         """
         master   : containing widget
         width    : width of button
         share    : dictionary of other objects
         """
-
-        ActButton.__init__(
-            self, master, width, share, text='Reset SDSU software')
+        ActButton.__init__(self, master, width, text='Reset SDSU software')
 
     def act(self):
         """
         Carries out the action associated with the Reset SDSU software button
         """
+        g.clog.log.debug('Reset SDSU software pressed\n')
 
-        o = self.share
-        cpars, clog, rlog = o['cpars'], o['clog'], o['rlog']
-
-        clog.log.debug('Reset SDSU software pressed\n')
-
-        if execCommand('RS', cpars, clog, rlog):
-            clog.log.info('Reset SDSU software succeeded\n')
+        if execCommand('RS'):
+            g.clog.log.info('Reset SDSU software succeeded\n')
 
             # alter buttons
             self.disable()
-            o['observe'].start.disable()
-            o['observe'].stop.disable()
-            o['Reset SDSU hardware'].disable()
-            o['Reset PCI'].enable()
-            o['Setup servers'].disable()
-            o['Power on'].disable()
-            o['Power off'].disable()
+            g.observe.start.disable()
+            g.observe.stop.disable()
+            g.setup.resetSDSUhard.disable()
+            g.setup.resetPCI.enable()
+            g.setup.setupServers.disable()
+            g.setup.powerOn.disable()
+            g.setup.powerOff.disable()
             return True
         else:
-            clog.log.warn('Reset SDSU software failed\n')
+            g.clog.log.warn('Reset SDSU software failed\n')
             return False
 
 class ResetPCI(ActButton):
@@ -1874,39 +1845,36 @@ class ResetPCI(ActButton):
     Class defining the 'Reset PCI' button
     """
 
-    def __init__(self, master, width, share):
+    def __init__(self, master, width):
         """
         master   : containing widget
         width    : width of button
-        share    : dictionary with cpars, observe, clog, rlog
+        share    : dictionary with observe, clog, rlog
         """
-
-        ActButton.__init__(self, master, width, share, text='Reset PCI')
+        ActButton.__init__(self, master, width, text='Reset PCI')
 
     def act(self):
         """
         Carries out the action associated with the Reset PCI button
         """
-        o = self.share
-        cpars, clog, rlog = o['cpars'], o['clog'], o['rlog']
+        g.clog.log.debug('Reset PCI pressed\n')
 
-        clog.log.debug('Reset PCI pressed\n')
-
-        if execCommand('RST', cpars, clog, rlog):
-            clog.log.info('Reset PCI succeeded\n')
+        if execCommand('RST'):
+            g.clog.log.info('Reset PCI succeeded\n')
 
             # alter buttons
             self.disable()
-            o['observe'].start.disable()
-            o['observe'].stop.disable()
-            o['Reset SDSU hardware'].enable()
-            o['Reset SDSU software'].enable()
-            o['Setup servers'].enable()
-            o['Power on'].disable()
-            o['Power off'].disable()
+            g.observe.start.disable()
+            g.observe.stop.disable()
+            g.setup.resetSDSUhard.enable()
+            g.setup.resetSDSUsoft.enable()
+            g.setup.resetPCI.enable()
+            g.setup.setupServers.enable()
+            g.setup.powerOn.disable()
+            g.setup.powerOff.disable()
             return True
         else:
-            clog.log.warn('Reset PCI failed\n')
+            g.clog.log.warn('Reset PCI failed\n')
             return False
 
 class SystemReset(ActButton):
@@ -1914,39 +1882,39 @@ class SystemReset(ActButton):
     Class defining the 'System Reset' button
     """
 
-    def __init__(self, master, width, share):
+    def __init__(self, master, width):
         """
         master   : containing widget
         width    : width of button
-        share    : dictionary with cpars, observe, clog, rlog
+        share    : dictionary with observe, clog, rlog
         """
 
-        ActButton.__init__(self, master, width, share, text='System Reset')
+        ActButton.__init__(self, master, width, text='System Reset')
 
     def act(self):
         """
         Carries out the action associated with the System Reset
         """
         o = self.share
-        cpars, clog, rlog = o['cpars'], o['clog'], o['rlog']
+        clog, rlog = o['clog'], o['rlog']
 
         clog.log.debug('System Reset pressed\n')
 
-        if execCommand('SRS', cpars, clog, rlog):
+        if execCommand('SRS', clog, rlog):
             clog.log.info('System Reset succeeded\n')
 
             # alter buttons here
-            o['observe'].start.disable()
-            o['observe'].stop.disable()
-            o['Reset SDSU hardware'].disable()
-            o['Reset SDSU software'].disable()
-            o['Reset PCI'].enable()
-            o['Setup servers'].disable()
-            o['Power off'].disable()
-            o['Power on'].disable()
+            g.observe.start.disable()
+            g.observe.stop.disable()
+            g.setup.resetSDSUhard.disable()
+            g.setup.resetSDSUsoft.disable()
+            g.setup.resetPCI.enable()
+            g.setup.setupServers.disable()
+            g.setup.powerOn.disable()
+            g.setup.powerOff.disable()
             return True
         else:
-            clog.log.warn('System Reset failed\n')
+            g.clog.log.warn('System Reset failed\n')
             return False
 
 class SetupServers(ActButton):
@@ -1954,46 +1922,40 @@ class SetupServers(ActButton):
     Class defining the 'Setup servers' button
     """
 
-    def __init__(self, master, width, share):
+    def __init__(self, master, width):
         """
         master   : containing widget
         width    : width of button
-        share    : dictionary with cpars, observe, clog, rlog
         """
-
-        ActButton.__init__(self, master, width, share, text='Setup servers')
+        ActButton.__init__(self, master, width, text='Setup servers')
 
     def act(self):
         """
         Carries out the action associated with the 'Setup servers' button
         """
-        o = self.share
-        cpars, clog, rlog = o['cpars'], o['clog'], o['rlog']
 
-        clog.log.debug('Setup servers pressed\n')
-        tapp = TINS[cpars['telins_name']]['app']
+        g.clog.log.debug('Setup servers pressed\n')
+        tapp = g.TINS[g.cpars['telins_name']]['app']
 
-        if execServer('camera', tapp, cpars, clog, rlog) and \
-                execServer(
-            'camera', cpars['instrument_app'], cpars, clog, rlog) and \
-            execServer('data', tapp, cpars, clog, rlog) and \
-            execServer('data', cpars['instrument_app'], cpars, clog, rlog):
+        if execServer('camera', tapp) and \
+                execServer('camera', g.cpars['instrument_app']) and \
+                execServer('data', tapp) and \
+                execServer('data', g.cpars['instrument_app']):
 
-            clog.log.info('Setup servers succeeded\n')
+            g.clog.log.info('Setup servers succeeded\n')
 
             # alter buttons
             self.disable()
-            o['observe'].start.disable()
-            o['observe'].stop.disable()
-            o['Reset SDSU hardware'].enable()
-            o['Reset SDSU software'].enable()
-            o['Reset PCI'].disable()
-            o['Power on'].enable()
-            o['Power off'].disable()
-
+            g.observe.start.disable()
+            g.observe.stop.disable()
+            g.setup.resetSDSUhard.enable()
+            g.setup.resetSDSUsoft.enable()
+            g.setup.resetPCI.disable()
+            g.setup.powerOn.enable()
+            g.setup.powerOff.disable()
             return True
         else:
-            clog.log.warn('Setup servers failed\n')
+            g.clog.log.warn('Setup servers failed\n')
             return False
 
 class PowerOn(ActButton):
@@ -2001,63 +1963,57 @@ class PowerOn(ActButton):
     Class defining the 'Power on' button's operation
     """
 
-    def __init__(self, master, width, share):
+    def __init__(self, master, width):
         """
         master  : containing widget
         width   : width of button
         share   : other objects
         """
-
-        ActButton.__init__(self, master, width, share, text='Power on')
+        ActButton.__init__(self, master, width, text='Power on')
 
     def act(self):
         """
         Power on action
         """
-        # shortening
-        o = self.share
-        cpars, clog, rlog = o['cpars'], o['clog'], o['rlog']
+        g.clog.log.debug('Power on pressed\n')
 
-        clog.log.debug('Power on pressed\n')
+        if execRemoteApp(g.cpars['power_on']) and execCommand('GO'):
 
-        if execRemoteApp(cpars['power_on'], cpars, clog, rlog) and \
-                execCommand('GO', cpars, clog, rlog):
-
-            clog.log.info('Power on successful\n')
+            g.clog.log.info('Power on successful\n')
 
             # change other buttons
-            o['observe'].start.enable()
-            o['observe'].stop.disable()
-            o['Reset SDSU hardware'].enable()
-            o['Reset SDSU software'].enable()
-            o['Reset PCI'].disable()
-            o['Setup servers'].disable()
-            o['Power off'].enable()
             self.disable()
+            g.observe.start.enable()
+            g.observe.stop.disable()
+            g.setup.resetSDSUhard.enable()
+            g.setup.resetSDSUsoft.enable()
+            g.setup.resetPCI.disable()
+            g.setup.setupServers.disable()
+            g.setup.powerOff.enable()
 
             try:
                 # now check the run number -- lifted from Java code; the wait
                 # for the power on application to finish may not be needed
                 n = 0
-                while isRunActive(cpars) and n < 5:
+                while isRunActive() and n < 5:
                     n += 1
                     time.sleep(1)
 
-                if isRunActive(cpars):
-                    clog.log.warn(
+                if isRunActive():
+                    g.clog.log.warn(
                         'Timed out waiting for power on run to ' + \
                             'de-activate; cannot initialise run number. ' + \
                             'Tell trm if this happens')
                 else:
-                    o['info'].run.configure(text='{0:03d}'.format(getRunNumber(cpars,rlog,True)))
+                    g.info.run.configure(text='{0:03d}'.format(getRunNumber(True)))
             except Exception, err:
-                clog.log.warn(\
+                g.clog.log.warn(\
                     'Failed to determine run number at start of run\n')
-                clog.log.warn(str(err) + '\n')
-                o['info'].run.configure(text='UNDEF')
+                g.clog.log.warn(str(err) + '\n')
+                g.info.run.configure(text='UNDEF')
             return True
         else:
-            clog.log.warn('Power on failed\n')
+            g.clog.log.warn('Power on failed\n')
             return False
 
 class PowerOff(ActButton):
@@ -2065,46 +2021,39 @@ class PowerOff(ActButton):
     Class defining the 'Power off' button's operation
     """
 
-    def __init__(self, master, width, share):
+    def __init__(self, master, width):
         """
         master  : containing widget
         width   : width of button
-        share   : other objects
         """
 
-        ActButton.__init__(self, master, width, share, text='Power off')
+        ActButton.__init__(self, master, width, text='Power off')
         self.disable()
 
     def act(self):
         """
         Power off action
         """
-        # shortening
-        o = self.share
-        cpars, clog, rlog = o['cpars'], o['clog'], o['rlog']
+        g.clog.log.debug('Power off pressed\n')
+        g.clog.log.debug('This is a placeholder as there is no Power' + \
+                             ' off application so it will fail\n')
 
-        clog.log.debug('Power off pressed\n')
-        clog.log.debug('This is a placeholder as there is no Power' + \
-                           ' off application so it will fail\n')
+        if execRemoteApp(g.cpars['power_off']) and execCommand('GO'):
 
-        if execRemoteApp(cpars['power_off'], cpars, clog, rlog) and \
-                execCommand('GO', cpars, clog, rlog):
+            g.clog.log.info('Powered off SDSU\n')
 
-            clog.log.info('Powered off SDSU\n')
+            # alter buttons
             self.disable()
-
-            # alter other buttons
-            o['observe'].start.disable()
-            o['observe'].stop.disable()
-            o['Reset SDSU hardware'].enable()
-            o['Reset SDSU software'].enable()
-            o['Reset PCI'].disable()
-            o['Setup servers'].disable()
-            o['Power on'].enable()
-
+            g.observe.start.disable()
+            g.observe.stop.disable()
+            g.setup.resetSDSUhard.enable()
+            g.setup.resetSDSUsoft.enable()
+            g.setup.resetPCI.disable()
+            g.setup.setupServers.disable()
+            g.setup.powerOn.enable()
             return True
         else:
-            clog.log.warn('Power off failed\n')
+            g.clog.log.warn('Power off failed\n')
             return False
 
 class Initialise(ActButton):
@@ -2112,85 +2061,67 @@ class Initialise(ActButton):
     Class defining the 'Initialise' button's operation
     """
 
-    def __init__(self, master, width, share):
+    def __init__(self, master, width):
         """
         master  : containing widget
         width   : width of button
-        share   : other objects
         """
 
-        ActButton.__init__(self, master, width, share, text='Initialise')
+        ActButton.__init__(self, master, width, text='Initialise')
 
     def act(self):
         """
         Initialise action
         """
-        # shortening
-        o = self.share
-        cpars, clog, rlog = o['cpars'], o['clog'], o['rlog']
+        g.clog.log.debug('Initialise pressed\n')
 
-        clog.log.debug('Initialise pressed\n')
-
-        if not o['System reset'].act():
-            clog.log.warn('Initialise failed on system reset\n')
+        if not g.setup.systemReset.act():
+            g.clog.log.warn('Initialise failed on system reset\n')
             return False
 
-        if not o['Setup servers'].act():
-            clog.log.warn('Initialise failed on server setup\n')
+        if not g.setup.setupServers.act():
+            g.clog.log.warn('Initialise failed on server setup\n')
             return False
 
-        if not o['Power on'].act():
-            clog.log.warn('Initialise failed on power on\n')
+        if not g.setup.powerOn.act():
+            g.clog.log.warn('Initialise failed on power on\n')
             return False
 
-        clog.log.info('Initialise succeeded\n')
+        g.clog.log.info('Initialise succeeded\n')
         return True
 
 class InstSetup(tk.LabelFrame):
     """
-    Instrument configuration frame.
+    Instrument setup frame.
     """
 
-    def __init__(self, master, share):
+    def __init__(self, master):
         """
         master -- containing widget
-        share  -- dictionary of other objects that this needs to access
         """
         tk.LabelFrame.__init__(
             self, master, text='Instrument setup', padx=10, pady=10)
 
         # Define all buttons
         width = 15
-        self.resetSDSUhard = ResetSDSUhard(self, width, share)
-        self.resetSDSUsoft = ResetSDSUsoft(self, width, share)
-        self.resetPCI      = ResetPCI(self, width, share)
-        self.systemReset   = SystemReset(self, width, share)
-        self.setupServers  = SetupServers(self, width, share)
-        self.powerOn       = PowerOn(self, width, share)
-        self.initialise    = Initialise(self, width, share)
+        self.resetSDSUhard = ResetSDSUhard(self, width)
+        self.resetSDSUsoft = ResetSDSUsoft(self, width)
+        self.resetPCI      = ResetPCI(self, width)
+        self.systemReset   = SystemReset(self, width)
+        self.setupServers  = SetupServers(self, width)
+        self.powerOn       = PowerOn(self, width)
+        self.initialise    = Initialise(self, width)
         width = 8
-        self.powerOff      = PowerOff(self, width, share)
-
-        # share all the buttons
-        share['Reset SDSU hardware'] = self.resetSDSUhard
-        share['Reset SDSU software'] = self.resetSDSUsoft
-        share['Reset PCI']           = self.resetPCI
-        share['System reset']        = self.systemReset
-        share['Setup servers']       = self.setupServers
-        share['Initialise']          = self.initialise
-        share['Power on']            = self.powerOn
-        share['Power off']           = self.powerOff
-
-        # save
-        self.share = share
+        self.powerOff      = PowerOff(self, width)
 
         # set which buttons are presented and where they go
-        self.setExpertLevel(share['cpars']['expert_level'])
+        self.setExpertLevel()
 
-    def setExpertLevel(self, level):
+    def setExpertLevel(self):
         """
         Set expert level
         """
+        level = g.cpars['expert_level']
 
         # first define which buttons are visible
         if level == 0:
@@ -2270,11 +2201,11 @@ class LoggingToGUI(logging.Handler):
         """
         logging.Handler.__init__(self)
         self.console = console
-        self.console.tag_config('debug', background=COL['debug'])
-        self.console.tag_config('warn', background=COL['warn'])
-        self.console.tag_config('error', background=COL['error'])
-        self.console.tag_config('critical', background=COL['critical'])
-        self.console.tag_config('debug', background=COL['debug'])
+        self.console.tag_config('debug', background=g.COL['debug'])
+        self.console.tag_config('warn', background=g.COL['warn'])
+        self.console.tag_config('error', background=g.COL['error'])
+        self.console.tag_config('critical', background=g.COL['critical'])
+        self.console.tag_config('debug', background=g.COL['debug'])
 
     def emit(self, message):
         """
@@ -2315,7 +2246,7 @@ class LogDisplay(tk.LabelFrame):
         scrollbar = tk.Scrollbar(self)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         self.console = tk.Text(
-            self, height=height, width=width, bg=COL['log'],
+            self, height=height, width=width, bg=g.COL['log'],
             yscrollcommand=scrollbar.set)
         self.console.configure(state=tk.DISABLED)
         self.console.pack(side=tk.LEFT)
@@ -2340,10 +2271,9 @@ class Switch(tk.Frame):
     and observing frames. Provides radio buttons and hides / shows
     respective frames
     """
-    def __init__(self, master, share):
+    def __init__(self, master):
         """
         master : containing widget
-        share  : pass the widgets to select between
         """
         tk.Frame.__init__(self, master)
 
@@ -2359,25 +2289,21 @@ class Switch(tk.Frame):
         tk.Radiobutton(self, text='Observe', variable=self.val,
                        value='Observe').grid(row=0, column=2, sticky=tk.W)
 
-        self.observe = share['observe']
-        self.fpslide = share['fpslide']
-        self.setup   = share['setup']
-
     def _changed(self, *args):
         if self.val.get() == 'Setup':
-            self.setup.pack(anchor=tk.W, pady=10)
-            self.fpslide.pack_forget()
-            self.observe.pack_forget()
+            g.setup.pack(anchor=tk.W, pady=10)
+            g.fpslide.pack_forget()
+            g.observe.pack_forget()
 
         elif self.val.get() == 'Focal plane slide':
-            self.setup.pack_forget()
-            self.fpslide.pack(anchor=tk.W, pady=10)
-            self.observe.pack_forget()
+            g.setup.pack_forget()
+            g.fpslide.pack(anchor=tk.W, pady=10)
+            g.observe.pack_forget()
 
         elif self.val.get() == 'Observe':
-            self.setup.pack_forget()
-            self.fpslide.pack_forget()
-            self.observe.pack(anchor=tk.W, pady=10)
+            g.setup.pack_forget()
+            g.fpslide.pack_forget()
+            g.observe.pack(anchor=tk.W, pady=10)
 
         else:
             raise DriverError('Unrecognised Switch value')
@@ -2389,30 +2315,26 @@ class ExpertMenu(tk.Menu):
     be used to hide buttons for instance according to
     the status of others, etc.
     """
-    def __init__(self, master, cpars, *args):
+    def __init__(self, master, *args):
         """
         master   -- the containing widget, e.g. toolbar menu
-        cpars -- configuration parameters containing expert_level which is
-                    is used to store initial value and to pass changed value
-        args     -- other objects that have a 'setExpertLevel(elevel)' method.
+        args     -- other objects that have a 'setExpertLevel()' method.
         """
         tk.Menu.__init__(self, master, tearoff=0)
 
         self.val = tk.IntVar()
-        self.val.set(cpars['expert_level'])
+        self.val.set(g.cpars['expert_level'])
         self.val.trace('w', self._change)
         self.add_radiobutton(label='Level 0', value=0, variable=self.val)
         self.add_radiobutton(label='Level 1', value=1, variable=self.val)
         self.add_radiobutton(label='Level 2', value=2, variable=self.val)
 
-        self.cpars = cpars
         self.args  = args
 
     def _change(self, *args):
-        elevel = self.val.get()
-        self.cpars['expert_level'] = elevel
+        g.cpars['expert_level'] = self.val.get()
         for arg in self.args:
-            arg.setExpertLevel(elevel)
+            arg.setExpertLevel()
 
 
 class RtplotHandler(BaseHTTPServer.BaseHTTPRequestHandler):
@@ -2455,10 +2377,9 @@ class Timer(tk.Label):
     run status @1Hz. Switches button statuses
     when the run stops.
     """
-    def __init__(self, master, share):
+    def __init__(self, master):
         tk.Label.__init__(self, master, text='{0:<d} s'.format(0))
         self.id    = None
-        self.share = share
         self.count = 0
 
     def start(self):
@@ -2479,18 +2400,16 @@ class Timer(tk.Label):
 
         self.count += 1
         if self.count % 10 == 0:
-            o = self.share
-            cpars, clog = o['cpars'], o['clog']
-            if not isRunActive(cpars):
-                o['Start'].enable()
-                o['Stop'].disable()
-                o['setup'].resetSDSUhard.enable()
-                o['setup'].resetSDSUsoft.enable()
-                o['setup'].resetPCI.disable()
-                o['setup'].setupServers.disable()
-                o['setup'].powerOn.disable()
-                o['setup'].powerOff.enable()
-                clog.log.info('Run stopped')
+            if not isRunActive():
+                g.observe.start.enable()
+                g.observer.stop.disable()
+                g.setup.resetSDSUhard.enable()
+                g.setup.resetSDSUsoft.enable()
+                g.setup.resetPCI.disable()
+                g.setup.setupServers.disable()
+                g.setup.powerOn.disable()
+                g.setup.powerOff.enable()
+                g.clog.log.info('Run stopped')
                 self.stop()
                 return
 
@@ -2506,7 +2425,7 @@ class FocalPlaneSlide(tk.LabelFrame):
     Self-contained widget to deal with the focal plane slide
     """
 
-    def __init__(self, master, share):
+    def __init__(self, master):
         """
         master  : containing widget
         """
@@ -2565,7 +2484,7 @@ class FocalPlaneSlide(tk.LabelFrame):
         bot = tk.Frame(self)
         scrollbar = tk.Scrollbar(bot)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        console = tk.Text(bot, height=5, width=45, bg=COL['log'],
+        console = tk.Text(bot, height=5, width=45, bg=g.COL['log'],
                           yscrollcommand=scrollbar.set)
         console.configure(state=tk.DISABLED)
         console.pack(side=tk.LEFT)
@@ -2587,7 +2506,6 @@ class FocalPlaneSlide(tk.LabelFrame):
         # Finish off
         self.where   = 'UNDEF'
         self.running = False
-        self.share   = share
         self.slide   = slide.Slide(self.log)
 
     def wrap(self, *comm):
@@ -2595,26 +2513,25 @@ class FocalPlaneSlide(tk.LabelFrame):
         Carries out an action wrapping it in a thread so that
         we don't have to sit around waiting for completion.
         """
-        if not self.running:
-            o = self.share
-            cpars, clog = o['cpars'], o['clog']
-            clog.log.info('Focal plane slide operation started:\n')
-            clog.log.info(' '.join(comm[0]) + '\n')
-            t = threading.Thread(target=lambda: self.action(comm))
-            t.daemon = True
-            t.start()
-            self.running = True
-            self.check()
+        if g.cpars['focal_plane_slide_on']:
+            if not self.running:
+                self.log.info('Focal plane slide operation started:\n')
+                self.log.info(' '.join(comm[0]) + '\n')
+                t = threading.Thread(target=lambda: self.action(comm))
+                t.daemon = True
+                t.start()
+                self.running = True
+                self.check()
+            else:
+                print('a focal plane slide command is already underway')
         else:
-            print('a focal plane slide command is already underway')
+            self.log.warn('Focal plane slide access is OFF; see settings.\n')
+
 
     def action(self, comm):
         """
         Send a command to the focal plane slide
         """
-        o       = self.share
-        cpars   = o['cpars']
-
         print(comm)
         if comm[0] == 'home':
             t = threading.Thread(target=self.slide.home())
@@ -2655,21 +2572,19 @@ class FocalPlaneSlide(tk.LabelFrame):
             # check once per second
             self.after(1000, self.check)
         else:
-            o       = self.share
-            clog    = o['clog']
-            clog.log.info('Focal plane slide operation finished\n')
+            self.log.info('Focal plane slide operation finished\n')
 
 class InfoFrame(tk.LabelFrame):
     """
     Information frame: run number, exposure time, etc.
     """
-    def __init__(self, master, share):
+    def __init__(self, master):
         tk.LabelFrame.__init__(self, master,
                                text='Run & Tel status', padx=4, pady=4)
 
         self.run     = tk.Label(self, text='UNDEF')
         self.frame   = tk.Label(self,text='UNDEF')
-        self.timer   = Timer(self, share)
+        self.timer   = Timer(self)
         self.cadence = tk.Label(self,text='UNDEF')
         self.duty    = tk.Label(self,text='UNDEF')
         self.filt    = tk.Label(self,text='UNDEF')
@@ -2741,8 +2656,6 @@ class InfoFrame(tk.LabelFrame):
         tk.Label(self,text='FP slide:').grid(row=4,column=6,padx=5,sticky=tk.W)
         self.fpslide.grid(row=4,column=7,padx=5,sticky=tk.W)
 
-        self.share = share
-
         # these are used to judge whether we are tracking or not
         self.ra_old    = 0.
         self.dec_old   = 0.
@@ -2759,16 +2672,12 @@ class InfoFrame(tk.LabelFrame):
         once every 10 seconds.
         """
 
-        o = self.share
-        if 'astro' not in o:
+        if g.astro is None or g.fpslide is None:
             self.after(100, self.update)
             return
 
-        cpars, clog, rlog, astro = o['cpars'], \
-            o['clog'], o['rlog'], o['astro']
-
-        if cpars['access_tcs']:
-            if cpars['telins_name'] == 'TNO-USPEC':
+        if g.cpars['tcs_on']:
+            if g.cpars['telins_name'] == 'TNO-USPEC':
                 try:
                     # Poll TCS for ra,dec etc.
                     ra,dec,pa,focus,tflag,engpa = tcs.getTntTcs()
@@ -2786,20 +2695,20 @@ class InfoFrame(tk.LabelFrame):
                     if abs(ra-self.ra_old) < 1.e-3 and \
                             abs(dec-self.dec_old) < 1.e-3 and tflag:
                         self.tracking = True
-                        self.ra.configure(bg=COL['main'])
-                        self.dec.configure(bg=COL['main'])
+                        self.ra.configure(bg=g.COL['main'])
+                        self.dec.configure(bg=g.COL['main'])
                     else:
                         self.tracking = False
-                        self.ra.configure(bg=COL['warn'])
-                        self.dec.configure(bg=COL['warn'])
+                        self.ra.configure(bg=g.COL['warn'])
+                        self.dec.configure(bg=g.COL['warn'])
 
                     # check for changing sky PA
                     if abs(pa-self.pa_old) > 0.1 and \
                             abs(pa-self.pa_old-360.) > 0.1 and \
                             abs(pa-self.pa_old+360.) > 0.1:
-                        self.pa.configure(bg=COL['warn'])
+                        self.pa.configure(bg=g.COL['warn'])
                     else:
-                        self.pa.configure(bg=COL['main'])
+                        self.pa.configure(bg=g.COL['main'])
 
                     # store current values for comparison with next
                     self.ra_old  = ra
@@ -2815,9 +2724,9 @@ class InfoFrame(tk.LabelFrame):
                     # upper rotator limit was actually hit at +255 but
                     # I have stuck to 250).
                     if engpa < -200 or engpa > 230:
-                        self.engpa.configure(bg=COL['warn'])
+                        self.engpa.configure(bg=g.COL['warn'])
                     else:
-                        self.engpa.configure(bg=COL['main'])
+                        self.engpa.configure(bg=g.COL['main'])
 
                     # set focus
                     self.focus.configure(text='{0:+5.2f}'.format(focus))
@@ -2859,11 +2768,11 @@ class InfoFrame(tk.LabelFrame):
                                  (daz > 33.5 and \
                                       dalt < 73.5- \
                                       (daz-33.5)/(50.0-33.5)*(73.5-21.5))):
-                        self.alt.configure(bg=COL['warn'])
-                        self.az.configure(bg=COL['warn'])
+                        self.alt.configure(bg=g.COL['warn'])
+                        self.az.configure(bg=g.COL['warn'])
                     else:
-                        self.alt.configure(bg=COL['main'])
-                        self.az.configure(bg=COL['main'])
+                        self.alt.configure(bg=g.COL['main'])
+                        self.az.configure(bg=g.COL['main'])
 
                     # set airmass
                     self.airmass.configure(text='{0:<4.2f}'.format(
@@ -2872,10 +2781,10 @@ class InfoFrame(tk.LabelFrame):
                     # distance to the moon. Warn if too close (configurable) to it.
                     md = math.degrees(ephem.separation(astro.moon,star))
                     self.mdist.configure(text='{0:<7.2f}'.format(md))
-                    if md < cpars['mdist_warn']:
-                        self.mdist.configure(bg=COL['warn'])
+                    if md < g.cpars['mdist_warn']:
+                        self.mdist.configure(bg=g.COL['warn'])
                     else:
-                        self.mdist.configure(bg=COL['main'])
+                        self.mdist.configure(bg=g.COL['main'])
 
                     # calculate cosine of angle between vertical and celestial
                     # North cpan = (math.sin(astro.obs.lat)-math.sin(star._dec)
@@ -2893,14 +2802,14 @@ class InfoFrame(tk.LabelFrame):
                     self.mdist.configure(text='UNDEF')
                     print(err)
 
-        if cpars['cdf_servers_on']:
+        if g.cpars['cdf_servers_on']:
 
             # get run number (set by the 'Start' button')
             try:
                 # if no run is active, get run number from
                 # ultracam servers
-                if not isRunActive(cpars):
-                    run = getRunNumber(cpars, rlog, True)
+                if not isRunActive():
+                    run = getRunNumber(rlog, True)
                     self.run.configure(text='{0:03d}'.format(run))
 
                 # get the value of the run being displayed, regardless
@@ -2911,7 +2820,7 @@ class InfoFrame(tk.LabelFrame):
                 # out the run number from the FileServer directory
                 # listing
                 if rtxt == 'UNDEF':
-                    url = cpars['http_file_server'] + '?action=dir'
+                    url = g.cpars['http_file_server'] + '?action=dir'
                     response = urllib2.urlopen(url)
                     resp = response.read()
 
@@ -2930,7 +2839,7 @@ class InfoFrame(tk.LabelFrame):
                 # OK, we have managed to get the run number
                 rstr = 'run{0:03d}'.format(run)
                 try:
-                    url = cpars['http_file_server'] + rstr + \
+                    url = g.cpars['http_file_server'] + rstr + \
                           '?action=get_num_frames'
                     response = urllib2.urlopen(url)
                     rstr = response.read()
@@ -2943,37 +2852,37 @@ class InfoFrame(tk.LabelFrame):
                     self.frame.configure(text='UNDEF')
                     print('Error trying to set frame: ' + str(err) + '\n')
             except Exception, err:
-                clog.log.debug('Error occurred trying to set run\n')
-                clog.log.debug(str(err) + '\n')
+                g.clog.log.debug('Error occurred trying to set run\n')
+                g.clog.log.debug(str(err) + '\n')
 
         # get the current filter, if the wheel is defined
         # poll at 5x slower rate than the frame
-        if 'wheel' in self.share and self.count % 5 == 0:
-            wheel = self.share['wheel']
+        if g.wheel is not None and self.count % 5 == 0 and g.cpars['filter_wheel_on']:
             try:
-                if not wheel.connected:
-                    wheel.connect()
-                    wheel.init()
-                findex = wheel.getPos()-1
-                self.filter.configure(text=cpars['active_filter_names'][findex])
+                if not g.wheel.connected:
+                    g.wheel.connect()
+                    g.wheel.init()
+                findex = g.wheel.getPos()-1
+                self.filter.configure(text=g.cpars['active_filter_names'][findex])
             except Exception, err:
                 if self.count % 50:
-                    clog.info.warn('Failed to get filter for Run & Tel\n')
-                    clog.info.warn(str(err) + '\n')
+                    g.clog.log.warn('Failed to get filter for Run & Tel\n')
+                    g.clog.log.warn(str(err) + '\n')
 
         # get the slide position
         # poll at 5x slower rate than the frame
-        if self.count % 5 == 0:
+        if self.count % 5 == 0 and g.cpars['focal_plane_slide_on']:
             try:
-                pos_ms,pos_mm,pos_px = self.slide.return_position()
+                pos_ms,pos_mm,pos_px = g.fpslide.slide.return_position()
                 self.fpslide.configure(text='{0:d}'.format(int(round(pos_px))))
                 if pos_px < 1050.:
-                    self.fpslide.configure(bg=COL['warn'])
+                    self.fpslide.configure(bg=g.COL['warn'])
                 else:
-                    self.fpslide.configure(bg=COL['main'])
-            except:
+                    self.fpslide.configure(bg=g.COL['main'])
+            except Exception, err:
+                print(str(err))
                 self.fpslide.configure(text='UNDEF')
-                self.fpslide.configure(bg=COL['warn'])
+                self.fpslide.configure(bg=g.COL['warn'])
 
         # run every 2 seconds
         self.count += 1
@@ -2983,7 +2892,7 @@ class AstroFrame(tk.LabelFrame):
     """
     Astronomical information frame
     """
-    def __init__(self, master, share):
+    def __init__(self, master):
         tk.LabelFrame.__init__(self, master, padx=2, pady=2, text='Time & Sky')
 
         # times
@@ -3004,10 +2913,9 @@ class AstroFrame(tk.LabelFrame):
         self.moonphase = tk.Label(self)
 
         # observatory info
-        cpars = share['cpars']
         self.obs      = ephem.Observer()
 
-        tins = TINS[cpars['telins_name']]
+        tins = g.TINS[g.cpars['telins_name']]
         self.obs.lat       = tins['latitude']
         self.obs.lon       = tins['longitude']
         self.obs.elevation = tins['elevation']
@@ -3054,12 +2962,11 @@ class AstroFrame(tk.LabelFrame):
         self.moonphase.grid(row=3,column=4,padx=2,sticky=tk.W)
 
         # report back to the user
-        clog = share['clog']
-        tins = TINS[cpars['telins_name']]
-        clog.log.info('Tel/ins  = ' + cpars['telins_name'] + '\n')
-        clog.log.info('Longitude = ' + tins['longitude'] + ' E\n')
-        clog.log.info('Latitude   = ' + tins['latitude'] + ' N\n')
-        clog.log.info('Elevation  = ' + str(tins['elevation']) + ' m\n')
+        tins = g.TINS[g.cpars['telins_name']]
+        g.clog.log.info('Tel/ins  = ' + g.cpars['telins_name'] + '\n')
+        g.clog.log.info('Longitude = ' + tins['longitude'] + ' E\n')
+        g.clog.log.info('Latitude   = ' + tins['latitude'] + ' N\n')
+        g.clog.log.info('Elevation  = ' + str(tins['elevation']) + ' m\n')
 
         # parameters used to reduce re-calculation of sun rise etc, and
         # to provide info for other widgets
@@ -3076,12 +2983,12 @@ class AstroFrame(tk.LabelFrame):
         """
         # current time in seconds since start of UNIX
         utc = time.time()
-        self.obs.date = ephem.Date(UNIX0-EPH0+utc/DAY)
+        self.obs.date = ephem.Date(g.UNIX0-g.EPH0+utc/g.DAY)
 
         # configure times
         self.utc.configure(text=time.strftime('%H:%M:%S',time.gmtime(utc)))
-        self.mjd.configure(text='{0:11.5f}'.format(UNIX0-MJD0+utc/DAY))
-        lst = DAY*(self.obs.sidereal_time()/math.pi/2.)
+        self.mjd.configure(text='{0:11.5f}'.format(g.UNIX0-g.MJD0+utc/g.DAY))
+        lst = g.DAY*(self.obs.sidereal_time()/math.pi/2.)
         self.lst.configure(text=time.strftime('%H:%M:%S',time.gmtime(lst)))
 
         if self.counter % 100 == 0:
@@ -3149,10 +3056,10 @@ class AstroFrame(tk.LabelFrame):
                         self.sun, use_center=True)
 
                 # Configure the corresponding text fields
-                ntime = DAY*(self.lastRiset + EPH0 - UNIX0)
+                ntime = g.DAY*(self.lastRiset + g.EPH0 - g.UNIX0)
                 self.riset.configure(
                     text=time.strftime('%H:%M:%S',time.gmtime(ntime)))
-                ntime = DAY*(self.lastAstro + EPH0 - UNIX0)
+                ntime = g.DAY*(self.lastAstro + g.EPH0 - g.UNIX0)
                 self.astro.configure(
                     text=time.strftime('%H:%M:%S',time.gmtime(ntime)))
 
@@ -3177,12 +3084,12 @@ class AstroFrame(tk.LabelFrame):
 
 # various helper routines
 
-def isRunActive(cpars):
+def isRunActive():
     """
     Polls the data server to see if a run is active
     """
-    if cpars['cdf_servers_on']:
-        url = cpars['http_data_server'] + 'status'
+    if g.cpars['cdf_servers_on']:
+        url = g.cpars['http_data_server'] + 'status'
         response = urllib2.urlopen(url, timeout=2)
         rs  = ReadServer(response.read())
         if not rs.ok:
@@ -3197,12 +3104,10 @@ def isRunActive(cpars):
     else:
         raise DriverError('isRunActive error: servers are not active')
 
-def getRunNumber(cpars, rlog, nocheck=False):
+def getRunNumber(nocheck=False):
     """
     Polls the data server to find the current run number. Throws
     exceptions if it can't determine it.
-
-    cpars : dictionary of configuration parameters
 
     nocheck : determines whether a check for an active run is made
             nocheck=False is safe, but runs 'isRunActive' which
@@ -3212,11 +3117,11 @@ def getRunNumber(cpars, rlog, nocheck=False):
             be done.
     """
 
-    if not cpars['cdf_servers_on']:
+    if not g.cpars['cdf_servers_on']:
         raise DriverError('getRunNumber error: servers are not active')
 
-    if nocheck or isRunActive(cpars):
-        url = cpars['http_data_server'] + 'fstatus'
+    if nocheck or isRunActive():
+        url = g.cpars['http_data_server'] + 'fstatus'
         response = urllib2.urlopen(url)
         rs  = ReadServer(response.read())
         if rs.ok:
@@ -3392,7 +3297,7 @@ class WinPairs (tk.Frame):
             nr  += 1
 
         # syncing button
-        self.sbutt = ActButton(bottom, 5, {}, self.sync, text='Sync')
+        self.sbutt = ActButton(bottom, 5, self.sync, text='Sync')
         self.sbutt.grid(row=row,column=0,columnspan=5,pady=10,sticky=tk.W)
         self.frozen = False
 
@@ -3418,11 +3323,11 @@ class WinPairs (tk.Frame):
         for xslw, xsrw, ysw, nxw, nyw in \
                 zip(self.xsl[:npair], self.xsr[:npair], self.ys[:npair],
                     self.nx[:npair], self.ny[:npair]):
-            xslw.config(bg=COL['main'])
-            xsrw.config(bg=COL['main'])
-            ysw.config(bg=COL['main'])
-            nxw.config(bg=COL['main'])
-            nyw.config(bg=COL['main'])
+            xslw.config(bg=g.COL['main'])
+            xsrw.config(bg=g.COL['main'])
+            ysw.config(bg=g.COL['main'])
+            nxw.config(bg=g.COL['main'])
+            nyw.config(bg=g.COL['main'])
             status = status if xslw.ok() else False
             status = status if xsrw.ok() else False
             status = status if ysw.ok() else False
@@ -3436,20 +3341,20 @@ class WinPairs (tk.Frame):
 
             # Are unbinned dimensions consistent with binning factors?
             if nx is None or nx % xbin != 0:
-                nxw.config(bg=COL['error'])
+                nxw.config(bg=g.COL['error'])
                 status = False
 
             if ny is None or ny % ybin != 0:
-                nyw.config(bg=COL['error'])
+                nyw.config(bg=g.COL['error'])
                 status = False
 
             # overlap checks
             if xsl is None or xsr is None or xsl >= xsr:
-                xsrw.config(bg=COL['error'])
+                xsrw.config(bg=g.COL['error'])
                 status = False
 
             if xsl is None or xsr is None or nx is None or xsl + nx > xsr:
-                xsrw.config(bg=COL['error'])
+                xsrw.config(bg=g.COL['error'])
                 status = False
 
             # Are the windows synchronised? This means that they would
@@ -3465,15 +3370,15 @@ class WinPairs (tk.Frame):
 
             # Range checks
             if xsl is None or nx is None or xsl + nx - 1 > xslw.imax:
-                xslw.config(bg=COL['error'])
+                xslw.config(bg=g.COL['error'])
                 status = False
 
             if xsr is None or nx is None or xsr + nx - 1 > xsrw.imax:
-                xsrw.config(bg=COL['error'])
+                xsrw.config(bg=g.COL['error'])
                 status = False
 
             if ys is None or ny is None or ys + ny - 1 > ysw.imax:
-                ysw.config(bg=COL['error'])
+                ysw.config(bg=g.COL['error'])
                 status = False
 
         # Pair overlap checks. Compare one pair with the next one upstream
@@ -3494,16 +3399,16 @@ class WinPairs (tk.Frame):
                 ny2  = nyw2.value()
 
                 if ys1 + ny1 > ys2:
-                    ysw2.config(bg=COL['error'])
+                    ysw2.config(bg=g.COL['error'])
                     status = False
 
         if synced:
-            self.sbutt.config(bg=COL['main'])
+            self.sbutt.config(bg=g.COL['main'])
             self.sbutt.disable()
         else:
             if not self.frozen:
                 self.sbutt.enable()
-            self.sbutt.config(bg=COL['warn'])
+            self.sbutt.config(bg=g.COL['warn'])
 
         return status
 
@@ -3557,6 +3462,14 @@ class WinPairs (tk.Frame):
         """
         Unfreeze all settings so that they can be altered
         """
+        self.enable()
+        self.frozen = False
+        self.check()
+
+    def enable(self):
+        """
+        Enables WinPair settings
+        """
         npair = self.npair.value()
         for label, xsl, xsr, ys, nx, ny in \
                 zip(self.label[:npair], self.xsl[:npair], self.xsr[:npair],
@@ -3582,9 +3495,6 @@ class WinPairs (tk.Frame):
         self.xbin.enable()
         self.ybin.enable()
         self.sbutt.enable()
-
-        self.frozen = False
-        self.check()
 
     def __iter__(self):
         """
@@ -3718,7 +3628,7 @@ class Windows (tk.Frame):
             row += 1
             nr  += 1
 
-        self.sbutt = ActButton(bottom, 5, {}, self.sync, text='Sync')
+        self.sbutt = ActButton(bottom, 5, self.sync, text='Sync')
         self.sbutt.grid(row=row,column=0,columnspan=5,pady=6,sticky=tk.W)
         self.frozen = False
 
@@ -3743,10 +3653,10 @@ class Windows (tk.Frame):
                 zip(self.xs[:nwin], self.ys[:nwin],
                     self.nx[:nwin], self.ny[:nwin]):
 
-            xsw.config(bg=COL['main'])
-            ysw.config(bg=COL['main'])
-            nxw.config(bg=COL['main'])
-            nyw.config(bg=COL['main'])
+            xsw.config(bg=g.COL['main'])
+            ysw.config(bg=g.COL['main'])
+            nxw.config(bg=g.COL['main'])
+            nyw.config(bg=g.COL['main'])
             status = status if xsw.ok() else False
             status = status if ysw.ok() else False
             status = status if nxw.ok() else False
@@ -3758,11 +3668,11 @@ class Windows (tk.Frame):
 
             # Are unbinned dimensions consistent with binning factors?
             if nx is None or nx % xbin != 0:
-                nxw.config(bg=COL['error'])
+                nxw.config(bg=g.COL['error'])
                 status = False
 
             if ny is None or ny % ybin != 0:
-                nyw.config(bg=COL['error'])
+                nyw.config(bg=g.COL['error'])
                 status = False
 
             # Are the windows synchronised? This means that they
@@ -3779,11 +3689,11 @@ class Windows (tk.Frame):
 
             # Range checks
             if xs is None or nx is None or xs + nx - 1 > xsw.imax:
-                xsw.config(bg=COL['error'])
+                xsw.config(bg=g.COL['error'])
                 status = False
 
             if ys is None or ny is None or ys + ny - 1 > ysw.imax:
-                ysw.config(bg=COL['error'])
+                ysw.config(bg=g.COL['error'])
                 status = False
 
         # Overlap checks. Compare each window with the next one, requiring
@@ -3802,17 +3712,17 @@ class Windows (tk.Frame):
                 ny2  = nyw2.value()
 
                 if ys2 < ys1 + ny1:
-                    ysw2.config(bg=COL['error'])
+                    ysw2.config(bg=g.COL['error'])
                     status = False
 
         if synced:
-            self.sbutt.config(bg=COL['main'])
+            self.sbutt.config(bg=g.COL['main'])
             self.sbutt.disable()
             print('synced')
         else:
             if not self.frozen:
                 self.sbutt.enable()
-            self.sbutt.config(bg=COL['warn'])
+            self.sbutt.config(bg=g.COL['warn'])
             print('not synced')
 
         return status
@@ -3861,6 +3771,14 @@ class Windows (tk.Frame):
         Unfreeze all settings
         """
         print('unfreezing windows')
+        self.enable()
+        self.frozen = False
+        self.check()
+
+    def enable(self):
+        """
+        Enables all settings
+        """
         nwin = self.nwin.value()
         for label, xs, ys, nx, ny in \
                 zip(self.label[:nwin], self.xs[:nwin], self.ys[:nwin],
@@ -3884,8 +3802,6 @@ class Windows (tk.Frame):
         self.xbin.enable()
         self.ybin.enable()
         self.sbutt.enable()
-        self.frozen = False
-        self.check()
 
     def __iter__(self):
         """

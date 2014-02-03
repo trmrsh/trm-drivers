@@ -1,17 +1,19 @@
 #!/usr/bin/env python
 
 """
-Python module supplying classes specific to ULTRASPEC
+uspec provides classes and data specific to ULTRASPEC
 """
 
 from __future__ import print_function
 import Tkinter as tk
 import tkFont, tkMessageBox, tkFileDialog
 import xml.etree.ElementTree as ET
-import os
-import urllib2
+import os, urllib2, math
+
+# mine
+import globals as g
 import drivers as drvs
-import math
+import tcs
 
 # Timing, gain, noise parameters lifted from java usdriver
 VCLOCK           =  14.4e-6  # vertical clocking time
@@ -63,11 +65,9 @@ class InstPars(tk.LabelFrame):
     Ultraspec instrument parameters block.
     """
 
-    def __init__(self, master, share):
+    def __init__(self, master):
         """
         master : enclosing widget
-        share  : dictionary of other objects needed by this widget.
-                 These are 'observe' and 'cpars'
         """
         tk.LabelFrame.__init__(self, master, text='Instrument parameters',
                                padx=10, pady=10)
@@ -75,26 +75,20 @@ class InstPars(tk.LabelFrame):
         # left hand side
         lhs = tk.Frame(self)
 
-        # First column: the labels
-        tk.Label(lhs, text='Mode').grid(row=0,column=0,sticky=tk.W)
-        self.clearLab = tk.Label(lhs, text='Clear')
-        self.clearLab.grid(row=1,column=0, sticky=tk.W)
-        tk.Label(lhs, text='Avalanche').grid(row=2,column=0,sticky=tk.W)
-        tk.Label(lhs, text='Readout speed').grid(row=3,column=0, sticky=tk.W)
-        tk.Label(lhs, text='LED setting').grid(row=4,column=0, sticky=tk.W)
-        tk.Label(lhs, text='Exposure delay').grid(row=5,column=0, sticky=tk.W)
-        tk.Label(lhs, text='Num. exposures  ').grid(row=6,column=0, sticky=tk.W)
-
         # Application (mode)
+        tk.Label(lhs, text='Mode').grid(row=0,column=0,sticky=tk.W)
         self.app = drvs.Radio(lhs, ('Wins', 'Drift'), 2, self.check,
                                  ('Windows', 'Drift'))
         self.app.grid(row=0,column=1,sticky=tk.W)
 
         # Clear enabled
+        self.clearLab = tk.Label(lhs, text='Clear')
+        self.clearLab.grid(row=1,column=0, sticky=tk.W)
         self.clear = drvs.OnOff(lhs, True, self.check)
         self.clear.grid(row=1,column=1,sticky=tk.W)
 
         # Avalanche settings
+        tk.Label(lhs, text='Avalanche').grid(row=2,column=0,sticky=tk.W)
         aframe = tk.Frame(lhs)
         self.avalanche = drvs.OnOff(aframe, False, self.check)
         self.avalanche.pack(side=tk.LEFT)
@@ -106,27 +100,34 @@ class InstPars(tk.LabelFrame):
         aframe.grid(row=2,column=1,pady=2,sticky=tk.W)
 
         # Readout speed
+        tk.Label(lhs, text='Readout speed').grid(row=3,column=0, sticky=tk.W)
         self.readSpeed = drvs.Radio(lhs, ('S', 'M', 'F'), 3,
                                     self.check, ('Slow', 'Medium', 'Fast'))
         self.readSpeed.grid(row=3,column=1,pady=2,sticky=tk.W)
 
-        # LED setting
-        self.led = drvs.RangedInt(lhs, 0, 0, 4095, None, False, width=7)
-        self.led.grid(row=4,column=1,pady=2,sticky=tk.W)
-
         # Exposure delay
-        elevel = share['cpars']['expert_level']
+        tk.Label(lhs, text='Exposure delay').grid(row=4,column=0, sticky=tk.W)
+        elevel = g.cpars['expert_level']
         if elevel == 0:
             self.expose = drvs.Expose(lhs, 0.0007, 0.0007, 1677.7207,
                                       self.check, width=7)
         else:
             self.expose = drvs.Expose(lhs, 0., 0., 1677.7207,
                                       self.check, width=7)
-        self.expose.grid(row=5,column=1,pady=2,sticky=tk.W)
+        self.expose.grid(row=4,column=1,pady=2,sticky=tk.W)
 
         # Number of exposures
+        tk.Label(lhs, text='Num. exposures  ').grid(row=5,column=0, sticky=tk.W)
         self.number = drvs.PosInt(lhs, 1, None, False, width=7)
-        self.number.grid(row=6,column=1,pady=2,sticky=tk.W)
+        self.number.grid(row=5,column=1,pady=2,sticky=tk.W)
+
+        # LED setting
+        self.ledLab = tk.Label(lhs, text='LED setting')
+        self.ledLab.grid(row=6,column=0, sticky=tk.W)
+        self.led = drvs.RangedInt(lhs, 0, 0, 4095, None, False, width=7)
+        self.led.grid(row=6,column=1,pady=2,sticky=tk.W)
+        self.ledValue = self.led.value()
+
 
         # Right-hand side: the window parameters
         rhs = tk.Frame(self)
@@ -168,12 +169,32 @@ class InstPars(tk.LabelFrame):
         lhs.pack(side=tk.LEFT,anchor=tk.N,padx=5)
         rhs.pack(side=tk.LEFT,anchor=tk.N,padx=5)
 
-        # Store configuration parameters and freeze state
-        self.share  = share
+        # Store freeze state
         self.frozen = False
 
         # stores current avalanche setting to check for changes
         self.oldAvalanche = False
+
+        self.setExpertLevel()
+
+    def setExpertLevel(self):
+        """
+        Modifies widget according to expertise level, which in this
+        case is just matter of hiding or revealing the LED option.
+        """
+
+        level = g.cpars['expert_level']
+
+        if level == 0:
+            self.ledLab.grid_forget()
+            self.led.grid_forget()
+            self.ledValue = self.led.value()
+            self.led.set(0)
+
+        elif level == 1 or level == 2:
+            self.led.set(self.ledValue)
+            self.ledLab.grid(row=6,column=0, sticky=tk.W)
+            self.led.grid(row=6,column=1,pady=2,sticky=tk.W)
 
     def isDrift(self):
         """
@@ -186,6 +207,138 @@ class InstPars(tk.LabelFrame):
         else:
             raise UspecError('uspec.InstPars.isDrift: application = ' + \
                                  self.app.value() + ' not recognised.')
+
+    def loadXML(self, xml):
+        """
+        Sets the values of instrument parameters given an ElementTree
+        containing suitable XML
+        """
+
+        # find application
+        app = 'Windows' if xml.attrib['id'] == 'ccd201_winbin_app' else 'Drift'
+
+        # find parameters
+        cconfig = xml.find('configure_camera')
+        pdict = {}
+        for param in cconfig.findall('set_parameter'):
+            pdict[param.attrib['ref']] = param.attrib['value']
+
+        xbin, ybin = int(pdict['X_BIN']), int(pdict['Y_BIN'])
+
+        # Set them.
+
+        # Number of exposures
+        self.number.set(pdict['NUM_EXPS'] if pdict['NUM_EXPS'] != '-1' else 0)
+
+        # LED level
+        self.led.set(pdict['LED_FLSH'])
+
+        # Avalanche or normal
+        self.avalanche.set(pdict['OUTPUT'])
+
+        # Avalanche gain
+        self.avgain.set(pdict['HV_GAIN'])
+
+        # Dwell
+        self.expose.set(str(float(pdict['DWELL'])/10000.))
+
+        # Readout speed
+        speed = pdict['SPEED']
+        self.readSpeed.set('Slow' if \
+                               speed == '0' else 'Medium' if speed == '1' \
+                               else 'Fast')
+
+        if app == 'Windows':
+            # Clear or not
+            self.clear.set(pdict['EN_CLR'])
+
+            # now for the windows which come in two flavours
+            self.app.set('Windows')
+            w = self.wframe
+
+            # X-binning factor
+            w.xbin.set(xbin)
+
+            # Y-binning factor
+            w.ybin.set(ybin)
+
+            # Load up windows
+            nwin = 0
+            for nw in xrange(4):
+                xs = 'X' + str(nw+1) + '_START'
+                ys = 'Y' + str(nw+1) + '_START'
+                nx = 'X' + str(nw+1) + '_SIZE'
+                ny = 'Y' + str(nw+1) + '_SIZE'
+                if xs in pdict and ys in pdict and nx in pdict and ny in pdict \
+                        and pdict[nx] != '0' and pdict[ny] != 0:
+                    xsv, ysv, nxv, nyv = int(pdict[xs]),int(pdict[ys]),int(pdict[nx]),int(pdict[ny])
+                    nxv *= xbin
+                    nyv *= ybin
+
+                    nchop = max(0,17-xsv)
+                    if nchop % xbin != 0:
+                        nchop = xbin * (nchop // xbin + 1)
+
+                    if self.avalanche():
+                        xsv  = max(1, 1074 - xsv - nxv)
+                    else:
+                        xsv  = max(1, xsv + nchop - 16)
+                    nxv -= nchop
+
+                    w.xs[nw].set(xsv)
+                    w.ys[nw].set(ysv)
+                    w.nx[nw].set(nxv)
+                    w.ny[nw].set(nyv)
+                    nwin += 1
+                else:
+                    break
+
+            # Set the number of windows
+            w.nwin.set(nwin)
+
+        else:
+            self.clear.set(0)
+
+            # now for drift mode
+            self.app.set('Drift')
+            p = self.pframe
+
+            # X-binning factor
+            p.xbin.set(xbin)
+
+            # Y-binning factor
+            p.ybin.set(ybin)
+
+            # Load up window pair values
+            xslv, xsrv, ysv, nxv, nyv = int(pdict['X1_START']),int(pdict['X2_START']),\
+                int(pdict['Y1_START']),int(pdict['X1_SIZE']),int(pdict['Y1_SIZE'])
+
+            nxv *= xbin
+            nyv *= ybin
+
+            nchop = max(0,17-xslv)
+            if nchop % xbin != 0:
+                nchop = xbin * (nchop // xbin + 1)
+
+            if self.avalanche():
+                xslv = max(1,1074-xslv-nxv)
+                xsrv = max(1,1074-xsrv-nxv)
+            else:
+                xslv = max(1,xslv+nchop-16)
+                xsrv = max(1,xsrv+nchop-16)
+
+            nxv -= nchop
+            if xslv > xsrv:
+                xsrv, xslv = xslv, xsrv
+
+            # finally set the values
+            p.xsl[0].set(xslv)
+            p.xsr[0].set(xsrv)
+            p.ys[0].set(ysv)
+            p.nx[0].set(nxv)
+            p.ny[0].set(nyv)
+            p.npair.set(1)
+
 
     def check(self, *args):
         """Callback function for running validity checks on the CCD
@@ -201,11 +354,8 @@ class InstPars(tk.LabelFrame):
         OK. True means they are thought to be in a fit state to be sent to the
         camera.
 
-        This can only be run once the 'observe' and 'cpars' are defined.
+        This can only be run once the 'observe' are defined.
         """
-        o = self.share
-        cpars, observe, cframe = o['cpars'], o['observe'], o['cframe']
-
         # Switch visible widget according to the application
         if self.isDrift():
             # prevent frame from re-sizing when switching to drift
@@ -215,15 +365,14 @@ class InstPars(tk.LabelFrame):
             self.clearLab.config(state='disable')
             if not self.frozen:
                 self.clear.config(state='disable')
-                self.pframe.npair.enable()
-
+                self.pframe.enable()
         else:
             self.pframe.grid_forget()
             self.wframe.grid(row=2,column=0,columnspan=3,sticky=tk.W+tk.N)
             self.clearLab.config(state='normal')
             if not self.frozen:
                 self.clear.config(state='normal')
-                self.wframe.nwin.enable()
+                self.wframe.enable()
 
         if self.avalanche():
             if not self.frozen: self.avgain.enable()
@@ -248,19 +397,19 @@ class InstPars(tk.LabelFrame):
 
         # exposure delay
         if self.expose.ok():
-            self.expose.config(bg=drvs.COL['main'])
+            self.expose.config(bg=g.COL['main'])
         else:
-            self.expose.config(bg=drvs.COL['warn'])
+            self.expose.config(bg=g.COL['warn'])
             status = False
 
         # allow posting according to whether the parameters are ok
         # update count and S/N estimates as well
         if status:
-            if cpars['cdf_servers_on'] and not drvs.isRunActive(cpars):
-                observe.start.enable()
-            cframe.update()
+            if g.cpars['cdf_servers_on'] and not drvs.isRunActive():
+                g.observe.start.enable()
+            g.count.update()
         else:
-            observe.start.disable()
+            g.observe.start.disable()
 
         return status
 
@@ -518,7 +667,7 @@ class RunPars(tk.LabelFrame):
     DTYPES = ('data', 'acquire', 'bias', 'flat', 'dark', 'tech')
     DVALS  = ('data', 'data caution', 'bias', 'flat', 'dark', 'technical')
 
-    def __init__(self, master, share):
+    def __init__(self, master):
         tk.LabelFrame.__init__(self, master, text='Run parameters',
                                padx=10, pady=10)
 
@@ -559,13 +708,13 @@ class RunPars(tk.LabelFrame):
         # target
         row     = 0
         column += 1
-        self.target = drvs.Target(self,share,self.check)
+        self.target = drvs.Target(self, self.check)
         self.target.grid(row=row, column=column, sticky=tk.W)
 
         # filter
         row += 1
-        print('filter =',share['cpars']['active_filter_names'])
-        self.filter = drvs.Radio(self, share['cpars']['active_filter_names'], 6)
+        print('filter =',g.cpars['active_filter_names'])
+        self.filter = drvs.Radio(self, g.cpars['active_filter_names'], 6)
         self.filter.set('undef')
         self.filter.grid(row=row,column=column,sticky=tk.W)
 
@@ -595,7 +744,27 @@ class RunPars(tk.LabelFrame):
         self.dtype.set('undef')
         self.dtype.grid(row=row,column=column,sticky=tk.W)
 
-        self.share = share
+    def loadXML(self, xml):
+        """
+        Sets the values of the run parameters given an ElementTree
+        containing suitable XML
+        """
+        user  = xml.find('user')
+
+        def getUser(user, param):
+           val = user.find(param)
+           if val is None or val.text is None:
+               return ''
+           else:
+               return val.text
+
+        self.target.set(getUser(user,'target'))
+        self.progid.set(getUser(user,'ID'))
+        self.pi.set(getUser(user,'PI'))
+        self.observers.set(getUser(user,'Observers'))
+        self.comment.set(getUser(user,'comment'))
+        self.dtype.set(getUser(user,'flags'))
+        self.filter.set(getUser(user,'filters'))
 
     def check(self, *args):
         """
@@ -607,18 +776,16 @@ class RunPars(tk.LabelFrame):
         ok  = True
         msg = ''
 
-        o = self.share
-        cpars, clog, rlog = o['cpars'], o['clog'], o['rlog']
-        if cpars['require_run_params']:
+        if g.cpars['require_run_params']:
             dtype = self.dtype.value()
             if dtype not in RunPars.DVALS:
                 ok = False
                 msg += 'No data type has been defined\n'
 
             if self.target.ok():
-                self.target.entry.config(bg=drvs.COL['main'])
+                self.target.entry.config(bg=g.COL['main'])
             else:
-                self.target.entry.config(bg=drvs.COL['error'])
+                self.target.entry.config(bg=g.COL['error'])
                 ok = False
                 msg += 'Target name field cannot be blank\n'
 
@@ -626,23 +793,23 @@ class RunPars(tk.LabelFrame):
                dtype == 'data' or dtype == 'technical':
 
                 if self.progid.ok():
-                    self.progid.config(bg=drvs.COL['main'])
+                    self.progid.config(bg=g.COL['main'])
                 else:
-                    self.progid.config(bg=drvs.COL['error'])
+                    self.progid.config(bg=g.COL['error'])
                     ok   = False
                     msg += 'Programme ID field cannot be blank\n'
 
                 if self.pi.ok():
-                    self.pi.config(bg=drvs.COL['main'])
+                    self.pi.config(bg=g.COL['main'])
                 else:
-                    self.pi.config(bg=drvs.COL['error'])
+                    self.pi.config(bg=g.COL['error'])
                     ok   = False
                     msg += 'Principal Investigator field cannot be blank\n'
 
             if self.observers.ok():
-                self.observers.config(bg=drvs.COL['main'])
+                self.observers.config(bg=g.COL['main'])
             else:
-                self.observers.config(bg=drvs.COL['error'])
+                self.observers.config(bg=g.COL['error'])
                 ok   = False
                 msg += 'Observers field cannot be blank'
 
@@ -651,7 +818,7 @@ class RunPars(tk.LabelFrame):
 # Observing section. First a helper routine needed
 # by the 'Save' and 'Start' buttons
 
-def createXML(post, cpars, ipars, rpars, clog, rlog):
+def createXML(post):
     """
     This creates the XML representing the current setup. It does
     this by loading a template xml file using directives in the
@@ -661,38 +828,31 @@ def createXML(post, cpars, ipars, rpars, clog, rlog):
 
       post      : True if posting an application. This is a safety
                   feature to avoid querying the camera server during a run.
-      cpars     : configuration parameters
-      ipars     : windows etc
-      rpars     : target, PI name etc.
-      clog      : command logger
-      rlog      : response logger
 
-    Returns a xml.etree.ElementTree.Element
+    Returns an xml.etree.ElementTree.Element
     """
-
     # identify the template
-    app = ipars.app.value()
-    if cpars['debug']:
+    app = g.ipars.app.value()
+    if g.cpars['debug']:
         print('DEBUG: createXML: application = ' + app)
         print('DEBUG: createXML: application vals = ' + \
-                  str(cpars['templates'][app]))
+                  str(g.cpars['templates'][app]))
 
-    if cpars['template_from_server']:
+    if g.cpars['template_from_server']:
         # get template from server
-        url = cpars['http_camera_server'] + cpars['http_path_get'] + '?' + \
-              cpars['http_search_attr_name'] + \
-              '=' + cpars['templates'][app]['app']
-        if cpars['debug']:
+        url = g.cpars['http_camera_server'] + g.cpars['http_path_get'] + '?' + \
+              g.cpars['http_search_attr_name'] + '=' + g.cpars['templates'][app]['app']
+        if g.cpars['debug']:
             print ('DEBUG: url = ' + url)
         sxml = urllib2.urlopen(url).read()
         root = ET.fromstring(sxml)
     else:
         # get template from local file
-        if cpars['debug']:
-            print ('DEBUG: directory = ' + cpars['template_directory'])
-        lfile = os.path.join(cpars['template_directory'],
-                             cpars['templates'][app]['app'])
-        if cpars['debug']:
+        if g.cpars['debug']:
+            print ('DEBUG: directory = ' + g.cpars['template_directory'])
+        lfile = os.path.join(g.cpars['template_directory'],
+                             g.cpars['templates'][app]['app'])
+        if g.cpars['debug']:
             print ('DEBUG: local file = ' + lfile)
         tree = ET.parse(lfile)
         root = tree.getroot()
@@ -707,30 +867,30 @@ def createXML(post, cpars, ipars, rpars, clog, rlog):
     # parameters will cause exceptions to be raised.
 
     # Number of exposures
-    pdict['NUM_EXPS']['value'] = '-1' if ipars.number.value() == 0 \
-        else str(ipars.number.value())
+    pdict['NUM_EXPS']['value'] = '-1' if g.ipars.number.value() == 0 \
+        else str(g.ipars.number.value())
 
     # LED level
-    pdict['LED_FLSH']['value'] = str(ipars.led.value())
+    pdict['LED_FLSH']['value'] = str(g.ipars.led.value())
 
     # Avalanche or normal
-    pdict['OUTPUT']['value'] = str(ipars.avalanche())
+    pdict['OUTPUT']['value'] = str(g.ipars.avalanche())
 
     # Avalanche gain
-    pdict['HV_GAIN']['value'] = str(ipars.avgain.value())
+    pdict['HV_GAIN']['value'] = str(g.ipars.avgain.value())
 
     # Dwell
-    pdict['DWELL']['value'] = str(ipars.expose.ivalue())
+    pdict['DWELL']['value'] = str(g.ipars.expose.ivalue())
 
     # Readout speed
-    pdict['SPEED']['value'] = '0' if ipars.readSpeed.value() == 'Slow' \
-        else '1' if ipars.readSpeed.value() == 'Medium' else '2'
+    pdict['SPEED']['value'] = '0' if g.ipars.readSpeed.value() == 'Slow' \
+        else '1' if g.ipars.readSpeed.value() == 'Medium' else '2'
 
     if app == 'Windows':
         # Clear or not
-        pdict['EN_CLR']['value'] = str(ipars.clear())
+        pdict['EN_CLR']['value'] = str(g.ipars.clear())
 
-        w = ipars.wframe
+        w = g.ipars.wframe
 
         # Number of windows -- needed to set output parameters correctly
         nwin  = w.nwin.value()
@@ -751,7 +911,7 @@ def createXML(post, cpars, ipars, rpars, clog, rlog):
 
             # re-jig so that user always refers to same part of
             # the CCD regardless of the output being used. 'Derek coords'
-            xs = 1074 - xs - nx if ipars.avalanche() else xs + 16
+            xs = 1074 - xs - nx if g.ipars.avalanche() else xs + 16
             pdict['X' + str(nw+1) + '_START']['value'] = str(xs)
             pdict['Y' + str(nw+1) + '_START']['value'] = str(ys)
             pdict['X' + str(nw+1) + '_SIZE']['value']  = str(nx // xbin)
@@ -766,14 +926,14 @@ def createXML(post, cpars, ipars, rpars, clog, rlog):
 
     else:
 
-        p = ipars.pframe
+        p = g.ipars.pframe
 
         # Number of windows -- needed to set output parameters correctly
         # although WinPairs supports multiple pairs, only one is allowed
         # in drift mode.
         npair = p.npair.value()
         if npair != 1:
-            clog.log.warn('Only one pair of drift mode windows supported.')
+            g.clog.log.warn('Only one pair of drift mode windows supported.')
             raise Exception()
 
         xbin, ybin = p.xbin.value(), p.ybin.value()
@@ -789,7 +949,7 @@ def createXML(post, cpars, ipars, rpars, clog, rlog):
 
         # re-jig so that user always refers to same part of
         # the CCD regardless of the output being used. 'Derek coords'
-        if ipars.avalanche():
+        if g.ipars.avalanche():
             xsl = 1074 - xsl - nx
             xsr = 1074 - xsr - nx
         else:
@@ -814,20 +974,28 @@ def createXML(post, cpars, ipars, rpars, clog, rlog):
 
     # Load the user parameters
     uconfig    = root.find('user')
+
     targ       = ET.SubElement(uconfig, 'target')
-    targ.text  = rpars.target.value()
+    targ.text  = g.rpars.target.value()
     id         = ET.SubElement(uconfig, 'ID')
-    id.text    = rpars.progid.value()
+    id.text    = g.rpars.progid.value()
     pi         = ET.SubElement(uconfig, 'PI')
-    pi.text    = rpars.pi.value()
+    pi.text    = g.rpars.pi.value()
     obs        = ET.SubElement(uconfig, 'Observers')
-    obs.text   = rpars.observers.value()
+    obs.text   = g.rpars.observers.value()
     comm       = ET.SubElement(uconfig, 'comment')
-    comm.text  = rpars.comment.value()
-    dtype      = ET.SubElement(uconfig, 'dtype')
-    dtype.text = rpars.dtype.value()
-    filtr      = ET.SubElement(uconfig, 'filter')
-    filtr.text = rpars.filter.value()
+    comm.text  = g.rpars.comment.value()
+    dtype      = ET.SubElement(uconfig, 'flags')
+    dtype.text = g.rpars.dtype.value()
+    filtr      = ET.SubElement(uconfig, 'filters')
+    filtr.text = g.rpars.filter.value()
+
+    ra         = ET.SubElement(uconfig, 'RA')
+    ra.text    = g.info.ra.cget('text')
+    dec        = ET.SubElement(uconfig, 'Dec')
+    dec.text   = g.info.dec.cget('text')
+    pa         = ET.SubElement(uconfig, 'PA')
+    pa.text    = g.info.pa.cget('text')
 
     if post:
         if not hasattr(createXML, 'revision'):
@@ -836,24 +1004,24 @@ def createXML(post, cpars, ipars, rpars, clog, rlog):
             # need to do a pre-post before reading otherwise memory won't
             # have been set
             try:
-                url = cpars['http_camera_server'] + cpars['http_path_exec'] + \
+                url = g.cpars['http_camera_server'] + g.cpars['http_path_exec'] + \
                     '?RM,X,0x2E'
-                clog.log.info('exec = "' + url + '"\n')
+                g.clog.log.info('exec = "' + url + '"\n')
                 response = urllib2.urlopen(url)
                 rs  = drvs.ReadServer(response.read())
-                rlog.log.info('Camera response =\n' + rs.resp() + '\n')
+                g.rlog.log.info('Camera response =\n' + rs.resp() + '\n')
                 if rs.ok:
-                    clog.log.info('Response from camera server was OK\n')
+                    g.clog.log.info('Response from camera server was OK\n')
                     csfind = rs.root.find('command_status')
                     createXML.revision = int(csfind.attrib['readback'],16)
                 else:
-                    clog.log.warn('Response from camera server was not OK\n')
-                    clog.log.warn('Reason: ' + rs.err + '\n')
+                    g.clog.log.warn('Response from camera server was not OK\n')
+                    g.clog.log.warn('Reason: ' + rs.err + '\n')
                     raise Exception()
 
             except urllib2.URLError, err:
-                clog.log.warn('Failed to get version from camera server\n')
-                clog.log.warn(str(err) + '\n')
+                g.clog.log.warn('Failed to get version from camera server\n')
+                g.clog.log.warn(str(err) + '\n')
                 raise Exception()
 
             revision      = ET.SubElement(uconfig, 'revision')
@@ -877,15 +1045,13 @@ class Start(drvs.ActButton):
     -- starting the exposure timer.
     """
 
-    def __init__(self, master, width, share):
+    def __init__(self, master, width):
         """
         master   : containing widget
         width    : width of button
-        share    : dictionary with configuration parameters and the loggers
         """
 
-        drvs.ActButton.__init__(
-            self, master, width, share, bg=drvs.COL['start'], text='Start')
+        drvs.ActButton.__init__(self, master, width, bg=g.COL['start'], text='Start')
         self.target = None
 
     def act(self):
@@ -893,55 +1059,49 @@ class Start(drvs.ActButton):
         Carries out the action associated with Start button
         """
 
-        # some shorthand
-        o = self.share
-        cpars, ipars, rpars, clog, rlog, info = \
-            o['cpars'], o['instpars'], o['runpars'], o['clog'], \
-            o['rlog'], o['info']
-
         # Check the instrument parameters
-        if not ipars.check():
-            clog.log.warn('Invalid instrument parameters.\n')
+        if not g.ipars.check():
+            g.clog.log.warn('Invalid instrument parameters.\n')
             tkMessageBox.showwarning('Start failure',
                                      'Please check the instrument setup.')
             return False
 
         # Check the run parameters
-        rok, msg = rpars.check()
+        rok, msg = g.rpars.check()
         if not rok:
-            clog.log.warn('Invalid run parameters.\n')
-            clog.log.warn(msg + '\n')
+            g.clog.log.warn('Invalid run parameters.\n')
+            g.clog.log.warn(msg + '\n')
             tkMessageBox.showwarning('Start failure',
                                      'Please check the run parameters:\n' + msg)
             return False
 
         # Confirm when avalanche gain is on
-        if cpars['expert_level'] == 0 and cpars['confirm_hv_gain_on'] and \
-                ipars.avalanche() and ipars.avgain.value() > 0:
+        if g.cpars['expert_level'] == 0 and g.cpars['confirm_hv_gain_on'] and \
+                g.ipars.avalanche() and g.ipars.avgain.value() > 0:
 
             if not tkMessageBox.askokcancel(
                 'Avalanche','Avalanche gain is on at level = ' +
-                str(ipars.avgain.value()) + '\n' + 'Continue?'):
-                clog.log.warn('Start operation cancelled\n')
+                str(g.ipars.avgain.value()) + '\n' + 'Continue?'):
+                g.clog.log.warn('Start operation cancelled\n')
                 return False
 
         # Confirm when target name has changed
-        if cpars['expert_level'] == 0 and cpars['confirm_on_change'] and \
-                self.target is not None and self.target != rpars.target.value():
+        if g.cpars['expert_level'] == 0 and g.cpars['confirm_on_change'] and \
+                self.target is not None and self.target != g.rpars.target.value():
 
             if not tkMessageBox.askokcancel(
                 'Confirm target', 'Target name has changed\n' +
                  'Continue?'):
-                clog.log.warn('Start operation cancelled\n')
+                g.clog.log.warn('Start operation cancelled\n')
                 return False
 
         try:
             # Get XML from template and modify according to the current settings
-            root = createXML(True, cpars, ipars, rpars, clog, rlog)
+            root = createXML(True)
 
-            if cpars['access_tcs']:
+            if g.cpars['access_tcs']:
                 # get positional info from telescope
-                if cpars['telins_name'] == 'TNO-USPEC':
+                if g.cpars['telins_name'] == 'TNO-USPEC':
                     try:
                         ra,dec,pa,focus,engpa = tcs.getTntTcs()
                         # add it into XML
@@ -962,66 +1122,66 @@ class Start(drvs.ActButton):
                             'TCS error',
                             'Could not get RA, Dec from telescope.\n' +
                             'Continue?'):
-                            clog.log.warn('Start operation cancelled\n')
+                            g.clog.log.warn('Start operation cancelled\n')
                             return False
                 else:
                     if not tkMessageBox.askokcancel(
                         'TCS error',
                         'No TCS routine for telescope/instrument = ' +
-                        cpars['telins_name'] + '\n' +
+                        g.cpars['telins_name'] + '\n' +
                         'Could not get RA, Dec from telescope.\n' +
                         'Continue?'):
-                        clog.log.warn('Start operation cancelled\n')
+                        g.clog.log.warn('Start operation cancelled\n')
                         return False
 
             # Post the XML it to the server
-            clog.log.info('\nPosting application to the servers\n')
+            g.clog.log.info('\nPosting application to the servers\n')
 
-            if drvs.postXML(root, cpars, clog, rlog):
-                clog.log.info('Post successful; starting run\n')
+            if drvs.postXML(root):
+                g.clog.log.info('Post successful; starting run\n')
 
-                if drvs.execCommand('GO', cpars, clog, rlog):
+                if drvs.execCommand('GO'):
                     # start the exposure timer
-                    info.timer.start()
+                    g.info.timer.start()
 
-                    clog.log.info('Run started on target = ' + \
-                                  rpars.target.value() + '\n')
+                    g.clog.log.info('Run started on target = ' + \
+                                        g.rpars.target.value() + '\n')
 
                     # configure buttons
                     self.disable()
-                    o['Stop'].enable()
-                    o['Load'].disable()
-                    o['Unfreeze'].enable()
-                    o['setup'].resetSDSUhard.disable()
-                    o['setup'].resetSDSUsoft.disable()
-                    o['setup'].resetPCI.disable()
-                    o['setup'].setupServers.disable()
-                    o['setup'].powerOn.disable()
-                    o['setup'].powerOff.disable()
+                    g.observe.stop.enable()
+                    g.observe.load.disable()
+                    g.observe.unfreeze.enable()
+                    g.setup.resetSDSUhard.disable()
+                    g.setup.resetSDSUsoft.disable()
+                    g.setup.resetPCI.disable()
+                    g.setup.setupServers.disable()
+                    g.setup.powerOn.disable()
+                    g.setup.powerOff.disable()
 
                     # freeze instrument parameters
-                    ipars.freeze()
+                    g.ipars.freeze()
 
                     # update the run number
                     try:
-                        print('will update run number')
-                        run  = int(info.run.cget('text'))
+                        print('will update run number',g.info.run.cget('text'))
+                        run  = int(g.info.run.cget('text'))
                         run += 1
-                        info.run.configure(text='{0:03d}'.format(run))
+                        g.info.run.configure(text='{0:03d}'.format(run))
                     except Exception, err:
-                        clog.log.warn('Failed to update run number')
+                        g.clog.log.warn('Failed to update run number')
 
                     return True
                 else:
-                    clog.log.warn('Failed to start run\n')
+                    g.clog.log.warn('Failed to start run\n')
                     return False
             else:
-                clog.log.warn('Failed to post the application\n')
+                g.clog.log.warn('Failed to post the application\n')
                 return False
 
         except Exception, err:
-            clog.log.warn('Failed to start run\n')
-            clog.log.warn(str(err) + '\n')
+            g.clog.log.warn('Failed to start run\n')
+            g.clog.log.warn(str(err) + '\n')
             return False
 
 class Load(drvs.ActButton):
@@ -1030,15 +1190,12 @@ class Load(drvs.ActButton):
     saved configuration from disk.
     """
 
-    def __init__(self, master, width, share):
+    def __init__(self, master, width):
         """
         master  : containing widget
         width   : width of button
-        share   : dictionary of other objects. Must have 'instpars' the
-                  instrument setup parameters (windows etc), and 'runpars'
-                  the run parameters (target name etc)
         """
-        drvs.ActButton.__init__(self, master, width, share, text='Load')
+        drvs.ActButton.__init__(self, master, width, text='Load')
 
     def act(self):
         """
@@ -1048,161 +1205,18 @@ class Load(drvs.ActButton):
         fname = tkFileDialog.askopenfilename(
             defaultextension='.xml', filetypes=[('xml files', '.xml'),])
         if not fname:
-            share['clog'].warn('Aborted load from disk')
+            g.clog.log.warn('Aborted load from disk')
             return False
 
         # load XML
         tree = ET.parse(fname)
         root = tree.getroot()
 
-        # find application
-        app = 'Windows' if root.attrib['id'] == 'ccd201_winbin_app' else 'Drift'
+        # load up the instrument settings
+        g.ipars.loadXML(root)
 
-        # find parameters
-        cconfig = root.find('configure_camera')
-        pdict = {}
-        for param in cconfig.findall('set_parameter'):
-            pdict[param.attrib['ref']] = param.attrib['value']
-
-        print(pdict)
-
-        xbin, ybin = int(pdict['X_BIN']), int(pdict['Y_BIN'])
-
-        # Set them.
-        ipars, rpars = self.share['instpars'], self.share['runpars']
-
-        # Number of exposures
-        ipars.number.set(pdict['NUM_EXPS'] if \
-                             pdict['NUM_EXPS'] != '-1' else 0)
-
-        # LED level
-        ipars.led.set(pdict['LED_FLSH'])
-
-        # Avalanche or normal
-        ipars.avalanche.set(pdict['OUTPUT'])
-
-        # Avalanche gain
-        ipars.avgain.set(pdict['HV_GAIN'])
-
-        # Dwell
-        ipars.expose.set(str(float(pdict['DWELL'])/10000.))
-
-        # Readout speed
-        speed = pdict['SPEED']
-        ipars.readSpeed.set('Slow' if \
-                                speed == '0' else 'Medium' if speed == '1' \
-                                else 'Fast')
-
-        if app == 'Windows':
-            # Clear or not
-            ipars.clear.set(pdict['EN_CLR'])
-
-            # now for the windows which come in two flavours
-            ipars.app.set('Windows')
-            w = ipars.wframe
-
-            # X-binning factor
-            w.xbin.set(xbin)
-
-            # Y-binning factor
-            w.ybin.set(ybin)
-
-            # Load up windows
-            nwin = 0
-            for nw in xrange(4):
-                xs = 'X' + str(nw+1) + '_START'
-                ys = 'Y' + str(nw+1) + '_START'
-                nx = 'X' + str(nw+1) + '_SIZE'
-                ny = 'Y' + str(nw+1) + '_SIZE'
-                if xs in pdict and ys in pdict and nx in pdict and ny in pdict \
-                        and pdict[nx] != '0' and pdict[ny] != 0:
-                    xsv, ysv, nxv, nyv = int(pdict[xs]),int(pdict[ys]),int(pdict[nx]),int(pdict[ny])
-                    nxv *= xbin
-                    nyv *= ybin
-
-                    nchop = max(0,17-xsv)
-                    if nchop % xbin != 0:
-                        nchop = xbin * (nchop // xbin + 1)
-
-                    if ipars.avalanche():
-                        xsv  = max(1, 1074 - xsv - nxv)
-                    else:
-                        xsv  = max(1, xsv + nchop - 16)
-                    nxv -= nchop
-
-                    print(xsv,ysv,nxv,nyv)
-                    w.xs[nw].set(xsv)
-                    w.ys[nw].set(ysv)
-                    w.nx[nw].set(nxv)
-                    w.ny[nw].set(nyv)
-                    nwin += 1
-                else:
-                    break
-
-            # Set the number of windows
-            w.nwin.set(nwin)
-
-        else:
-            ipars.clear.set(0)
-
-            # now for drift mode
-            ipars.app.set('Drift')
-            p = ipars.pframe
-
-            # X-binning factor
-            p.xbin.set(xbin)
-
-            # Y-binning factor
-            p.ybin.set(ybin)
-
-            # Load up window pair values
-            xslv, xsrv, ysv, nxv, nyv = int(pdict['X1_START']),int(pdict['X2_START']),\
-                int(pdict['Y1_START']),int(pdict['X1_SIZE']),int(pdict['Y1_SIZE'])
-
-            nxv *= xbin
-            nyv *= ybin
-
-            nchop = max(0,17-xslv)
-            if nchop % xbin != 0:
-                nchop = xbin * (nchop // xbin + 1)
-
-            if ipars.avalanche():
-                xslv = max(1,1074-xslv-nxv)
-                xsrv = max(1,1074-xsrv-nxv)
-            else:
-                xslv = max(1,xslv+nchop-16)
-                xsrv = max(1,xsrv+nchop-16)
-
-            nxv -= nchop
-            if xslv > xsrv:
-                xsrv, xslv = xslv, xsrv
-
-            # finally set the values
-            p.xsl[0].set(xslv)
-            p.xsr[0].set(xsrv)
-            p.ys[0].set(ysv)
-            p.nx[0].set(nxv)
-            p.ny[0].set(nyv)
-            p.npair.set(1)
-
-        # User parameters, set the values in the
-        # RunPars widget
-        user  = root.find('user')
-
-        def getUser(user, param):
-           val = user.find(param)
-           if val is None or val.text is None:
-               return ''
-           else:
-               return val.text
-
-        rpars.target.set(getUser(user,'target'))
-        rpars.progid.set(getUser(user,'ID'))
-        rpars.pi.set(getUser(user,'PI'))
-        rpars.observers.set(getUser(user,'Observers'))
-        rpars.comment.set(getUser(user,'comment'))
-        rpars.dtype.set(getUser(user,'dtype'))
-        rpars.filter.set(getUser(user,'filter'))
+        # load up the run parameters
+        g.rpars.loadXML(root)
 
         return True
 
@@ -1212,52 +1226,42 @@ class Save(drvs.ActButton):
     current configuration to disk.
     """
 
-    def __init__(self, master, width, share):
+    def __init__(self, master, width):
         """
         master  : containing widget
         width   : width of button
-        share   : dictionary of other objects. Must have 'cpars' the
-                  configuration parameters, 'instpars' the instrument
-                  setup parameters (windows etc), and 'runpars' the
-                  run parameters (target name etc), 'clog' and 'rlog'
         """
-        drvs.ActButton.__init__(self, master, width, share, text='Save')
+        drvs.ActButton.__init__(self, master, width, text='Save')
 
     def act(self):
         """
         Carries out the action associated with the Save button
         """
-
-        o = self.share
-        cpars, ipars, rpars, clog, rlog = \
-            o['cpars'], o['instpars'], o['runpars'], o['clog'], o['rlog']
-
-        clog.log.info('\nSaving current application to disk\n')
+        g.clog.log.info('\nSaving current application to disk\n')
 
         # check instrument parameters
-        if not ipars.check():
-            clog.log.warn('Invalid instrument parameters; save failed.\n')
+        if not g.ipars.check():
+            g.clog.log.warn('Invalid instrument parameters; save failed.\n')
             return False
 
         # check run parameters
-        rok, msg = rpars.check()
+        rok, msg = g.rpars.check()
         if not rok:
-            clog.log.warn('Invalid run parameters; save failed.\n')
-            clog.log.warn(msg + '\n')
+            g.clog.log.warn('Invalid run parameters; save failed.\n')
+            g.clog.log.warn(msg + '\n')
             return False
 
         # Get XML from template
-        print('cpars=',cpars['templates'])
-        root = createXML(False, cpars, ipars, rpars, clog, rlog)
+        root = createXML(False)
 
         # Save to disk
-        if drvs.saveXML(root, clog):
+        if drvs.saveXML(root):
             # modify buttons
-            o['Load'].enable()
-            o['Unfreeze'].disable()
+            g.observe.load.enable()
+            g.observe.unfreeze.disable()
 
             # unfreeze the instrument params
-            ipars.unfreeze()
+            g.ipars.unfreeze()
             return True
         else:
             return False
@@ -1267,39 +1271,31 @@ class Unfreeze(drvs.ActButton):
     Class defining the 'Unfreeze' button's operation.
     """
 
-    def __init__(self, master, width, share):
+    def __init__(self, master, width):
         """
         master  : containing widget
         width   : width of button
-        share   : dictionary of other objects needed. Needs 'instpars', 
-                  the current instrument  parameters to be loaded up once 
-                  the template is loaded
         """
-        drvs.ActButton.__init__(self, master, width, share, text='Unfreeze')
+        drvs.ActButton.__init__(self, master, width, text='Unfreeze')
 
     def act(self):
         """
         Carries out the action associated with the Unfreeze button
         """
-        self.share['instpars'].unfreeze()
-        self.share['Load'].enable()
+        g.ipars.unfreeze()
+        g.observe.load.enable()
         self.disable()
 
 class Observe(tk.LabelFrame):
     """
-    Observe Frame. Collects together buttons that fire off the commands needed
+    Observe widget. Collects together buttons that fire off the commands needed
     during observing. These have in common interaction with external objects,
-    such as loading data from disk, or sending data to servers. All of these
-    need callback routines which are hidden within this class.
+    such as loading data from disk, or sending data to servers.
     """
 
-    def __init__(self, master, share):
+    def __init__(self, master):
         """
         master : container widget
-        share   : dictionary of other objects. Must have 'cpars' the
-                  configuration parameters, 'instpars' the instrument
-                  setup parameters (windows etc), and 'runpars' the
-                  run parameters (target name etc), 'clog' and 'rlog'
         """
 
         tk.LabelFrame.__init__(
@@ -1307,20 +1303,11 @@ class Observe(tk.LabelFrame):
 
         # create buttons
         width = 10
-        self.load     = Load(self, width, share)
-        self.save     = Save(self, width, share)
-        self.unfreeze = Unfreeze(self, width, share)
-        self.start    = Start(self, width, share)
-        self.stop     = drvs.Stop(self, width, share)
-
-        # pass all buttons to each other
-        share['Load']     = self.load
-        share['Save']     = self.save
-        share['Unfreeze'] = self.unfreeze
-        share['Start']    = self.start
-        share['Stop']     = self.stop
-
-        self.share = share
+        self.load     = Load(self, width)
+        self.save     = Save(self, width)
+        self.unfreeze = Unfreeze(self, width)
+        self.start    = Start(self, width)
+        self.stop     = drvs.Stop(self, width)
 
         # Lay them out
         self.load.grid(row=0,column=0)
@@ -1335,12 +1322,13 @@ class Observe(tk.LabelFrame):
         self.unfreeze.disable()
 
         # Implement expert level
-        self.setExpertLevel(share['cpars']['expert_level'])
+        self.setExpertLevel()
 
-    def setExpertLevel(self, level):
+    def setExpertLevel(self):
         """
         Set expert level
         """
+        level = g.cpars['expert_level']
 
         # now set whether buttons are permanently enabled or not
         if level == 0 or level == 1:
@@ -1362,16 +1350,14 @@ class CountsFrame(tk.LabelFrame):
     """
     Frame for count rate estimates
     """
-    def __init__(self, master, share):
+    def __init__(self, master):
         """
         master : enclosing widget
-        share  : other objects. 'instpars' for timing & binning info.
         """
         tk.LabelFrame.__init__(
             self, master, pady=2, text='Count & S/N estimator')
-        self.share = share
 
-        # divide into left and right frames 
+        # divide into left and right frames
         lframe = tk.Frame(self, padx=2)
         rframe = tk.Frame(self, padx=2)
 
@@ -1440,11 +1426,11 @@ class CountsFrame(tk.LabelFrame):
         tk.Label(rframe,text='S/N (3h):').grid(
             row=5,column=0,padx=5,pady=3,sticky=tk.W)
         self.ston3.grid(row=5,column=1,padx=5,pady=3,sticky=tk.W)
-        
+
         # slot frames in
         lframe.grid(row=0,column=0,sticky=tk.W+tk.N)
         rframe.grid(row=0,column=1,sticky=tk.W+tk.N)
-        
+
     def checkUpdate(self, *args):
         """
         Updates values after first checking instrument parameters are OK.
@@ -1452,14 +1438,12 @@ class CountsFrame(tk.LabelFrame):
         since update gets called from ipars.
         """
 
-        ipars, clog = self.share['instpars'], self.share['clog']
-
         if not self.check():
-            clog.log.warn('Current observing parameters are not valid.\n')
+            g.clog.log.warn('Current observing parameters are not valid.\n')
             return False
 
-        if not ipars.check():
-            clog.log.warn('Current instrument parameters are not valid.\n')
+        if not g.ipars.check():
+            g.clog.log.warn('Current instrument parameters are not valid.\n')
             return False
 
     def check(self):
@@ -1469,35 +1453,33 @@ class CountsFrame(tk.LabelFrame):
         status = True
 
         if self.mag.ok():
-            self.mag.config(bg=drvs.COL['main'])
+            self.mag.config(bg=g.COL['main'])
         else:
-            self.mag.config(bg=drvs.COL['warn'])
+            self.mag.config(bg=g.COL['warn'])
             status = False
 
         if self.airmass.ok():
-            self.airmass.config(bg=drvs.COL['main'])
+            self.airmass.config(bg=g.COL['main'])
         else:
-            self.airmass.config(bg=drvs.COL['warn'])
+            self.airmass.config(bg=g.COL['warn'])
             status = False
 
         if self.seeing.ok():
             print('seeing = ',self.seeing.value())
-            self.seeing.config(bg=drvs.COL['main'])
+            self.seeing.config(bg=g.COL['main'])
         else:
-            self.seeing.config(bg=drvs.COL['warn'])
+            self.seeing.config(bg=g.COL['warn'])
             status = False
 
         return status
 
     def update(self, *args):
         """
-        Updates values. You should run a check on the instrument and 
+        Updates values. You should run a check on the instrument and
         target parameters before calling this.
         """
 
-        ipars = self.share['instpars']
-
-        expTime, deadTime, cycleTime, dutyCycle, frameRate = ipars.timing()
+        expTime, deadTime, cycleTime, dutyCycle, frameRate = g.ipars.timing()
 
         total, peak, peakSat, peakWarn, ston, ston3 = \
             self.counts(expTime, cycleTime)
@@ -1519,11 +1501,11 @@ class CountsFrame(tk.LabelFrame):
         self.duty.config(text='{0:4.1f} %'.format(dutyCycle))
         self.peak.config(text='{0:d} cts'.format(int(round(peak))))
         if peakSat:
-            self.peak.config(bg=drvs.COL['error'])
+            self.peak.config(bg=g.COL['error'])
         elif peakWarn:
-            self.peak.config(bg=drvs.COL['warn'])
+            self.peak.config(bg=g.COL['warn'])
         else:
-            self.peak.config(bg=drvs.COL['main'])
+            self.peak.config(bg=g.COL['main'])
 
         self.total.config(text='{0:d} cts'.format(int(round(total))))
         self.ston.config(text='{0:.1f}'.format(ston))
@@ -1551,14 +1533,12 @@ class CountsFrame(tk.LabelFrame):
         """
 
         # code directly translated from Java equivalent.
-        o = self.share
-        ipars, cpars = o['instpars'], o['cpars']
- 
+
         # avalanche mode y/n?
-        lnormal = not ipars.avalanche()
-		
+        lnormal = not g.ipars.avalanche()
+
         # Set the readout speed
-        readSpeed = ipars.readSpeed.value()
+        readSpeed = g.ipars.readSpeed.value()
 
         if readSpeed == 'Fast':
             video = VIDEO_NORM_FAST if lnormal else VIDEO_AV_FAST
@@ -1568,26 +1548,26 @@ class CountsFrame(tk.LabelFrame):
             video = VIDEO_NORM_SLOW if lnormal else VIDEO_AV_SLOW
         else:
             raise drvs.DriverError(
-                'drivers.CountsFrame.counts: readout speed = ' 
+                'drivers.CountsFrame.counts: readout speed = '
                 + readSpeed + ' not recognised.')
 
-        if ipars.app == 'Windows':
-            xbin, ybin = ipars.wframe.xbin.value(), ipars.wframe.ybin.value()
+        if g.ipars.app == 'Windows':
+            xbin, ybin = g.ipars.wframe.xbin.value(), g.ipars.wframe.ybin.value()
         else:
-            xbin, ybin = ipars.pframe.xbin.value(), ipars.pframe.ybin.value()
+            xbin, ybin = g.ipars.pframe.xbin.value(), g.ipars.pframe.ybin.value()
 
-        # calculate SN info. 
+        # calculate SN info.
         zero, sky, skyTot, gain, read, darkTot = 0., 0., 0., 0., 0., 0.
         total, peak, correct, signal, readTot, seeing = 0., 0., 0., 0., 0., 0.
         noise,  skyPerPixel, narcsec, npix, signalToNoise3 = 1., 0., 0., 0., 0.
 
-        tinfo   = drvs.TINS[cpars['telins_name']]
+        tinfo   = g.TINS[g.cpars['telins_name']]
         filtnam = self.filter.value()
 
         zero    = tinfo['zerop'][filtnam]
         mag     = self.mag.value()
         seeing  = self.seeing.value()
-        sky     = drvs.SKY[self.moon.value()][filtnam]
+        sky     = g.SKY[self.moon.value()][filtnam]
         airmass = self.airmass.value()
 
         # GAIN, RNO
@@ -1598,23 +1578,23 @@ class CountsFrame(tk.LabelFrame):
         elif readSpeed == 'Medium':
             gain = GAIN_NORM_MED if lnormal else GAIN_AV_MED
             read = RNO_NORM_MED if lnormal else RNO_AV_MED
-                    
+
         elif readSpeed == 'Slow':
             gain = GAIN_NORM_SLOW if lnormal else GAIN_AV_SLOW
             read = RNO_NORM_SLOW if lnormal else RNO_AV_SLOW
-                    
+
         plateScale = tinfo['plateScale']
 
-        # calculate expected electrons 
-        total   = 10.**((zero-mag-airmass*drvs.EXTINCTION[filtnam])/2.5)*expTime
+        # calculate expected electrons
+        total   = 10.**((zero-mag-airmass*g.EXTINCTION[filtnam])/2.5)*expTime
 
-        # compute fraction that fall in central pixel 
+        # compute fraction that fall in central pixel
         # assuming target exactly at its centre. Do this
         # by splitting each pixel of the central (potentially
         # binned) pixel into ndiv * ndiv points at
         # which the seeing profile is added. sigma is the
         # RMS seeing in terms of pixels.
-        sigma = seeing/2.3548/plateScale
+        sigma = seeing/g.EFAC/plateScale
         print(seeing,plateScale,sigma)
         sum = 0.
         for iyp in range(ybin):
@@ -1628,18 +1608,18 @@ class CountsFrame(tk.LabelFrame):
                         sum += math.exp(-(x*x+y*y)/2.)
         peak = total*sum/(2.*math.pi*sigma**2*ndiv**2)
 
-#        peak    = total*xbin*ybin*(plateScale/(seeing/2.3548))**2/(2.*math.pi)
+#        peak    = total*xbin*ybin*(plateScale/(seeing/EFAC))**2/(2.*math.pi)
 
         # Work out fraction of flux in aperture with radius AP_SCALE*seeing
-        correct = 1. - math.exp(-(2.3548*ap_scale)**2/2.)
-		    
+        correct = 1. - math.exp(-(g.EFAC*ap_scale)**2/2.)
+
         # expected sky e- per arcsec
         skyPerArcsec = 10.**((zero-sky)/2.5)*expTime
         skyPerPixel  = skyPerArcsec*plateScale**2*xbin*ybin
         narcsec      = math.pi*(ap_scale*seeing)**2
         skyTot       = skyPerArcsec*narcsec
         npix         = math.pi*(ap_scale*seeing/plateScale)**2/xbin/ybin
-                
+
         signal       = correct*total # in electrons
         darkTot      = npix*DARK_E*expTime  # in electrons
         readTot      = npix*read**2 # in electrons
@@ -1647,29 +1627,29 @@ class CountsFrame(tk.LabelFrame):
 
         # noise, in electrons
         if lnormal:
-            noise = math.sqrt(readTot + darkTot + skyTot + signal + cic) 
+            noise = math.sqrt(readTot + darkTot + skyTot + signal + cic)
         else:
             # assume high gain observations in proportional mode
-            noise = math.sqrt(readTot/AVALANCHE_GAIN_9**2 + 
+            noise = math.sqrt(readTot/AVALANCHE_GAIN_9**2 +
                            2.0*(darkTot + skyTot + signal) + cic)
-		    
+
         # Now compute signal-to-noise in 3 hour seconds run
         signalToNoise3 = signal/noise*math.sqrt(3*3600./cycleTime);
 
-        # if using the avalanche mode, check that the signal level 
-        # is safe. A single electron entering the avalanche register 
-        # results in a distribution of electrons at the output with 
-        # mean value given by the parameter avalanche_gain. The 
+        # if using the avalanche mode, check that the signal level
+        # is safe. A single electron entering the avalanche register
+        # results in a distribution of electrons at the output with
+        # mean value given by the parameter avalanche_gain. The
         # distribution is close to exponential, hence the probability
-        # of obtaining an amplification n times higher than the mean is 
-        # given by e**-n. A value of 3/5 for n is adopted here for 
-        # warning/safety, which will occur once in every ~20/100 
+        # of obtaining an amplification n times higher than the mean is
+        # given by e**-n. A value of 3/5 for n is adopted here for
+        # warning/safety, which will occur once in every ~20/100
         # amplifications
 
         # convert from electrons to counts
         total /= gain
         peak  /= gain
-        
+
         warn = 25000
         sat  = 60000
 
