@@ -10,7 +10,6 @@ from __future__ import print_function
 import Tkinter as tk
 import tkFont, tkFileDialog
 import xml.etree.ElementTree as ET
-import ConfigParser
 import urllib, urllib2
 import logging, time, datetime
 import BaseHTTPServer, SocketServer
@@ -54,105 +53,6 @@ def addStyle(root):
     root.option_add('*background', g.COL['main'])
     root.option_add('*HighlightBackground', g.COL['main'])
     root.config(background=g.COL['main'])
-
-def loadCpars(fp):
-    """
-    Loads dictionary of configuration parameters given a file object pointing
-    to the configuration file. The configuration file consists of a series of
-    entries of the form:
-
-    NAME : value
-
-    The routine loads straight into the global cpars as a dictionary, with
-    values translated to appropriate types. e.g. Yes/No values become boolean,
-    etc. Note the names are converted to lowercase internally so this is
-    effectively case insensitive as far as the key values are concerned
-    """
-
-    # read the configuration parameters file
-    parser = ConfigParser.ConfigParser()
-    parser.readfp(fp)
-
-    # intialise dictionary
-    g.cpars = {}
-
-    # names / types of simple single value items needing no changes.
-    SINGLE_ITEMS = {\
-        'RTPLOT_SERVER_ON' : 'boolean', 'CDF_SERVERS_ON' : 'boolean',
-        'FILTER_WHEEL_ON' : 'boolean', 'FOCAL_PLANE_SLIDE_ON' : 'boolean',
-        'CCD_TEMPERATURE_ON' : 'boolean', 'TCS_ON' : 'boolean',
-        'EXPERT_LEVEL' : 'integer', 'FILE_LOGGING_ON' : 'boolean',
-        'HTTP_CAMERA_SERVER' : 'string', 'HTTP_DATA_SERVER' : 'string',
-        'APP_DIRECTORY' : 'string', 'TEMPLATE_FROM_SERVER' : 'boolean',
-        'TEMPLATE_DIRECTORY' : 'string', 'LOG_FILE_DIRECTORY' : 'string',
-        'CONFIRM_ON_CHANGE' : 'boolean', 'CONFIRM_HV_GAIN_ON' : 'boolean',
-        'RTPLOT_SERVER_PORT' : 'integer', 'DEBUG' : 'boolean',
-        'HTTP_PATH_GET' : 'string', 'HTTP_PATH_EXEC' : 'string',
-        'HTTP_PATH_CONFIG' : 'string', 'HTTP_SEARCH_ATTR_NAME' : 'string',
-        'INSTRUMENT_APP' : 'string', 'POWER_ON' : 'string',
-        'TELINS_NAME' : 'string', 'REQUIRE_RUN_PARAMS' : 'boolean',
-        'HTTP_FILE_SERVER' : 'string', 'CONFIRM_ON_QUIT' : 'boolean',
-        'MDIST_WARN' : 'float'}
-
-    for key, value in SINGLE_ITEMS.iteritems():
-        if value == 'boolean':
-            g.cpars[key.lower()] = parser.getboolean('All',key)
-        elif value == 'string':
-            g.cpars[key.lower()] = parser.get('All',key)
-        elif value == 'integer':
-            g.cpars[key.lower()] = parser.getint('All',key)
-        elif value == 'float':
-            g.cpars[key.lower()] = parser.getfloat('All',key)
-
-    # quick check
-    if g.cpars['expert_level'] < 0 or g.cpars['expert_level'] > 2:
-        print('EXPERT_LEVEL must be one of 0, 1, or 2.')
-        print('Please fix the configuration file = ' + fp.name)
-        exit(1)
-
-    # names with multiple values (all strings)
-    MULTI_ITEMS = [\
-        'FILTER_NAMES', 'FILTER_IDS', 'ACTIVE_FILTER_NAMES',
-        'UAC_DATABASE_HOST']
-
-    for item in MULTI_ITEMS:
-        g.cpars[item.lower()] = [x.strip() for x in
-                                  parser.get('All',item).split(';')]
-
-    # Check the filters
-    if not set(g.cpars['active_filter_names']) <= set(g.cpars['filter_names']):
-        print('One or more of the active filter names was not recognised.')
-        print('Please fix the configuration file = ' + fp.name)
-        exit(1)
-
-    # Check the telescope/instrument combo
-    if g.cpars['telins_name'] not in g.TINS:
-        print('Telescope/instrument combination = ' +
-              g.cpars['telins_name'] + ' not recognised.')
-        print('Current possibilities are : ' + str(g.TINS.keys().sort()))
-        print('Please fix the configuration file = ' + fp.name)
-        exit(1)
-
-    # Special code for the templates
-    labels = [x.strip() for x in parser.get('All','TEMPLATE_LABELS').split(';')]
-    pairs  = [int(x.strip()) for x in
-              parser.get('All','TEMPLATE_PAIRS').split(';')]
-    apps   = [x.strip() for x in parser.get('All','TEMPLATE_APPS').split(';')]
-    ids    = [x.strip() for x in parser.get('All','TEMPLATE_IDS').split(';')]
-    if len(pairs) != len(labels) or \
-            len(apps) != len(labels) or len(ids) != len(labels):
-        print('TEMPLATE_LABELS, TEMPLATE_PAIRS,' +
-              ' TEMPLATE_APPS and TEMPLATE_IDS must all')
-        print('have the same number of items.')
-        print('Please fix the configuration file = ' + fp.name)
-        exit(1)
-
-    g.cpars['templates'] = dict( \
-        (arr[0],{'pairs' : arr[1], 'app' : arr[2], 'id' : arr[3]}) \
-            for arr in zip(labels,pairs,apps,ids))
-
-    # Next line is so that we know the order defined in the file
-    g.cpars['template_labels'] = labels
 
 class Boolean(tk.IntVar):
     """
@@ -204,7 +104,7 @@ class IntegerEntry(tk.Entry):
         self.blank   = blank
         self.set_bind()
 
-        # Nasty stuff to do with holiding mouse
+        # Nasty stuff to do with holding mouse
         # buttons down
         self._leftMousePressed        = False
         self._shiftLeftMousePressed   = False
@@ -292,21 +192,29 @@ class IntegerEntry(tk.Entry):
         self.bind('<Shift-Down>', lambda e : self.sub(10))
         self.bind('<Control-Up>', lambda e : self.add(100))
         self.bind('<Control-Down>', lambda e : self.sub(100))
-        self.bind('<Enter>', self._enter)
 
         # Mouse buttons: bit complex since they don't automatically
         # run in continuous mode like the arrow keys
-        self.bind("<ButtonPress-1>", self._leftMouseDown)
-        self.bind("<ButtonRelease-1>", self._leftMouseUp)
-        self.bind("<Shift-ButtonPress-1>", self._shiftLeftMouseDown)
-        self.bind("<Shift-ButtonRelease-1>", self._shiftLeftMouseUp)
+        self.bind('<ButtonPress-1>', self._leftMouseDown)
+        self.bind('<ButtonRelease-1>', self._leftMouseUp)
+        self.bind('<Shift-ButtonPress-1>', self._shiftLeftMouseDown)
+        self.bind('<Shift-ButtonRelease-1>', self._shiftLeftMouseUp)
         self.bind('<Control-Button-1>', lambda e : self.add(100))
 
-        self.bind("<ButtonPress-3>", self._rightMouseDown)
-        self.bind("<ButtonRelease-3>", self._rightMouseUp)
-        self.bind("<Shift-ButtonPress-3>", self._shiftRightMouseDown)
-        self.bind("<Shift-ButtonRelease-3>", self._shiftRightMouseUp)
+        self.bind('<ButtonPress-3>', self._rightMouseDown)
+        self.bind('<ButtonRelease-3>', self._rightMouseUp)
+        self.bind('<Shift-ButtonPress-3>', self._shiftRightMouseDown)
+        self.bind('<Shift-ButtonRelease-3>', self._shiftRightMouseUp)
         self.bind('<Control-Button-3>', lambda e : self.sub(100))
+
+        self.bind('<Double-Button-1>', self._dadd1)
+        self.bind('<Double-Button-3>', self._dsub1)
+        self.bind('<Shift-Double-Button-1>', self._dadd10)
+        self.bind('<Shift-Double-Button-3>', self._dsub10)
+        self.bind('<Control-Double-Button-1>', self._dadd100)
+        self.bind('<Control-Double-Button-3>', self._dsub100)
+
+        self.bind('<Enter>', self._enter)
 
     def _leftMouseDown(self, event):
         self._leftMousePressed = True
@@ -385,7 +293,7 @@ class IntegerEntry(tk.Entry):
         self.unbind('<Shift-Down>')
         self.unbind('<Control-Up>')
         self.unbind('<Control-Down>')
-        self.unbind('<Enter>')
+
         self.unbind('<Shift-Button-1>')
         self.unbind('<Shift-Button-3>')
         self.unbind('<Control-Button-1>')
@@ -394,7 +302,14 @@ class IntegerEntry(tk.Entry):
         self.unbind('<ButtonRelease-1>')
         self.unbind('<ButtonPress-3>')
         self.unbind('<ButtonRelease-3>')
-        self.unbind('<Up>')
+        self.unbind('<Double-Button-1>')
+        self.unbind('<Double-Button-3>')
+        self.unbind('<Shift-Double-Button-1>')
+        self.unbind('<shiftDouble-Button-3>')
+        self.unbind('<Control-Double-Button-1>')
+        self.unbind('<Control-Double-Button-3>')
+        self.unbind('<Enter>')
+
 
     def _callback(self, *dummy):
         """
@@ -425,12 +340,28 @@ class IntegerEntry(tk.Entry):
                 self.checker(*dummy)
 
     # following are callbacks for bindings
-    def _dadd(self, event):
+    def _dadd1(self, event):
         self.add(1)
         return 'break'
 
-    def _dsub(self, event):
+    def _dsub1(self, event):
         self.sub(1)
+        return 'break'
+
+    def _dadd10(self, event):
+        self.add(10)
+        return 'break'
+
+    def _dsub10(self, event):
+        self.sub(10)
+        return 'break'
+
+    def _dadd100(self, event):
+        self.add(100)
+        return 'break'
+
+    def _dsub100(self, event):
+        self.sub(100)
         return 'break'
 
     def _enter(self, event):
@@ -1361,7 +1292,7 @@ def postXML(root):
     sxml = ET.tostring(root)
 
     # Send the xml to the camera server
-    url = g.cpars['http_camera_server'] + g.cpars['http_path_config']
+    url = g.cpars['http_camera_server'] + g.HTTP_PATH_CONFIG
     g.clog.log.debug('Camera URL = ' + url +'\n')
 
     opener = urllib2.build_opener()
@@ -1375,7 +1306,7 @@ def postXML(root):
         return False
 
     # Send the xml to the data server
-    url = g.cpars['http_data_server'] + g.cpars['http_path_config']
+    url = g.cpars['http_data_server'] + g.HTTP_PATH_CONFIG
     g.clog.log.debug('Data server URL = ' + url + '\n')
     req = urllib2.Request(url, data=sxml, headers={'Content-type': 'text/xml'})
     response = opener.open(req, timeout=5) # ?? need to check whether this is needed
@@ -1692,7 +1623,7 @@ def execCommand(command):
         return False
 
     try:
-        url = g.cpars['http_camera_server'] + g.cpars['http_path_exec'] + \
+        url = g.cpars['http_camera_server'] + g.HTTP_PATH_EXEC + \
             '?' + command
         g.clog.log.info('execCommand, command = "' + command + '"\n')
         response = urllib2.urlopen(url)
@@ -1730,13 +1661,13 @@ def execServer(name, app):
         g.clog.log.warn('execServer: servers are not active\n')
         return False
 
-    print(g.cpars['http_camera_server'], g.cpars['http_path_config'], '?', app)
+    print(g.cpars['http_camera_server'], g.HTTP_PATH_CONFIG, '?', app)
 
     if name == 'camera':
-        url = g.cpars['http_camera_server'] + g.cpars['http_path_config'] + \
+        url = g.cpars['http_camera_server'] + g.HTTP_PATH_CONFIG + \
             '?' + app
     elif name == 'data':
-        url = g.cpars['http_data_server'] + g.cpars['http_path_config'] + '?' + app
+        url = g.cpars['http_data_server'] + g.HTTP_PATH_CONFIG + '?' + app
     else:
         raise Exception('Server name = ' + name + ' not recognised.')
 
@@ -1813,7 +1744,6 @@ class ResetSDSUsoft(ActButton):
         """
         master   : containing widget
         width    : width of button
-        share    : dictionary of other objects
         """
         ActButton.__init__(self, master, width, text='Reset SDSU software')
 
@@ -1849,7 +1779,6 @@ class ResetPCI(ActButton):
         """
         master   : containing widget
         width    : width of button
-        share    : dictionary with observe, clog, rlog
         """
         ActButton.__init__(self, master, width, text='Reset PCI')
 
@@ -1886,7 +1815,6 @@ class SystemReset(ActButton):
         """
         master   : containing widget
         width    : width of button
-        share    : dictionary with observe, clog, rlog
         """
 
         ActButton.__init__(self, master, width, text='System Reset')
@@ -1895,13 +1823,11 @@ class SystemReset(ActButton):
         """
         Carries out the action associated with the System Reset
         """
-        o = self.share
-        clog, rlog = o['clog'], o['rlog']
 
-        clog.log.debug('System Reset pressed\n')
+        g.clog.log.debug('System Reset pressed\n')
 
-        if execCommand('SRS', clog, rlog):
-            clog.log.info('System Reset succeeded\n')
+        if execCommand('SRS'):
+            g.clog.log.info('System Reset succeeded\n')
 
             # alter buttons here
             g.observe.start.disable()
@@ -1967,7 +1893,6 @@ class PowerOn(ActButton):
         """
         master  : containing widget
         width   : width of button
-        share   : other objects
         """
         ActButton.__init__(self, master, width, text='Power on')
 
@@ -1977,7 +1902,7 @@ class PowerOn(ActButton):
         """
         g.clog.log.debug('Power on pressed\n')
 
-        if execRemoteApp(g.cpars['power_on']) and execCommand('GO'):
+        if execRemoteApp(g.cpars['power_on_app']) and execCommand('GO'):
 
             g.clog.log.info('Power on successful\n')
 
@@ -2038,7 +1963,7 @@ class PowerOff(ActButton):
         g.clog.log.debug('This is a placeholder as there is no Power' + \
                              ' off application so it will fail\n')
 
-        if execRemoteApp(g.cpars['power_off']) and execCommand('GO'):
+        if execRemoteApp(g.cpars['power_off_app']) and execCommand('GO'):
 
             g.clog.log.info('Powered off SDSU\n')
 
@@ -3718,12 +3643,10 @@ class Windows (tk.Frame):
         if synced:
             self.sbutt.config(bg=g.COL['main'])
             self.sbutt.disable()
-            print('synced')
         else:
             if not self.frozen:
                 self.sbutt.enable()
             self.sbutt.config(bg=g.COL['warn'])
-            print('not synced')
 
         return status
 

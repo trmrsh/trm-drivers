@@ -215,7 +215,12 @@ class InstPars(tk.LabelFrame):
         """
 
         # find application
-        app = 'Windows' if xml.attrib['id'] == 'ccd201_winbin_app' else 'Drift'
+        xmlid = xml.attrib['id']
+        for app, d in g.cpars['templates'].iteritems():
+            if xmlid == d['id']:
+                break
+        else:
+            raise drvs.DriverError('Do not recognize application id = ' + xmlid)
 
         # find parameters
         cconfig = xml.find('configure_camera')
@@ -513,7 +518,6 @@ class InstPars(tk.LabelFrame):
 
         # clear chip on/off?
         lclear = not isDriftMode and self.clear()
-        print('clear =',lclear,self.clear(),isDriftMode)
 
         # get exposure delay
         expose = self.expose.value()
@@ -656,7 +660,6 @@ class InstPars(tk.LabelFrame):
         expTime   = expose_delay if lclear else cycleTime - frame_transfer
         deadTime  = cycleTime - expTime
         dutyCycle = 100.0*expTime/cycleTime
-        print(dutyCycle, expTime, cycleTime, frameRate, frame_transfer)
 
         return (expTime, deadTime, cycleTime, dutyCycle, frameRate)
 
@@ -715,7 +718,7 @@ class RunPars(tk.LabelFrame):
         row += 1
         print('filter =',g.cpars['active_filter_names'])
         self.filter = drvs.Radio(self, g.cpars['active_filter_names'], 6)
-        self.filter.set('undef')
+        self.filter.set('UNDEF')
         self.filter.grid(row=row,column=column,sticky=tk.W)
 
         # programme ID
@@ -839,14 +842,17 @@ def createXML(post):
                   str(g.cpars['templates'][app]))
 
     if g.cpars['template_from_server']:
+        print('Getting template from server')
         # get template from server
-        url = g.cpars['http_camera_server'] + g.cpars['http_path_get'] + '?' + \
-              g.cpars['http_search_attr_name'] + '=' + g.cpars['templates'][app]['app']
+        url = g.cpars['http_camera_server'] + g.HTTP_PATH_GET + '?' + \
+              g.HTTP_SEARCH_ATTR_NAME + '=' + g.cpars['templates'][app]['app']
         if g.cpars['debug']:
             print ('DEBUG: url = ' + url)
         sxml = urllib2.urlopen(url).read()
         root = ET.fromstring(sxml)
+
     else:
+        print('Getting template from local filesystem')
         # get template from local file
         if g.cpars['debug']:
             print ('DEBUG: directory = ' + g.cpars['template_directory'])
@@ -1004,7 +1010,7 @@ def createXML(post):
             # need to do a pre-post before reading otherwise memory won't
             # have been set
             try:
-                url = g.cpars['http_camera_server'] + g.cpars['http_path_exec'] + \
+                url = g.cpars['http_camera_server'] + g.HTTP_PATH_EXEC + \
                     '?RM,X,0x2E'
                 g.clog.log.info('exec = "' + url + '"\n')
                 response = urllib2.urlopen(url)

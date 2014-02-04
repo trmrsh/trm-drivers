@@ -11,6 +11,11 @@ This allows you to define the windows and readout mode you want to use.
 The window setup can be carried out at any time, including while a run
 is exposing. Nothing is sent to the camera until you send the 'post'
 command.
+
+When working fully, this script talks to the ATC camera, data and file
+servers, the filterwheel, the focal plane slide, the TNT TCS, and the
+Lakeshore CCD temperature monitor. When testing away from the telcescope
+any of these can be switched off.
 """
 
 # core
@@ -21,6 +26,7 @@ import logging, Queue, threading
 import xml.etree.ElementTree as ET
 
 # my stuff
+import trm.drivers.config      as config
 import trm.drivers.globals     as g
 import trm.drivers.drivers     as drvs
 import trm.drivers.uspec       as uspec
@@ -208,11 +214,12 @@ class GUI(tk.Tk):
         self.config(menu=menubar)
 
         # All components defined. Try to load previously stored settings
-        self.store = os.path.join(os.path.expanduser('~'),'.usdriver.xml')
-        if os.path.isfile(self.store):
-            xml = ET.parse(self.store).getroot()
+        settings = os.path.join(os.path.expanduser('~'),'.usdriver','settings.xml')
+        if os.path.isfile(settings):
+            xml = ET.parse(settings).getroot()
             g.ipars.loadXML(xml)
             g.rpars.loadXML(xml)
+            print('Loaded instrument and run settings from ' + settings)
 
         # run instrument setting checks
         g.ipars.check()
@@ -242,6 +249,10 @@ class GUI(tk.Tk):
         self.server.run()
 
     def ask_quit(self):
+        """
+        This is the close down routine
+        """
+
         if g.cpars['confirm_on_quit'] and not tkMessageBox.askokcancel('Quit', 'Really quit usdriver?'):
             g.clog.log.warn('Quit usdriver cancelled.\n')
         else:
@@ -249,30 +260,70 @@ class GUI(tk.Tk):
                 g.wheel.close()
                 print('closed filter wheel')
 
-            # Save current settings
-            root = uspec.createXML(False)
-            ET.ElementTree(root).write(self.store)
+            try:
 
-            self.destroy()
+                # Save current configuration and run and instrument settings.
+                # Files are saved to hidden directory in home directory.
+                config_dir = os.path.join(os.path.expanduser('~'),'.usdriver')
+                if not os.path.exists(config_dir):
+                    os.makedirs(config_dir)
+
+                # Save current settings
+                root  = uspec.createXML(False)
+                settings = os.path.join(config_dir, 'settings.xml')
+                ET.ElementTree(root).write(settings)
+                print('Saved instrument and run setting to ' + settings)
+
+                # Save configuration
+                conf = os.path.join(config_dir, 'usdriver.conf')
+                config.writeCpars(config.ULTRASPEC, conf)
+                print('Saved usdriver configuration (including filters) to ' + conf)
+
+                self.destroy()
+
+            except Exception, err:
+                g.clog.log.warn("""
+Failed to save the usdriver configuration and/or the
+instrument settings to disk. Directory of saved files
+should be = {0}
+Please check that this directory is writeable and try
+again. Failure to save the configuration could cause
+the filters to become mis-labelled on next startup. If
+you cannot get it to work, then at least note down the
+order of the filters before hitting ctrl-C.
+Error = ' {1}""".format(config_dir, str(err)))
+
 
 if __name__ == '__main__':
+
+    # Default configuration file (which may not exist)
+    def_cpars = os.path.join(os.path.expanduser('~'),'.usdriver','usdriver.conf')
 
     # command-line parameters
     parser = argparse.ArgumentParser(description=usage)
 
-    # positional
-    # parser.add_argument('run', help='run to plot, e.g. "run045"')
-
     # optional
-    parser.add_argument('-c', dest='cpars', default='usdriver.conf',
-                        help='configuration file name')
+    parser.add_argument('-c', dest='cpars', default=def_cpars, help='configuration file name')
 
     try:
         # OK, parse arguments
         args = parser.parse_args()
 
-        with open(args.cpars) as fp:
-            drvs.loadCpars(fp)
+        # Read a configuration file, if there is one
+        try:
+            config.readCpars(config.ULTRASPEC, args.cpars)
+            print('Loaded configuration from ' +  args.cpars)
+        except KeyError, err:
+            print('Failed to load configuration from  ' +  args.cpars)
+            print('KeyError = ' + str(err))
+            print('Possibly a corrupt configuration file.')
+            print('Will start with a default configuration; a config file will be saved on exit.\n')
+            config.loadCpars(config.ULTRASPEC)
+        except IOError, err:
+            print('Failed to load configuration from  ' +  args.cpars)
+            print('Error = ' + str(err))
+            print('Will start with a default configuration; a config file will be saved on exit.\n')
+            config.loadCpars(config.ULTRASPEC)
 
         if g.cpars['debug']:
             logging.basicConfig(level=logging.DEBUG)
