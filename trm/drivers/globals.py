@@ -15,10 +15,15 @@ DAY   : number of seconds in a day
 EFAC  : ratio FWHM/sigma for a gaussian
 EPH0  : zeropoint for pyephem
 EXTINCTION : extinction, mags/airmass
+HTTP_PATH_GET         : getting something string (ATC servers)
+HTTP_PATH_EXEC        : for executing commands (ATC servers)
+HTTP_PATH_CONFIG      : directory on server containing template applications
+HTTP_SEARCH_ATTR_NAME : attribute name to search for when getting applications
 MJD0  : zeropoint of MJD
 SKY   : sky brightenesses
 TINS  : Telescop/instrument data
 UNIX0 : UNIX time zeropoint
+
 
 and lowercase (all set = None to start with)::
 
@@ -48,6 +53,12 @@ MJD0  = datetime.date(1858,11,17).toordinal()
 UNIX0 = datetime.date(1970,1,1).toordinal()
 EPH0  = datetime.date(1899,12,31).toordinal() + 0.5
 DAY   = 86400.
+
+# ATC server stuff
+HTTP_PATH_GET         = 'get'
+HTTP_PATH_EXEC        = 'exec'
+HTTP_PATH_CONFIG      = 'config'
+HTTP_SEARCH_ATTR_NAME = 'filename'
 
 # Colours
 COL = {\
