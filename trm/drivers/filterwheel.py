@@ -171,8 +171,10 @@ class WheelController(tk.Toplevel):
         toplab = tk.Label(self,text='Current:')
         toplab.grid(row=0,column=0)
 
-        self.filter = drvs.Choice(self, g.cpars['active_filter_names'],
-                                  width=width-1)
+        if g.rpars.filter.value() == 'UNDEF':
+            self.filter = drvs.Choice(self, g.cpars['active_filter_names'], width=width-1)
+        else:
+            self.filter = drvs.Choice(self, g.cpars['active_filter_names'], initial=g.rpars.value(), width=width-1)
         self.filter.grid(row=1,column=0)
 
         self.go     = drvs.ActButton(self, width, self._go, text='go')
@@ -216,26 +218,36 @@ class FilterEditor(tk.Toplevel):
 
     def __init__(self):
 
-        width = 12
         tk.Toplevel.__init__(self)
         self.title('Filter editor')
 
         tk.Label(self,text='Old filter name:').grid(row=0,column=0)
-        self.old = drvs.Choice(self, g.cpars['active_filter_names'], width=width-1)
-        self.old.grid(row=0,column=1)
+        self.old = drvs.Choice(self, g.cpars['active_filter_names'], width=12)
+        self.old.grid(row=0,column=1,padx=2,pady=2)
 
         tk.Label(self,text='New filter name:').grid(row=1,column=0)
-        self.new  = drvs.Choice(self, g.cpars['filter_names'], width=width-1)
-        self.new.grid(row=1, column=1)
+        self.new  = drvs.Choice(self, g.cpars['filter_names'], width=12)
+        self.new.grid(row=1, column=1,padx=2,pady=2)
 
-        self.confirm  = drvs.ActButton(self, width, self._make_change, text='Confirm')
-        self.confirm.grid(row=2, column=0)
+        self.confirm = drvs.ActButton(self, 22, self._make_change, text='Confirm filter change')
+        self.confirm.grid(row=2, column=0, columnspan=2, pady=2)
 
     def _make_change(self, *args):
-        g.cpars['active_filter_names'][self.old.getIndex()] = self.new.value()
-        # need to reconfig the filters in RunPars; following does not work:
-        #g.rpars.filter = drvs.Radio(g.rpars, g.cpars['active_filter_names'], 6)
+        indx    = self.old.getIndex()
+        nfilter = self.new.value()
+        g.cpars['active_filter_names'][indx] = nfilter
+
+        # reconfig the filters in RunPars
+        g.rpars.filter.buttons[indx].config(text=nfilter)
+
+        # reconfig the old filter choices
+        m = self.old.children['menu']
+        m.entryconfig(indx, label=nfilter)
+        self.old.set(nfilter)
+
+        # report back
         g.clog.log.info('Filter name changed: ' + self.old.value() + ' ---> ' + self.new.value())
+        g.clog.log.info('You need to have physically changed the filter as well.')
 
 class FilterWheelError(Exception):
     pass
