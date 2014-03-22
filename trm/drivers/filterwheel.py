@@ -171,10 +171,10 @@ class WheelController(tk.Toplevel):
         toplab = tk.Label(self,text='Current:')
         toplab.grid(row=0,column=0)
 
-        if g.rpars.filter.value() == 'UNDEF':
-            self.filter = drvs.Choice(self, g.cpars['active_filter_names'], width=width-1)
-        else:
-            self.filter = drvs.Choice(self, g.cpars['active_filter_names'], initial=g.rpars.value(), width=width-1)
+        findex = wheel.getPos()-1
+        self.filter = drvs.Choice(self, g.cpars['active_filter_names'],
+                                  initial=g.cpars['active_filter_names'][findex],
+                                  width=width-1)
         self.filter.grid(row=1,column=0)
 
         self.go     = drvs.ActButton(self, width, self._go, text='go')
@@ -191,23 +191,23 @@ class WheelController(tk.Toplevel):
 
     def _go(self, *args):
         findex = self.filter.options.index(self.filter.value())+1
-        g.clog.info('Moving to filter position = ' + str(findex) + '\n')
+        g.clog.log.info('Moving to filter position = ' + str(findex) + '\n')
         self.wheel.goto(findex)
-        g.clog.info('Filter moved successfully\n')
+        g.clog.log.info('Filter moved successfully\n')
 
     def _home(self, *args):
-        g.clog.info('Homing filter wheel ...\n')
+        g.clog.log.info('Homing filter wheel ...\n')
         self.wheel.home()
-        g.clog.info('Filter homed\n')
+        g.clog.log.info('Filter homed\n')
 
     def _close(self, *args):
         self.wheel.close()
-        g.clog.info('Filter closed\n')
+        g.clog.log.info('Filter closed\n')
 
     def _init(self, *args):
-        g.clog.info('Initialising filter wheel ...\n')
+        g.clog.log.info('Initialising filter wheel ...\n')
         self.wheel.reboot()
-        g.clog.info('Filter wheel initialised\n')
+        g.clog.log.info('Filter wheel initialised\n')
 
 class FilterEditor(tk.Toplevel):
     """
