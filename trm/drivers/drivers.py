@@ -1879,6 +1879,9 @@ class SetupServers(ActButton):
             g.setup.resetPCI.disable()
             g.setup.powerOn.enable()
             g.setup.powerOff.disable()
+
+            # set flag indicating that the servers have been setup
+            g.servinit = True
             return True
         else:
             g.clog.log.warn('Setup servers failed\n')
@@ -2703,7 +2706,8 @@ class InfoFrame(tk.LabelFrame):
                     self.airmass.configure(text='{0:<4.2f}'.format(
                             1./math.sin(star.alt)))
 
-                    # distance to the moon. Warn if too close (configurable) to it.
+                    # distance to the moon. Warn if too close (configurable)
+                    # to it.
                     md = math.degrees(ephem.separation(g.astro.moon,star))
                     self.mdist.configure(text='{0:<7.2f}'.format(md))
                     if md < g.cpars['mdist_warn']:
@@ -2712,7 +2716,8 @@ class InfoFrame(tk.LabelFrame):
                         self.mdist.configure(bg=g.COL['main'])
 
                     # calculate cosine of angle between vertical and celestial
-                    # North cpan = (math.sin(g.astro.obs.lat)-math.sin(star._dec)
+                    # North cpan =
+                    # (math.sin(g.astro.obs.lat)-math.sin(star._dec)
                     # *math.sin(star.alt))/(math.cos(star._dec)*math.cos(
                     # star.alt)) pan = math.acos(cpan)
 
@@ -2727,7 +2732,7 @@ class InfoFrame(tk.LabelFrame):
                     self.mdist.configure(text='UNDEF')
                     print(err)
 
-        if g.cpars['cdf_servers_on']:
+        if g.cpars['cdf_servers_on'] and g.servinit:
 
             # get run number (set by the 'Start' button')
             try:
@@ -2782,7 +2787,8 @@ class InfoFrame(tk.LabelFrame):
 
         # get the current filter, if the wheel is defined
         # poll at 5x slower rate than the frame
-        if g.wheel is not None and self.count % 5 == 0 and g.cpars['filter_wheel_on']:
+        if g.wheel is not None and self.count % 5 == 0 and \
+           g.cpars['filter_wheel_on']:
             try:
                 if not g.wheel.connected:
                     g.wheel.connect()

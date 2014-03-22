@@ -38,6 +38,9 @@ observe : widget of observing commands
 rlog    : response log widget. Used to report server responses
 rpars   : run parameter widget
 setup   : setup widget
+
+servinit : True/False to show that the servers have been initialised.
+
 """
 
 from __future__ import print_function
@@ -134,3 +137,7 @@ count = None
 
 # Instrument setup widget
 setup = None
+
+# Shows whether the servers have been initialised which make
+# a difference to getting the run and frame numbers.
+servinit = False
