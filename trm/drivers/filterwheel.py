@@ -168,10 +168,16 @@ class WheelController(tk.Toplevel):
         self.title('Filter selector')
         self.wheel = wheel
 
+        # current index
+        findex = wheel.getPos()-1
+
         toplab = tk.Label(self,text='Current:')
         toplab.grid(row=0,column=0)
 
-        findex = wheel.getPos()-1
+        self.current = tk.Label(self,
+                                text=g.cpars['active_filter_names'][findex])
+        self.current.grid(row=0,column=1)
+
         self.filter = drvs.Choice(self, g.cpars['active_filter_names'],
                                   initial=g.cpars['active_filter_names'][findex],
                                   width=width-1)
@@ -186,18 +192,21 @@ class WheelController(tk.Toplevel):
         self.init   = drvs.ActButton(self, width, self._init, text='init wheel')
         self.init.grid(row=2, column=1)
 
-        self.close   = drvs.ActButton(self, width, self._close, text='close wheel')
+        self.close   = drvs.ActButton(self, width, self._close,
+                                      text='close wheel')
         self.close.grid(row=3, column=1)
 
     def _go(self, *args):
         findex = self.filter.options.index(self.filter.value())+1
         g.clog.log.info('Moving to filter position = ' + str(findex) + '\n')
         self.wheel.goto(findex)
+        self.current.configure(text=g.cpars['active_filter_names'][findex-1])
         g.clog.log.info('Filter moved successfully\n')
 
     def _home(self, *args):
         g.clog.log.info('Homing filter wheel ...\n')
         self.wheel.home()
+        self.current.configure(text=g.cpars['active_filter_names'][0])
         g.clog.log.info('Filter homed\n')
 
     def _close(self, *args):
@@ -207,6 +216,7 @@ class WheelController(tk.Toplevel):
     def _init(self, *args):
         g.clog.log.info('Initialising filter wheel ...\n')
         self.wheel.reboot()
+        self.current.configure(text=g.cpars['active_filter_names'][0])
         g.clog.log.info('Filter wheel initialised\n')
 
 class FilterEditor(tk.Toplevel):
@@ -229,7 +239,8 @@ class FilterEditor(tk.Toplevel):
         self.new  = drvs.Choice(self, g.cpars['filter_names'], width=12)
         self.new.grid(row=1, column=1,padx=2,pady=2)
 
-        self.confirm = drvs.ActButton(self, 22, self._make_change, text='Confirm filter change')
+        self.confirm = drvs.ActButton(self, 22, self._make_change,
+                                      text='Confirm filter change')
         self.confirm.grid(row=2, column=0, columnspan=2, pady=2)
 
     def _make_change(self, *args):
