@@ -56,21 +56,27 @@ def addStyle(root):
 
 class Boolean(tk.IntVar):
     """
-    Defines an object representing one of the boolean
-    configuration parameters to allow it to be interfaced with
-    the menubar easily.
+    Defines an object representing one of the boolean configuration
+    parameters to allow it to be interfaced with the menubar easily.
+
+    If defined, callback is run with the new value of the flag as its
+    argument
     """
-    def __init__(self, flag):
+    def __init__(self, flag, callback=None):
         tk.IntVar.__init__(self)
         self.set(g.cpars[flag])
         self.trace('w', self._update)
         self.flag = flag
+        self.callback = callback
 
     def _update(self, *args):
         if self.get():
             g.cpars[self.flag] = True
         else:
             g.cpars[self.flag] = False
+        if self.callback:
+            self.callback(g.cpars[self.flag])
+            
 
 class IntegerEntry(tk.Entry):
     """
@@ -1880,8 +1886,8 @@ class SetupServers(ActButton):
             g.setup.powerOn.enable()
             g.setup.powerOff.disable()
 
-            # set flag indicating that the servers have been setup
-            g.servinit = True
+            # set flag indicating that the servers have been initialised
+            g.cpars['servers_initialised'] = True
             return True
         else:
             g.clog.log.warn('Setup servers failed\n')
@@ -2211,11 +2217,10 @@ class Switch(tk.Frame):
 
         tk.Radiobutton(self, text='Setup', variable=self.val,
                        value='Setup').grid(row=0, column=0, sticky=tk.W)
-        tk.Radiobutton(self, text='Focal plane slide', variable=self.val,
-                       value='Focal plane slide').grid(
-            row=0, column=1, sticky=tk.W)
         tk.Radiobutton(self, text='Observe', variable=self.val,
-                       value='Observe').grid(row=0, column=2, sticky=tk.W)
+                       value='Observe').grid(row=0, column=1, sticky=tk.W)
+        tk.Radiobutton(self, text='Focal plane slide', variable=self.val,
+                       value='Focal plane slide').grid(row=0, column=2, sticky=tk.W)
 
     def _changed(self, *args):
         if self.val.get() == 'Setup':
@@ -2241,7 +2246,10 @@ class ExpertMenu(tk.Menu):
     Provides a menu to select the level of expertise wanted
     when interacting with a control GUI. This setting might
     be used to hide buttons for instance according to
-    the status of others, etc.
+    the status of others, etc. Use ExpertMenu.indices
+    to pass a set of indices of the master menu which get
+    enabled or disabled according to the expert level (disabled
+    at level 0, otherwise enabled)
     """
     def __init__(self, master, *args):
         """
@@ -2256,13 +2264,19 @@ class ExpertMenu(tk.Menu):
         self.add_radiobutton(label='Level 0', value=0, variable=self.val)
         self.add_radiobutton(label='Level 1', value=1, variable=self.val)
         self.add_radiobutton(label='Level 2', value=2, variable=self.val)
-
         self.args  = args
+        self.root  = master
+        self.indices = []
 
     def _change(self, *args):
         g.cpars['expert_level'] = self.val.get()
         for arg in self.args:
             arg.setExpertLevel()
+        for index in self.indices:
+            if g.cpars['expert_level']:
+                self.root.entryconfig(index,state=tk.NORMAL)
+            else:
+                self.root.entryconfig(index,state=tk.DISABLED)
 
 
 class RtplotHandler(BaseHTTPServer.BaseHTTPRequestHandler):
@@ -2330,7 +2344,7 @@ class Timer(tk.Label):
         if self.count % 10 == 0:
             if not isRunActive():
                 g.observe.start.enable()
-                g.observer.stop.disable()
+                g.observe.stop.disable()
                 g.setup.resetSDSUhard.enable()
                 g.setup.resetSDSUsoft.enable()
                 g.setup.resetPCI.disable()
@@ -2508,7 +2522,7 @@ class InfoFrame(tk.LabelFrame):
     """
     def __init__(self, master):
         tk.LabelFrame.__init__(self, master,
-                               text='Run & Tel status', padx=4, pady=4)
+                               text='Current run & telescope status', padx=4, pady=4)
 
         self.run     = tk.Label(self, text='UNDEF')
         self.frame   = tk.Label(self,text='UNDEF')
@@ -2619,9 +2633,11 @@ class InfoFrame(tk.LabelFrame):
                     self.pa.configure(text='{0:6.2f}'.format(pa))
 
                     # check for significant changes in position to flag
-                    # tracking failures
+                    # tracking failures. I have removed a test of tflag
+                    # to be True because the telescope often switches to
+                    # "slewing" status even when nominally tracking.
                     if abs(ra-self.ra_old) < 1.e-3 and \
-                            abs(dec-self.dec_old) < 1.e-3 and tflag:
+                            abs(dec-self.dec_old) < 1.e-3:
                         self.tracking = True
                         self.ra.configure(bg=g.COL['main'])
                         self.dec.configure(bg=g.COL['main'])
@@ -2732,7 +2748,7 @@ class InfoFrame(tk.LabelFrame):
                     self.mdist.configure(text='UNDEF')
                     print(err)
 
-        if g.cpars['cdf_servers_on'] and g.servinit:
+        if g.cpars['cdf_servers_on'] and g.cpars['servers_initialised']:
 
             # get run number (set by the 'Start' button')
             try:
@@ -2779,11 +2795,15 @@ class InfoFrame(tk.LabelFrame):
                         nframe = int(rstr[ind:ind+rstr[ind:].find('"')])
                         self.frame.configure(text='{0:d}'.format(nframe))
                 except Exception, err:
-                    self.frame.configure(text='UNDEF')
-                    print('Error trying to set frame: ' + str(err) + '\n')
+                    if err.code == 404:
+                        g.clog.log.debug('Error trying to set frame: ' + str(err) + '\n')
+                        self.frame.configure(text='0')
+                    else:
+                        g.clog.log.debug('Error trying to set occurred trying to set run\n')
+                        self.frame.configure(text='UNDEF')
+
             except Exception, err:
-                g.clog.log.debug('Error occurred trying to set run\n')
-                g.clog.log.debug(str(err) + '\n')
+                g.clog.log.debug('Error trying to set run: ' + str(err) + '\n')
 
         # get the current filter, if the wheel is defined
         # poll at 5x slower rate than the frame
