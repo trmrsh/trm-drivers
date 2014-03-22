@@ -410,7 +410,9 @@ class InstPars(tk.LabelFrame):
         # allow posting according to whether the parameters are ok
         # update count and S/N estimates as well
         if status:
-            if g.cpars['cdf_servers_on'] and not drvs.isRunActive():
+            if g.cpars['cdf_servers_on'] and \
+                    g.cpars['servers_initialised'] and \
+                    not drvs.isRunActive():
                 g.observe.start.enable()
             g.count.update()
         else:
@@ -671,7 +673,7 @@ class RunPars(tk.LabelFrame):
     DVALS  = ('data', 'data caution', 'bias', 'flat', 'dark', 'technical')
 
     def __init__(self, master):
-        tk.LabelFrame.__init__(self, master, text='Run parameters',
+        tk.LabelFrame.__init__(self, master, text='Next run parameters',
                                padx=10, pady=10)
 
         row     = 0
@@ -716,7 +718,6 @@ class RunPars(tk.LabelFrame):
 
         # filter
         row += 1
-        print('filter =',g.cpars['active_filter_names'])
         self.filter = drvs.Radio(self, g.cpars['active_filter_names'], 6)
         self.filter.set('UNDEF')
         self.filter.grid(row=row,column=column,sticky=tk.W)
@@ -996,13 +997,6 @@ def createXML(post):
     filtr      = ET.SubElement(uconfig, 'filters')
     filtr.text = g.rpars.filter.value()
 
-    ra         = ET.SubElement(uconfig, 'RA')
-    ra.text    = g.info.ra.cget('text')
-    dec        = ET.SubElement(uconfig, 'Dec')
-    dec.text   = g.info.dec.cget('text')
-    pa         = ET.SubElement(uconfig, 'PA')
-    pa.text    = g.info.pa.cget('text')
-
     if post:
         if not hasattr(createXML, 'revision'):
             # test for the revision number, only the first time we post
@@ -1044,6 +1038,7 @@ class Start(drvs.ActButton):
     -- checking that the instrument and run parameters are OK
     -- (optionally) querying when the target has changed or avalanche gain on
     -- (optionally) looking for TCS information
+    -- changes the filter if need be.
     -- creating the application from a template given current settings
     -- posting it to the servers
     -- starting the run
@@ -1057,7 +1052,8 @@ class Start(drvs.ActButton):
         width    : width of button
         """
 
-        drvs.ActButton.__init__(self, master, width, bg=g.COL['start'], text='Start')
+        drvs.ActButton.__init__(self, master, width, bg=g.COL['start'], 
+                                text='Start')
         self.target = None
 
     def act(self):
@@ -1091,9 +1087,10 @@ class Start(drvs.ActButton):
                 g.clog.log.warn('Start operation cancelled\n')
                 return False
 
-        # Confirm when target name has changed
+        # Confirm when the target name has changed
         if g.cpars['expert_level'] == 0 and g.cpars['confirm_on_change'] and \
-                self.target is not None and self.target != g.rpars.target.value():
+                self.target is not None and \
+                self.target != g.rpars.target.value():
 
             if not tkMessageBox.askokcancel(
                 'Confirm target', 'Target name has changed\n' +
@@ -1102,26 +1099,52 @@ class Start(drvs.ActButton):
                 return False
 
         try:
-            # Get XML from template and modify according to the current settings
+            # Get XML from template and modify according to the
+            # current settings
             root = createXML(True)
 
             if g.cpars['tcs_on']:
                 # get positional info from telescope
                 if g.cpars['telins_name'] == 'TNO-USPEC':
                     try:
-                        ra,dec,pa,focus,engpa = tcs.getTntTcs()
-                        # add it into XML
-                        uconfig    = root.find('user')
-                        ra         = ET.SubElement(uconfig, 'RA')
-                        ra.text    = '{0:9.5f}'.format(ra)
-                        dec        = ET.SubElement(uconfig, 'Dec')
-                        dec.text   = '{0:+10.5f}'.format(dec)
-                        pa         = ET.SubElement(uconfig, 'PA')
-                        pa.text    = '{0:6.2f}'.format(pa)
-                        focus      = ET.SubElement(uconfig, 'Focus')
-                        focus.text = '{0:+6.2f}'.format(focus)
-                        epa        = ET.SubElement(uconfig, 'Eng. PA')
-                        epa.text   = '{0:+7.2f}'.format(epa)
+                        ra,dec,pa,focus,tflag,epa = tcs.getTntTcs()
+                        if not g.info.tracking and not tkMessageBox.askokcancel(
+                                'TCS error',
+                                'The telescope does not appear to be tracking and the\n' +
+                                'RA, Dec and/or PA could be wrong as a result.\n' +
+                                'Continue?'):
+                            g.clog.log.warn('Start operation cancelled\n')
+                            return False
+
+                        # only bother about the telescope's tracking flag
+                        # if we have not over-ridden the more reliable flag
+                        # from 'info'
+                        if g.info.tracking and not tflag and \
+                                not tkMessageBox.askokcancel(
+                            'TCS error',
+                            'The telescope reports that it is not tracking;\n' + 
+                            'the RA, Dec and or PA could be wrong as a result.\n' +
+                            'Continue?'):
+                            g.clog.log.warn('Start operation cancelled\n')
+                            return False
+
+                        # all systems are go...
+                        uconfig     = root.find('user')
+                        tra         = ET.SubElement(uconfig, 'RA')
+                        tra.text    = drvs.d2hms(ra/15., 1, False)
+                        tdec        = ET.SubElement(uconfig, 'Dec')
+                        tdec.text   = drvs.d2hms(dec, 0, True)
+                        tpa         = ET.SubElement(uconfig, 'PA')
+                        tpa.text    = '{0:6.2f}'.format(pa)
+                        tfocus      = ET.SubElement(uconfig, 'Focus')
+                        tfocus.text = '{0:+6.2f}'.format(focus)
+                        tepa        = ET.SubElement(uconfig, 'Eng_PA')
+                        tepa.text   = '{0:+7.2f}'.format(epa)
+                        tracking    = ET.SubElement(uconfig, 'Tracking')
+                        tracking.text = 'yes' if g.info.tracking else 'no'
+                        ttflag      = ET.SubElement(uconfig, 'TTflag')
+                        ttflag.text = 'yes' if tflag else 'no'
+
                     except Exception, err:
                         print(err)
                         if not tkMessageBox.askokcancel(
@@ -1140,8 +1163,31 @@ class Start(drvs.ActButton):
                         g.clog.log.warn('Start operation cancelled\n')
                         return False
 
+            # Change the filter if necessary. Try to connect to the
+            # wheel. Raises an Exception if no wheel available
+            if not g.wheel.connected:
+                g.wheel.connect()
+                g.wheel.init()
+            currentPosition = g.wheel.getPos()
+            
+            desiredPosition = g.rpars.filter.getIndex() + 1
+            if currentPosition != desiredPosition:
+                # We must change the filter before starting the run. This means
+                # that we also have to update the filters element of the 'user' 
+                # part of the xml
+                g.clog.log.info('Changing filter from "' + g.cpars['active_filter_names'][currentPosition-1] + 
+                                '" to "' + g.cpars['active_filter_names'][desiredPosition-1] + '"\n')
+                g.wheel.goto(desiredPosition)
+
+                uconfig    = root.find('user')
+                filtr      = ET.SubElement(uconfig, 'filters')
+                filtr.text = g.cpars['active_filter_names'][desiredPosition-1]
+            else:
+                # No action needed
+                g.clog.log.info('No filter change needed\n')
+
             # Post the XML it to the server
-            g.clog.log.info('\nPosting application to the servers\n')
+            g.clog.log.info('Posting application to the servers\n')
 
             if drvs.postXML(root):
                 g.clog.log.info('Post successful; starting run\n')
@@ -1170,12 +1216,22 @@ class Start(drvs.ActButton):
 
                     # update the run number
                     try:
-                        print('will update run number',g.info.run.cget('text'))
                         run  = int(g.info.run.cget('text'))
                         run += 1
                         g.info.run.configure(text='{0:03d}'.format(run))
                     except Exception, err:
                         g.clog.log.warn('Failed to update run number')
+
+                    # take it that if we have successfully started a
+                    # run then we have also initialised the
+                    # servers. This is necessary to account for when
+                    # one starts usdriver with the servers already
+                    # initialised. Rather than re-initialising and
+                    # hence incurring another poweron, one can switch
+                    # to expert mode and start a run and hence make it
+                    # look as though the servers have been
+                    # initialised.
+                    g.cpars['servers_initialised'] = True
 
                     return True
                 else:
@@ -1361,7 +1417,7 @@ class CountsFrame(tk.LabelFrame):
         master : enclosing widget
         """
         tk.LabelFrame.__init__(
-            self, master, pady=2, text='Count & S/N estimator')
+            self, master, pady=2, text='Count & S-to-N estimator')
 
         # divide into left and right frames
         lframe = tk.Frame(self, padx=2)
