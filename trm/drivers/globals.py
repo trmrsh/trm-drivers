@@ -38,8 +38,7 @@ observe : widget of observing commands
 rlog    : response log widget. Used to report server responses
 rpars   : run parameter widget
 setup   : setup widget
-
-servinit : True/False to show that the servers have been initialised.
+wheel   : filter wheel controller
 
 """
 
@@ -138,6 +137,6 @@ count = None
 # Instrument setup widget
 setup = None
 
-# Shows whether the servers have been initialised which make
-# a difference to getting the run and frame numbers.
-servinit = False
+# Filter wheel controller
+wheel = None
+
