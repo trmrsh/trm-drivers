@@ -2512,7 +2512,7 @@ class InfoFrame(tk.LabelFrame):
         self.timer   = Timer(self)
         self.cadence = tk.Label(self,text='UNDEF')
         self.duty    = tk.Label(self,text='UNDEF')
-        self.filt    = tk.Label(self,text='UNDEF')
+        self.filter  = tk.Label(self,text='UNDEF')
         self.ra      = tk.Label(self,text='UNDEF')
         self.dec     = tk.Label(self,text='UNDEF')
         self.alt     = tk.Label(self,text='UNDEF')
@@ -2536,7 +2536,7 @@ class InfoFrame(tk.LabelFrame):
         self.timer.grid(row=2,column=1,padx=5,sticky=tk.W)
 
         tk.Label(self,text='Filter:').grid(row=3,column=0,padx=5,sticky=tk.W)
-        self.filt.grid(row=3,column=1,padx=5,sticky=tk.W)
+        self.filter.grid(row=3,column=1,padx=5,sticky=tk.W)
 
         tk.Label(self,text='Cadence:').grid(row=4,column=0,padx=5,sticky=tk.W)
         self.cadence.grid(row=4,column=1,padx=5,sticky=tk.W)
@@ -2661,9 +2661,9 @@ class InfoFrame(tk.LabelFrame):
                     star = ephem.FixedBody()
                     star._ra  = math.radians(ra)
                     star._dec = math.radians(dec)
-                    star.compute(astro.obs)
+                    star.compute(g.astro.obs)
 
-                    lst = astro.obs.sidereal_time()
+                    lst = g.astro.obs.sidereal_time()
                     ha  = (math.degrees(lst)-ra)/15.
                     if ha > 12.:
                         ha -= 12.
@@ -2704,7 +2704,7 @@ class InfoFrame(tk.LabelFrame):
                             1./math.sin(star.alt)))
 
                     # distance to the moon. Warn if too close (configurable) to it.
-                    md = math.degrees(ephem.separation(astro.moon,star))
+                    md = math.degrees(ephem.separation(g.astro.moon,star))
                     self.mdist.configure(text='{0:<7.2f}'.format(md))
                     if md < g.cpars['mdist_warn']:
                         self.mdist.configure(bg=g.COL['warn'])
@@ -2712,7 +2712,7 @@ class InfoFrame(tk.LabelFrame):
                         self.mdist.configure(bg=g.COL['main'])
 
                     # calculate cosine of angle between vertical and celestial
-                    # North cpan = (math.sin(astro.obs.lat)-math.sin(star._dec)
+                    # North cpan = (math.sin(g.astro.obs.lat)-math.sin(star._dec)
                     # *math.sin(star.alt))/(math.cos(star._dec)*math.cos(
                     # star.alt)) pan = math.acos(cpan)
 
@@ -2734,7 +2734,7 @@ class InfoFrame(tk.LabelFrame):
                 # if no run is active, get run number from
                 # ultracam servers
                 if not isRunActive():
-                    run = getRunNumber(rlog, True)
+                    run = getRunNumber(True)
                     self.run.configure(text='{0:03d}'.format(run))
 
                 # get the value of the run being displayed, regardless
