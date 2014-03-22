@@ -1105,7 +1105,7 @@ class Start(drvs.ActButton):
             # Get XML from template and modify according to the current settings
             root = createXML(True)
 
-            if g.cpars['access_tcs']:
+            if g.cpars['tcs_on']:
                 # get positional info from telescope
                 if g.cpars['telins_name'] == 'TNO-USPEC':
                     try:
