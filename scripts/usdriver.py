@@ -168,7 +168,7 @@ class GUI(tk.Tk):
             var=drvs.Boolean('confirm_hv_gain_on'))
 
         settingsMenu.add_checkbutton(
-            label='Confirm target',
+            label='Confirm target name change',
             var=drvs.Boolean('confirm_on_change'))
 
         settingsMenu.add_checkbutton(
@@ -191,6 +191,27 @@ class GUI(tk.Tk):
             label='CCD temperature on',
             var=drvs.Boolean('ccd_temperature_on'))
 
+        settingsMenu.add_checkbutton(
+            label='Templates from servers',
+            var=drvs.Boolean('template_from_server'))
+
+        # we run a callback here in order to enable the start button
+        # if appropriate
+        settingsMenu.add_checkbutton(
+            label='Assume servers initialised',
+            var=drvs.Boolean('servers_initialised', 
+                             lambda flag: g.ipars.check() if flag else None))
+
+        # find index of last item added to the menu to allow it to be enabled/disabled.
+        # also pass it through to the expert menu so that its status is updated if that
+        # changes.
+        lindex = settingsMenu.index(tk.END)
+        if g.cpars['expert_level']:
+            settingsMenu.entryconfig(lindex,state=tk.NORMAL)
+        else:
+            settingsMenu.entryconfig(lindex,state=tk.DISABLED)
+        expertMenu.indices = [lindex]
+
         # Add to menubar
         menubar.add_cascade(label='Settings', menu=settingsMenu)
 
@@ -206,7 +227,8 @@ class GUI(tk.Tk):
         filterMenu.add_command(label='Change filter', command=setwheel)
 
         # and the filter editor
-        filterMenu.add_command(label='Edit filters', command=lambda : fwheel.FilterEditor())
+        filterMenu.add_command(label='Edit filters', 
+                               command=lambda : fwheel.FilterEditor())
 
         menubar.add_cascade(label='Filters', menu=filterMenu)
 
@@ -214,7 +236,8 @@ class GUI(tk.Tk):
         self.config(menu=menubar)
 
         # All components defined. Try to load previously stored settings
-        settings = os.path.join(os.path.expanduser('~'),'.usdriver','settings.xml')
+        settings = os.path.join(os.path.expanduser('~'),'.usdriver',
+                                'settings.xml')
         if os.path.isfile(settings):
             xml = ET.parse(settings).getroot()
             g.ipars.loadXML(xml)
@@ -274,7 +297,10 @@ class GUI(tk.Tk):
                 ET.ElementTree(root).write(settings)
                 print('Saved instrument and run setting to ' + settings)
 
-                # Save configuration
+                # Save configuration (- 'servers_initialised' as one would
+                # never want this to be True on entry)
+                del g.cpars['servers_initialised']
+
                 conf = os.path.join(config_dir, 'usdriver.conf')
                 config.writeCpars(config.ULTRASPEC, conf)
                 print('Saved usdriver configuration (including filters) to ' + conf)
@@ -297,13 +323,15 @@ Error = ' {1}""".format(config_dir, str(err)))
 if __name__ == '__main__':
 
     # Default configuration file (which may not exist)
-    def_cpars = os.path.join(os.path.expanduser('~'),'.usdriver','usdriver.conf')
+    def_cpars = os.path.join(os.path.expanduser('~'),'.usdriver',
+                             'usdriver.conf')
 
     # command-line parameters
     parser = argparse.ArgumentParser(description=usage)
 
     # optional
-    parser.add_argument('-c', dest='cpars', default=def_cpars, help='configuration file name')
+    parser.add_argument('-c', dest='cpars', default=def_cpars,
+                        help='configuration file name')
 
     try:
         # OK, parse arguments
@@ -324,6 +352,10 @@ if __name__ == '__main__':
             print('Error = ' + str(err))
             print('Will start with a default configuration; a config file will be saved on exit.\n')
             config.loadCpars(config.ULTRASPEC)
+
+        # add one extra that there is no point getting from a file as
+        # it should always be set False on starting the GUI
+        g.cpars['servers_initialised'] = False
 
         if g.cpars['debug']:
             logging.basicConfig(level=logging.DEBUG)
