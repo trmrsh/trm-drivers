@@ -245,6 +245,7 @@ class FilterEditor(tk.Toplevel):
 
     def _make_change(self, *args):
         indx    = self.old.getIndex()
+        ofilter = self.old.value()
         nfilter = self.new.value()
         g.cpars['active_filter_names'][indx] = nfilter
 
@@ -257,8 +258,8 @@ class FilterEditor(tk.Toplevel):
         self.old.set(nfilter)
 
         # report back
-        g.clog.log.info('Filter name changed: ' + self.old.value() + ' ---> ' + self.new.value())
-        g.clog.log.info('You need to have physically changed the filter as well.')
+        g.clog.log.info('Filter name changed: ' + ofilter + ' ---> ' + nfilter + '\n')
+        g.clog.log.warn('You need to physically change the filter as well!')
 
 class FilterWheelError(Exception):
     pass
