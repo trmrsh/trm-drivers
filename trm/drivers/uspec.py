@@ -744,7 +744,7 @@ class RunPars(tk.LabelFrame):
         # data type
         row += 1
         self.dtype = drvs.Radio(self, RunPars.DTYPES, 3, values=RunPars.DVALS)
-        self.dtype.set('undef')
+        self.dtype.set('UNDEF')
         self.dtype.grid(row=row,column=column,sticky=tk.W)
 
     def loadXML(self, xml):
