@@ -12,16 +12,17 @@ def getTntTcs():
     Accesses TCS on TNT. Returns (ra,dec,posang,focus,tflag)
     where::
 
-      ra     : RA, degrees
-      dec    : Declination, degrees
-      posang : position angle, degrees
-      focus  : focus, mm
+      ra     : RA, degrees (float)
+      dec    : Declination, degrees (float)
+      posang : position angle, degrees (float)
+      focus  : focus, mm (float)
       tflag  : True if 'Tracking', but note that it can come back
                with True when 'Tracking' in Alt/Az mode so one needs
                to check for constant Ra, Dec as well outside this
                routine.
       engpa  : PA, degrees, related to instrument position. Not quite
                sure what it refers to but it runs from -220 to +250 deg.
+               (float)
     """
 
     # TNT TCS access
