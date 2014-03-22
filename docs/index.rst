@@ -9,7 +9,7 @@ Welcome to drivers's documentation!
 'drivers' refers to a set of routines to facilitate Python GUI interaction
 with ULTRACAM and ULTRASPEC. These are written as a replacement for the Java
 versions. The documentation at the moment is aimed at explaining the operation
-of the main GUI interface 'usdriver'
+of the main GUI interface 'usdriver'.
 
 Contents:
 
