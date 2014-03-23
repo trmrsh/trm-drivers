@@ -32,17 +32,17 @@ def addStyle(root):
 
     # Default font
     default_font = tkFont.nametofont("TkDefaultFont")
-    default_font.configure(size=8)
+    default_font.configure(size=10, weight='bold')
     root.option_add('*Font', default_font)
 
     # Menu font
     menu_font = tkFont.nametofont("TkMenuFont")
-    menu_font.configure(size=8)
+    menu_font.configure(size=10)
     root.option_add('*Menu.Font', menu_font)
 
     # Entry font
     entry_font = tkFont.nametofont("TkTextFont")
-    entry_font.configure(size=8)
+    entry_font.configure(size=10)
     root.option_add('*Entry.Font', menu_font)
 
     # position and size
