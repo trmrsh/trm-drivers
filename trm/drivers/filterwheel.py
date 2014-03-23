@@ -78,7 +78,7 @@ class FilterWheel(object):
         # disable serial mode operation for the serial port
         self.sendCommand('WEXITS')
         self.ser.close()
-        self.connected = False
+        self.connected   = False
         self.initialised = False
 
     def home(self):
