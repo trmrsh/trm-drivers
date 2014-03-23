@@ -31,19 +31,19 @@ def addStyle(root):
     """
 
     # Default font
-    default_font = tkFont.nametofont("TkDefaultFont")
-    default_font.configure(size=10, weight='bold')
-    root.option_add('*Font', default_font)
+    g.DEFAULT_FONT = tkFont.nametofont("TkDefaultFont")
+    g.DEFAULT_FONT.configure(size=10, weight='bold')
+    root.option_add('*Font', g.DEFAULT_FONT)
 
     # Menu font
-    menu_font = tkFont.nametofont("TkMenuFont")
-    menu_font.configure(size=10)
-    root.option_add('*Menu.Font', menu_font)
+    g.MENU_FONT = tkFont.nametofont("TkMenuFont")
+    g.MENU_FONT.configure(size=10)
+    root.option_add('*Menu.Font', g.MENU_FONT)
 
     # Entry font
-    entry_font = tkFont.nametofont("TkTextFont")
-    entry_font.configure(size=10)
-    root.option_add('*Entry.Font', menu_font)
+    g.ENTRY_FONT = tkFont.nametofont("TkTextFont")
+    g.ENTRY_FONT.configure(size=10)
+    root.option_add('*Entry.Font', g.ENTRY_FONT)
 
     # position and size
     #    root.geometry("320x240+325+200")
@@ -2516,6 +2516,14 @@ class FocalPlaneSlide(tk.LabelFrame):
         else:
             self.log.info('Focal plane slide operation finished\n')
 
+class Ilabel(tk.Label):
+    """
+    Class to define an information label which uses the same font
+    as the entry fields rather than the default font
+    """
+    def __init__(self, master, **kw):
+        tk.Label.__init__(self, master,font=g.ENTRY_FONT, **kw)
+
 class InfoFrame(tk.LabelFrame):
     """
     Information frame: run number, exposure time, etc.
@@ -2524,23 +2532,23 @@ class InfoFrame(tk.LabelFrame):
         tk.LabelFrame.__init__(self, master,
                                text='Current run & telescope status', padx=4, pady=4)
 
-        self.run     = tk.Label(self, text='UNDEF')
-        self.frame   = tk.Label(self,text='UNDEF')
+        self.run     = Ilabel(self, text='UNDEF')
+        self.frame   = Ilabel(self,text='UNDEF')
         self.timer   = Timer(self)
-        self.cadence = tk.Label(self,text='UNDEF')
-        self.duty    = tk.Label(self,text='UNDEF')
-        self.filter  = tk.Label(self,text='UNDEF')
-        self.ra      = tk.Label(self,text='UNDEF')
-        self.dec     = tk.Label(self,text='UNDEF')
-        self.alt     = tk.Label(self,text='UNDEF')
-        self.az      = tk.Label(self,text='UNDEF')
-        self.airmass = tk.Label(self,text='UNDEF')
-        self.ha      = tk.Label(self,text='UNDEF')
-        self.pa      = tk.Label(self,text='UNDEF')
-        self.engpa   = tk.Label(self,text='UNDEF')
-        self.focus   = tk.Label(self,text='UNDEF')
-        self.mdist   = tk.Label(self,text='UNDEF')
-        self.fpslide = tk.Label(self,text='UNDEF')
+        self.cadence = Ilabel(self,text='UNDEF')
+        self.duty    = Ilabel(self,text='UNDEF')
+        self.filter  = Ilabel(self,text='UNDEF')
+        self.ra      = Ilabel(self,text='UNDEF')
+        self.dec     = Ilabel(self,text='UNDEF')
+        self.alt     = Ilabel(self,text='UNDEF')
+        self.az      = Ilabel(self,text='UNDEF')
+        self.airmass = Ilabel(self,text='UNDEF')
+        self.ha      = Ilabel(self,text='UNDEF')
+        self.pa      = Ilabel(self,text='UNDEF')
+        self.engpa   = Ilabel(self,text='UNDEF')
+        self.focus   = Ilabel(self,text='UNDEF')
+        self.mdist   = Ilabel(self,text='UNDEF')
+        self.fpslide = Ilabel(self,text='UNDEF')
 
         # left-hand side
         tk.Label(self,text='Run:').grid(row=0,column=0,padx=5,sticky=tk.W)

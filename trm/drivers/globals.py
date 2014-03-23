@@ -103,6 +103,17 @@ SKY = {\
 # Extinction per unit airmass
 EXTINCTION = {'u' : 0.5, 'g' : 0.19, 'r' : 0.09, 'i' : 0.05, 'z' : 0.04}
 
+# Fonts set by drivers.add_style later
+
+# Default font, e.g. used for fixed labels
+DEFAULT_FONT = None
+
+# Font for menus
+MENU_FONT = None
+
+# Entry font, used for data entry points and mutable
+# information
+ENTRY_FONT = None
 
 # Command log widget. Used to report actions and results
 clog  = None
