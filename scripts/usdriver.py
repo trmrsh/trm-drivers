@@ -276,7 +276,8 @@ class GUI(tk.Tk):
         This is the close down routine
         """
 
-        if g.cpars['confirm_on_quit'] and not tkMessageBox.askokcancel('Quit', 'Really quit usdriver?'):
+        if g.cpars['confirm_on_quit'] and \
+           not tkMessageBox.askokcancel('Quit', 'Really quit usdriver?'):
             g.clog.log.warn('Quit usdriver cancelled.\n')
         else:
             if g.wheel.connected:
