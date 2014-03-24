@@ -2855,21 +2855,21 @@ class AstroFrame(tk.LabelFrame):
         tk.LabelFrame.__init__(self, master, padx=2, pady=2, text='Time & Sky')
 
         # times
-        self.mjd       = tk.Ilabel(self)
-        self.utc       = tk.Ilabel(self,width=9,anchor=tk.W)
-        self.lst       = tk.Ilabel(self)
+        self.mjd       = Ilabel(self)
+        self.utc       = Ilabel(self,width=9,anchor=tk.W)
+        self.lst       = Ilabel(self)
 
         # sun info
-        self.sunalt    = tk.Ilabel(self,width=11,anchor=tk.W)
-        self.riset     = tk.Ilabel(self)
-        self.lriset    = tk.Ilabel(self)
-        self.astro     = tk.Ilabel(self)
+        self.sunalt    = Ilabel(self,width=11,anchor=tk.W)
+        self.riset     = Ilabel(self)
+        self.lriset    = Ilabel(self)
+        self.astro     = Ilabel(self)
 
         # moon info
-        self.moonra    = tk.Ilabel(self)
-        self.moondec   = tk.Ilabel(self)
-        self.moonalt   = tk.Ilabel(self)
-        self.moonphase = tk.Ilabel(self)
+        self.moonra    = Ilabel(self)
+        self.moondec   = Ilabel(self)
+        self.moonalt   = Ilabel(self)
+        self.moonphase = Ilabel(self)
 
         # observatory info
         self.obs      = ephem.Observer()
