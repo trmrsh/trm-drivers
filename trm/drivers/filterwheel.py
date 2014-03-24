@@ -171,11 +171,12 @@ class WheelController(tk.Toplevel):
         # current index
         findex = wheel.getPos()-1
 
-        toplab = tk.Label(self,text='Current:')
+        toplab = tk.Label(self,text='Current filter: ', justify=tk.RIGHT)
         toplab.grid(row=0,column=0)
 
-        self.current = tk.Label(self,
-                                text=g.cpars['active_filter_names'][findex])
+        self.current = tk.Ilabel(self,
+                                 text=g.cpars['active_filter_names'][findex],
+                                 justify=tk.LEFT)
         self.current.grid(row=0,column=1)
 
         self.filter = drvs.Choice(self, g.cpars['active_filter_names'],
