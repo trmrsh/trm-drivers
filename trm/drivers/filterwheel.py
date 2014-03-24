@@ -192,9 +192,8 @@ class WheelController(tk.Toplevel):
         self.init   = drvs.ActButton(self, width, self._init, text='init wheel')
         self.init.grid(row=2, column=1)
 
-        self.close   = drvs.ActButton(self, width, self._close,
-                                      text='close wheel')
-        self.close.grid(row=3, column=1)
+        # override the 'x' to kill the window
+        self.protocol("WM_DELETE_WINDOW", self._close)
 
     def _go(self, *args):
         findex = self.filter.options.index(self.filter.value())+1
@@ -209,15 +208,20 @@ class WheelController(tk.Toplevel):
         self.current.configure(text=g.cpars['active_filter_names'][0])
         g.clog.log.info('Filter homed\n')
 
-    def _close(self, *args):
-        self.wheel.close()
-        g.clog.log.info('Filter closed\n')
-
     def _init(self, *args):
         g.clog.log.info('Initialising filter wheel ...\n')
         self.wheel.reboot()
         self.current.configure(text=g.cpars['active_filter_names'][0])
         g.clog.log.info('Filter wheel initialised\n')
+
+    def _close(self, *args):
+        """
+        Closes the wheel, and deletes the window
+        """
+        self.wheel.close()
+        g.clog.log.info('Filter closed\n')
+        self.destroy()
+
 
 class FilterEditor(tk.Toplevel):
     """
