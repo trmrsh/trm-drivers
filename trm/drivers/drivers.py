@@ -2320,7 +2320,7 @@ class Timer(tk.Label):
     when the run stops.
     """
     def __init__(self, master):
-        tk.Label.__init__(self, master, text='{0:<d} s'.format(0))
+        tk.Label.__init__(self, master, text='{0:<d} s'.format(0), font=g.ENTRY_FONT)
         self.id    = None
         self.count = 0
 
@@ -2855,21 +2855,21 @@ class AstroFrame(tk.LabelFrame):
         tk.LabelFrame.__init__(self, master, padx=2, pady=2, text='Time & Sky')
 
         # times
-        self.mjd       = tk.Label(self)
-        self.utc       = tk.Label(self,width=9,anchor=tk.W)
-        self.lst       = tk.Label(self)
+        self.mjd       = tk.Ilabel(self)
+        self.utc       = tk.Ilabel(self,width=9,anchor=tk.W)
+        self.lst       = tk.Ilabel(self)
 
         # sun info
-        self.sunalt    = tk.Label(self,width=11,anchor=tk.W)
-        self.riset     = tk.Label(self)
-        self.lriset    = tk.Label(self)
-        self.astro     = tk.Label(self)
+        self.sunalt    = tk.Ilabel(self,width=11,anchor=tk.W)
+        self.riset     = tk.Ilabel(self)
+        self.lriset    = tk.Ilabel(self)
+        self.astro     = tk.Ilabel(self)
 
         # moon info
-        self.moonra    = tk.Label(self)
-        self.moondec   = tk.Label(self)
-        self.moonalt   = tk.Label(self)
-        self.moonphase = tk.Label(self)
+        self.moonra    = tk.Ilabel(self)
+        self.moondec   = tk.Ilabel(self)
+        self.moonalt   = tk.Ilabel(self)
+        self.moonphase = tk.Ilabel(self)
 
         # observatory info
         self.obs      = ephem.Observer()
