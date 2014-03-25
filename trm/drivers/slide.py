@@ -101,7 +101,7 @@ class Slide(object):
             self.ser.timeout = timeout
             bytes_sent = self.ser.write(byteArr)
             if bytes_sent != 6:
-                raise SlideError('did not send 6 bytes to slide')
+                raise SlideError('failed to send bytes to slide')
         else:
             raise SlideError('cannot send bytes to an unconnected slide')
 
