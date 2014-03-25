@@ -1175,16 +1175,22 @@ class Start(drvs.ActButton):
                 # We must change the filter before starting the run. This means
                 # that we also have to update the filters element of the 'user' 
                 # part of the xml
-                g.clog.log.info('Changing filter from "' + g.cpars['active_filter_names'][currentPosition-1] + 
-                                '" to "' + g.cpars['active_filter_names'][desiredPosition-1] + '"\n')
+                g.clog.log.info('Changing filter from "' + \
+                                    g.cpars['active_filter_names'][currentPosition-1] + \
+                                    '" to "' + \
+                                    g.cpars['active_filter_names'][desiredPosition-1] + \
+                                    '"\n')
                 g.wheel.goto(desiredPosition)
+                g.wheel.close()
 
                 uconfig    = root.find('user')
                 filtr      = ET.SubElement(uconfig, 'filters')
                 filtr.text = g.cpars['active_filter_names'][desiredPosition-1]
+                current_filter = g.cpars['active_filter_names'][desiredPosition-1]
             else:
                 # No action needed
                 g.clog.log.info('No filter change needed\n')
+                current_filter = g.cpars['active_filter_names'][currentPosition-1]
 
             # Post the XML it to the server
             g.clog.log.info('Posting application to the servers\n')
@@ -1232,6 +1238,9 @@ class Start(drvs.ActButton):
                     # look as though the servers have been
                     # initialised.
                     g.cpars['servers_initialised'] = True
+
+                    # store filter name for use by InfoFrame
+                    g.start_filter = current_filter
 
                     return True
                 else:
@@ -1435,12 +1444,12 @@ class CountsFrame(tk.LabelFrame):
         self.moon      = drvs.Radio(lframe, ('d', 'g', 'b'),  3, self.checkUpdate)
 
         # results
-        self.cadence   = tk.Label(rframe,text='UNDEF',width=10,anchor=tk.W)
-        self.duty      = tk.Label(rframe,text='UNDEF',width=10,anchor=tk.W)
-        self.peak      = tk.Label(rframe,text='UNDEF',width=10,anchor=tk.W)
-        self.total     = tk.Label(rframe,text='UNDEF',width=10,anchor=tk.W)
-        self.ston      = tk.Label(rframe,text='UNDEF',width=10,anchor=tk.W)
-        self.ston3     = tk.Label(rframe,text='UNDEF',width=10,anchor=tk.W)
+        self.cadence   = drvs.Ilabel(rframe,text='UNDEF',width=10,anchor=tk.W)
+        self.duty      = drvs.Ilabel(rframe,text='UNDEF',width=10,anchor=tk.W)
+        self.peak      = drvs.Ilabel(rframe,text='UNDEF',width=10,anchor=tk.W)
+        self.total     = drvs.Ilabel(rframe,text='UNDEF',width=10,anchor=tk.W)
+        self.ston      = drvs.Ilabel(rframe,text='UNDEF',width=10,anchor=tk.W)
+        self.ston3     = drvs.Ilabel(rframe,text='UNDEF',width=10,anchor=tk.W)
 
         # layout
         # left
