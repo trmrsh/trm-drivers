@@ -23,7 +23,9 @@ MJD0  : zeropoint of MJD
 SKY   : sky brightenesses
 TINS  : Telescop/instrument data
 UNIX0 : UNIX time zeropoint
-
+DEFAULT_FONT : standard font (set in drivers)
+MENU_FONT    : font for menus (set in drivers)
+ENTRY_FONT   : font for data entry fields and mutable fields
 
 and lowercase (all set = None to start with)::
 
@@ -39,6 +41,7 @@ rlog    : response log widget. Used to report server responses
 rpars   : run parameter widget
 setup   : setup widget
 wheel   : filter wheel controller
+star_filter : filter at last press of 'Start'
 
 """
 
@@ -150,4 +153,7 @@ setup = None
 
 # Filter wheel controller
 wheel = None
+
+# Filter when 'start' last pressed
+start_filter = None
 
