@@ -1131,7 +1131,7 @@ class Choice(tk.OptionMenu):
             self.val.set(initial)
         tk.OptionMenu.__init__(self, master, self.val, *options)
         width = max(width, reduce(max, [len(s) for s in options]))
-        self.config(width=width)
+        self.config(width=width, font=g.ENTRY_FONT)
         self.checker = checker
         if self.checker is not None:
             self.val.trace('w', self.checker)
@@ -1194,11 +1194,13 @@ class Radio(tk.Frame):
             if values is None:
                 self.buttons.append(
                     tk.Radiobutton(self, text=option, variable=self.val,
+                                   font=g.ENTRY_FONT,
                                    value=option))
                 self.buttons[-1].grid(row=row, column=col, sticky=tk.W)
             else:
                 self.buttons.append(
                     tk.Radiobutton(self, text=option, variable=self.val,
+                                   font=g.ENTRY_FONT,
                                    value=values[nopt]))
                 self.buttons[-1].grid(row=row, column=col, sticky=tk.W)
             col += 1
@@ -2216,11 +2218,15 @@ class Switch(tk.Frame):
         self.val.trace('w', self._changed)
 
         tk.Radiobutton(self, text='Setup', variable=self.val,
+                       font=g.ENTRY_FONT,
                        value='Setup').grid(row=0, column=0, sticky=tk.W)
         tk.Radiobutton(self, text='Observe', variable=self.val,
+                       font=g.ENTRY_FONT,
                        value='Observe').grid(row=0, column=1, sticky=tk.W)
         tk.Radiobutton(self, text='Focal plane slide', variable=self.val,
-                       value='Focal plane slide').grid(row=0, column=2, sticky=tk.W)
+                       font=g.ENTRY_FONT,
+                       value='Focal plane slide').grid(row=0, column=2, 
+                                                       sticky=tk.W)
 
     def _changed(self, *args):
         if self.val.get() == 'Setup':
@@ -2459,13 +2465,14 @@ class FocalPlaneSlide(tk.LabelFrame):
             if not self.running:
                 self.log.info('Focal plane slide operation started:\n')
                 self.log.info(' '.join(comm[0]) + '\n')
-                t = threading.Thread(target=lambda: self.action(comm))
-                t.daemon = True
-                t.start()
-                self.running = True
+                self.action(comm)
+#                t = threading.Thread(target=lambda: self.action(comm))
+#                t.daemon = True
+#                t.start()
+#                self.running = True
                 self.check()
             else:
-                print('a focal plane slide command is already underway')
+                self.log.info('A focal plane slide command is already underway\n')
         else:
             self.log.warn('Focal plane slide access is OFF; see settings.\n')
 
@@ -2474,34 +2481,45 @@ class FocalPlaneSlide(tk.LabelFrame):
         """
         Send a command to the focal plane slide
         """
-        print(comm)
-        if comm[0] == 'home':
-            t = threading.Thread(target=self.slide.home())
-        elif comm[0] == 'unblock':
-            t = threading.Thread(target=self.slide.move_absolute(1100,'px'))
-        elif comm[0] == 'block':
-            t = threading.Thread(target=self.slide.move_absolute(-100,'px'))
-        elif comm[0] == 'position':
-            t = threading.Thread(target=self.slide.report_position())
-        elif comm[0] == 'reset':
-            t = threading.Thread(target=self.slide.reset())
-        elif comm[0] == 'restore':
-            t = threading.Thread(target=self.slide.restore())
-        elif comm[0] == 'enable':
-            t = threading.Thread(target=self.slide.enable())
-        elif comm[0] == 'disable':
-            t = threading.Thread(target=self.slide.disable())
-        elif comm[0] == 'stop':
-            t = threading.Thread(target=self.slide.stop())
-        elif comm[0] == 'goto':
-            if comm[1] is not None:
-                t = threading.Thread(target=self.slide.move_absolute(comm[1],'px'))
+        self.log.info('Command: ' + ' '.join(comm) + '\n')
+        try:
+            if comm[0] == 'home':
+                t = threading.Thread(target=self.slide.home())
+            elif comm[0] == 'unblock':
+                t = threading.Thread(target=self.slide.move_absolute(1100,'px'))
+            elif comm[0] == 'block':
+                t = threading.Thread(target=self.slide.move_absolute(-100,'px'))
+            elif comm[0] == 'position':
+                t = threading.Thread(target=self.slide.report_position())
+            elif comm[0] == 'reset':
+                t = threading.Thread(target=self.slide.reset())
+            elif comm[0] == 'restore':
+                t = threading.Thread(target=self.slide.restore())
+            elif comm[0] == 'enable':
+                t = threading.Thread(target=self.slide.enable())
+            elif comm[0] == 'disable':
+                t = threading.Thread(target=self.slide.disable())
+            elif comm[0] == 'stop':
+                t = threading.Thread(target=self.slide.stop())
+            elif comm[0] == 'goto':
+                if comm[1] is not None:
+                    t = threading.Thread(target=self.slide.move_absolute(comm[1],'px'))
+                else:
+                    self.log.warn('You must enter an integer pixel position for the mask first\n')
             else:
-                print('must enter an integer pixel position for mask first')
-        else:
-            print('Command = ' + str(comm) + ' not implemented yet.\n')
+                self.log.warn('Command = ' + str(comm) + ' not implemented yet.\n')
 
-        self.where = comm[0]
+            self.where = comm[0]
+            t.daemon = True
+            t.start()
+            self.running = True
+
+        except Exception, err:
+            self.log.warn('An error occured with command = ' + comm[0] + '\n')
+            self.log.warn('Error: ' + str(err) + '\n')
+            self.log.warn('The operation will be reported as having finished,\n' + 
+                          'but may not have done so. The slide is unreliable\n' +
+                          'in reporting its status so you should check its position.\n')
 
        # flag to tell the check routine to stop
         self.running = False
@@ -2813,20 +2831,9 @@ class InfoFrame(tk.LabelFrame):
             except Exception, err:
                 g.clog.log.debug('Error trying to set run: ' + str(err) + '\n')
 
-        # get the current filter, if the wheel is defined
-        # poll at 5x slower rate than the frame
-        if g.wheel is not None and self.count % 5 == 0 and \
-           g.cpars['filter_wheel_on']:
-            try:
-                if not g.wheel.connected:
-                    g.wheel.connect()
-                    g.wheel.init()
-                findex = g.wheel.getPos()-1
-                self.filter.configure(text=g.cpars['active_filter_names'][findex])
-            except Exception, err:
-                if self.count % 50:
-                    g.clog.log.warn('Failed to get filter for Run & Tel\n')
-                    g.clog.log.warn(str(err) + '\n')
+        # get the current filter, which is set during the start operation
+        if g.start_filter:
+            self.filter.configure(text=g.start_filter)
 
         # get the slide position
         # poll at 5x slower rate than the frame
@@ -2985,14 +2992,14 @@ class AstroFrame(tk.LabelFrame):
                 if sunrise > sunset:
                     # In the day time we report the upcoming sunset and
                     # end of evening twilight
-                    self.lriset.configure(text='Sets:')
+                    self.lriset.configure(text='Sets:', font=g.DEFAULT_FONT)
                     self.lastRiset = sunset
                     self.lastAstro = astroset
 
                 elif astrorise > astroset and astrorise < sunrise:
                     # During evening twilight, we report the sunset just
                     # passed and end of evening twilight
-                    self.lriset.configure(text='Sets:')
+                    self.lriset.configure(text='Sets:', font=g.DEFAULT_FONT)
                     self.obs.horizon  = '-0:34'
                     self.lastRiset = self.obs.previous_setting(self.sun)
                     self.lastAstro = astroset
@@ -3000,7 +3007,7 @@ class AstroFrame(tk.LabelFrame):
                 elif astrorise > astroset and astrorise < sunrise:
                     # During night, report upcoming start of morning
                     # twilight and sunrise
-                    self.lriset.configure(text='Rises:')
+                    self.lriset.configure(text='Rises:', font=g.DEFAULT_FONT)
                     self.obs.horizon  = '-0:34'
                     self.lastRiset = sunrise
                     self.lastAstro = astrorise
@@ -3008,7 +3015,7 @@ class AstroFrame(tk.LabelFrame):
                 else:
                     # During morning twilight report start of twilight
                     # just passed and upcoming sunrise
-                    self.lriset.configure(text='Rises:')
+                    self.lriset.configure(text='Rises:', font=g.DEFAULT_FONT)
                     self.obs.horizon  = '-18'
                     self.lastRiset = sunrise
                     self.lastAstro = self.obs.previous_rising(
