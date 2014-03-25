@@ -37,6 +37,7 @@ class FilterWheel(object):
         """
         self.ser = serial.Serial(self.port,baudrate=self.baudrate,
                                  timeout=self.default_timeout)
+        print('connected to filter wheel')
         self.connected = True
 
     def init(self):
@@ -88,10 +89,12 @@ class FilterWheel(object):
         confused state
         """
         response = self.sendCommand('WHOME')
-        if response == 'ER=3':
-            raise FilterWheelError('Could not ID filter wheel after HOME')
-        elif response == 'ER=1':
+        if response == 'ER=1':
             raise FilterWheelError('Filter wheel homing took too many steps')
+        elif response == 'ER=3':
+            raise FilterWheelError('Could not ID filter wheel after HOME')
+        elif response == 'ER=6':
+            raise FilterWheelError('Filter wheel is slipping')
 
     def getID(self):
         """
@@ -157,27 +160,34 @@ class WheelController(tk.Toplevel):
         wheel   : a FilterWheel instance representing the wheel
         """
 
-        # Try to connect to the wheel. Raises an Exception
-        # if no wheel available
-        if not wheel.connected:
-            wheel.connect()
-            wheel.init()
-
         width = 12
-        tk.Toplevel.__init__(self)
+        tk.Toplevel.__init__(self, padx=8, pady=8)
         self.title('Filter selector')
         self.wheel = wheel
 
+        toplab = tk.Label(self,text='Current filter: ')
+        toplab.grid(row=0,column=0,pady=3)
+
         # current index
-        findex = wheel.getPos()-1
+        try:
+            # Try to connect to the wheel. Raises an Exception
+            # if no wheel available
+            if not self.wheel.connected:
+                self.wheel.connect()
+                self.wheel.init()
 
-        toplab = tk.Label(self,text='Current filter: ', justify=tk.RIGHT)
-        toplab.grid(row=0,column=0)
+            findex = self.wheel.getPos()-1
+            
+            self.current = drvs.Ilabel(self,
+                                       text=g.cpars['active_filter_names'][findex])
 
-        self.current = drvs.Ilabel(self,
-                                   text=g.cpars['active_filter_names'][findex],
-                                   justify=tk.LEFT)
-        self.current.grid(row=0,column=1)
+        except Exception, err:
+            g.clog.log.warn('Failed to get current filter position.\n')
+            g.clog.log.warn('Error: ' + str(err) + '\n')
+            self.current = drvs.Ilabel(self,text='UNKNOWN')
+            findex = 0
+
+        self.current.grid(row=0,column=1, sticky=tk.W, pady=3)
 
         self.filter = drvs.Choice(self, g.cpars['active_filter_names'],
                                   initial=g.cpars['active_filter_names'][findex],
@@ -197,30 +207,62 @@ class WheelController(tk.Toplevel):
         self.protocol("WM_DELETE_WINDOW", self._close)
 
     def _go(self, *args):
-        findex = self.filter.options.index(self.filter.value())+1
-        g.clog.log.info('Moving to filter position = ' + str(findex) + '\n')
-        self.wheel.goto(findex)
-        self.current.configure(text=g.cpars['active_filter_names'][findex-1])
-        g.clog.log.info('Filter moved successfully\n')
+        if drvs.isRunActive():
+            tkMessageBox.showwarning('Run active',
+                                     'Sorry; you cannot change filters during a run.')
+            return
+
+        try:
+            if not self.wheel.connected:
+                self.wheel.connect()
+                self.wheel.init()
+            findex = self.filter.options.index(self.filter.value())+1
+            g.clog.log.info('Moving to filter position = ' + str(findex) + 
+                            ', name = ' + g.cpars['active_filter_names'][findex-1] +
+                            '\n')
+            self.wheel.goto(findex)
+            self.current.configure(text=g.cpars['active_filter_names'][findex-1])
+            g.clog.log.info('Filter moved successfully\n')
+        except Exception, err:
+            g.clog.log.warn('Filter change failed.\n')
+            g.clog.log.warn('Error: ' + str(err) + '\n')
+            g.clog.log.warn('You might want to try an "init".\n')
 
     def _home(self, *args):
         g.clog.log.info('Homing filter wheel ...\n')
-        self.wheel.home()
-        self.current.configure(text=g.cpars['active_filter_names'][0])
-        g.clog.log.info('Filter homed\n')
+        try:
+            if not self.wheel.connected:
+                self.wheel.connect()
+                self.wheel.init()
+            self.wheel.home()
+            self.current.configure(text=g.cpars['active_filter_names'][0])
+            g.clog.log.info('Filter homed\n')
+        except Exception, err:
+            g.clog.log.warn('Could not home wheel.\n')
+            g.clog.log.warn('Error: ' + str(err) + '\n')
+            g.clog.log.warn('You might want to try an "init".\n')
 
     def _init(self, *args):
         g.clog.log.info('Initialising filter wheel ...\n')
-        self.wheel.reboot()
-        self.current.configure(text=g.cpars['active_filter_names'][0])
-        g.clog.log.info('Filter wheel initialised\n')
+        try:
+            self.wheel.reboot()
+            self.current.configure(text=g.cpars['active_filter_names'][0])
+            g.clog.log.info('Filter wheel initialised\n')
+        except Exception, err:
+            g.clog.log.warn('Could not initialise wheel.\n')
+            g.clog.log.warn('Error: ' + str(err) + '\n')
+            g.clog.log.warn('You might want to stop & restart usdriver, or perhaps the wheel needs adjusting.See the online ultraspec manual.\n')
 
     def _close(self, *args):
         """
         Closes the wheel, and deletes the window
         """
-        self.wheel.close()
-        g.clog.log.info('Filter closed\n')
+        try:
+            self.wheel.close()
+            g.clog.log.info('Filter wheel closed\n')
+        except Exception, err:
+            g.clog.log.warn('Could not close wheel.\n')
+            g.clog.log.warn('Error: ' + str(err) + '\n')
         self.destroy()
 
 
@@ -236,35 +278,46 @@ class FilterEditor(tk.Toplevel):
         tk.Toplevel.__init__(self)
         self.title('Filter editor')
 
-        tk.Label(self,text='Old filter name:').grid(row=0,column=0)
-        self.old = drvs.Choice(self, g.cpars['active_filter_names'], width=12)
-        self.old.grid(row=0,column=1,padx=2,pady=2)
-
-        tk.Label(self,text='New filter name:').grid(row=1,column=0)
-        self.new  = drvs.Choice(self, g.cpars['filter_names'], width=12)
-        self.new.grid(row=1, column=1,padx=2,pady=2)
+        tk.Label(self,text='Pos.').grid(row=0,column=0)
+        tk.Label(self,text='Filter').grid(row=0,column=1)
+        
+        self.fnames = []
+        row = 1
+        for i, fname in enumerate(g.cpars['active_filter_names']):
+            tk.Label(self,text=str(i+1)).grid(row=row,column=0)
+            self.fnames.append(
+                drvs.Choice(self, g.cpars['filter_names'], fname, width=12))
+            self.fnames[-1].grid(row=row,column=1)
+            row += 1
 
         self.confirm = drvs.ActButton(self, 22, self._make_change,
                                       text='Confirm filter change')
-        self.confirm.grid(row=2, column=0, columnspan=2, pady=2)
+        self.confirm.grid(row=row, column=0, columnspan=2, pady=2)
 
     def _make_change(self, *args):
-        indx    = self.old.getIndex()
-        ofilter = self.old.value()
-        nfilter = self.new.value()
-        g.cpars['active_filter_names'][indx] = nfilter
+        """
+        Implements new choices
+        """
+        nchange = 0
+        for i, choice in enumerate(self.fnames):
+            nfilter = choice.value()
+            ofilter = g.cpars['active_filter_names'][i]
 
-        # reconfig the filters in RunPars
-        g.rpars.filter.buttons[indx].config(text=nfilter)
+            if nfilter != ofilter:
 
-        # reconfig the old filter choices
-        m = self.old.children['menu']
-        m.entryconfig(indx, label=nfilter)
-        self.old.set(nfilter)
+                # update active filter names
+                g.cpars['active_filter_names'][i] = nfilter
 
-        # report back
-        g.clog.log.info('Filter name changed: ' + ofilter + ' ---> ' + nfilter + '\n')
-        g.clog.log.warn('You need to physically change the filter as well!')
+                # reconfig the filters in RunPars
+                g.rpars.filter.buttons[i].config(text=nfilter)
+
+                # report changes
+                g.clog.log.info('Filter change: ' + ofilter + ' ---> ' + \
+                                    nfilter + '\n')
+                
+                nchange += 1
+        if nchange:
+            g.clog.log.warn('You must physically change the filter(s) as well!\n')
 
 class FilterWheelError(Exception):
     pass
