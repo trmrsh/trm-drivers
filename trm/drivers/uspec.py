@@ -100,8 +100,8 @@ class InstPars(tk.LabelFrame):
         aframe.grid(row=2,column=1,pady=2,sticky=tk.W)
 
         # Readout speed
-        tk.Label(lhs, text='Readout speed').grid(row=3,column=0, sticky=tk.W)
-        self.readSpeed = drvs.Radio(lhs, ('S', 'M', 'F'), 3,
+        tk.Label(lhs, text='Readout speed').grid(row=3,column=0, sticky=tk.NW)
+        self.readSpeed = drvs.Radio(lhs, ('Slow', 'Medium', 'Fast'), 1,
                                     self.check, ('Slow', 'Medium', 'Fast'))
         self.readSpeed.grid(row=3,column=1,pady=2,sticky=tk.W)
 
@@ -1048,9 +1048,9 @@ def createXML(post):
         progid_str = 'Calib'
     else:
         target_str = g.rpars.target.value()
-        pi_str     = g.rpars.pi.value() 
-        progid_str = g.rpars.progid.value() 
-    
+        pi_str     = g.rpars.pi.value()
+        progid_str = g.rpars.progid.value()
+
     targ       = ET.SubElement(uconfig, 'target')
     targ.text  = target_str
     id         = ET.SubElement(uconfig, 'ID')
@@ -1077,7 +1077,7 @@ def createXML(post):
                     '?RM,X,0x2E'
                 g.clog.log.info('exec = "' + url + '"\n')
                 response = urllib2.urlopen(url)
-                rs  = drvs.ReadServer(response.read())
+                rs = drvs.ReadServer(response.read())
                 g.rlog.log.info('Camera response =\n' + rs.resp() + '\n')
                 if rs.ok:
                     g.clog.log.info('Response from camera server was OK\n')
@@ -1093,8 +1093,8 @@ def createXML(post):
                 g.clog.log.warn(str(err) + '\n')
                 raise Exception()
 
-            revision      = ET.SubElement(uconfig, 'revision')
-            revision.text = str(createXML.revision)
+        revision      = ET.SubElement(uconfig, 'revision')
+        revision.text = str(createXML.revision)
 
     # finally return with the XML
     return root
@@ -1191,7 +1191,7 @@ class Start(drvs.ActButton):
                         if g.info.tracking and not tflag and \
                                 not tkMessageBox.askokcancel(
                             'TCS error',
-                            'The telescope reports that it is not tracking;\n' + 
+                            'The telescope reports that it is not tracking;\n' +
                             'the RA, Dec and or PA could be wrong as a result.\n' +
                             'Continue?'):
                             g.clog.log.warn('Start operation cancelled\n')
@@ -1238,11 +1238,11 @@ class Start(drvs.ActButton):
                 g.wheel.connect()
                 g.wheel.init()
             currentPosition = g.wheel.getPos()
-            
+
             desiredPosition = g.rpars.filter.getIndex() + 1
             if currentPosition != desiredPosition:
                 # We must change the filter before starting the run. This means
-                # that we also have to update the filters element of the 'user' 
+                # that we also have to update the filters element of the 'user'
                 # part of the xml
                 g.clog.log.info('Changing filter from "' + \
                                     g.cpars['active_filter_names'][currentPosition-1] + \
