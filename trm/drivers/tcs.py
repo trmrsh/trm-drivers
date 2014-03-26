@@ -45,6 +45,10 @@ def getTntTcs():
     ra     = math.degrees(float(ra))
     dec    = math.degrees(float(dec))
     pa     = math.degrees(float(pa))+270.
+    if pa < 0:
+        pa += 360.
+    elif pa >= 360.:
+        pa -= 360.
     focus  = 1000.*float(focus)
     engpa  = math.degrees(float(engpa))
 
