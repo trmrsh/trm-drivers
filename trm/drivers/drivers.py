@@ -14,8 +14,7 @@ import urllib, urllib2
 import logging, time, datetime
 import BaseHTTPServer, SocketServer
 import threading, subprocess
-import math
-import json
+import math, json
 
 # third party
 import ephem
@@ -1347,7 +1346,8 @@ class ActButton(tk.Button):
         kwargs   : keyword arguments
         """
         tk.Button.__init__(
-            self, master, fg='black', width=width, command=self.act, **kwargs)
+            self, master, fg='black', width=width,
+            command=self.act, **kwargs)
 
         # store some attributes. other anc calbback are obvious.
         # _active indicates whether the button should be enabled or disabled
@@ -2047,7 +2047,7 @@ class InstSetup(tk.LabelFrame):
             self, master, text='Instrument setup', padx=10, pady=10)
 
         # Define all buttons
-        width = 15
+        width = 17
         self.resetSDSUhard = ResetSDSUhard(self, width)
         self.resetSDSUsoft = ResetSDSUsoft(self, width)
         self.resetPCI      = ResetPCI(self, width)
@@ -2278,8 +2278,8 @@ class ExpertMenu(tk.Menu):
         self.add_radiobutton(label='Level 0', value=0, variable=self.val)
         self.add_radiobutton(label='Level 1', value=1, variable=self.val)
         self.add_radiobutton(label='Level 2', value=2, variable=self.val)
-        self.args  = args
-        self.root  = master
+        self.args    = args
+        self.root    = master
         self.indices = []
 
     def _change(self, *args):
@@ -2291,7 +2291,6 @@ class ExpertMenu(tk.Menu):
                 self.root.entryconfig(index,state=tk.NORMAL)
             else:
                 self.root.entryconfig(index,state=tk.DISABLED)
-
 
 class RtplotHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     """
