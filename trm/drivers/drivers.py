@@ -1480,6 +1480,14 @@ class Target(tk.Frame):
         """
         return self.val.set(text)
 
+    def disable(self):
+        self.entry.configure(state='disable')
+        self.verify.configure(state='disable')
+
+    def enable(self):
+        self.entry.configure(state='normal')
+        self.verify.configure(state='normal')
+
     def ok(self):
         if self.val.get() == '' or self.val.get().isspace():
             return False
@@ -2152,7 +2160,7 @@ class LoggingToGUI(logging.Handler):
         formattedMessage = self.format(message)
 
         # Write message to console
-        self.console.configure(state=tk.NORMAL)
+        self.console.configure(state=tk.NORMAL,font=g.ENTRY_FONT)
         if message.levelname == 'DEBUG':
             self.console.insert(tk.END, formattedMessage, ('debug'))
         elif message.levelname == 'INFO':
