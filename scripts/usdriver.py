@@ -29,6 +29,7 @@ import xml.etree.ElementTree as ET
 import trm.drivers.config      as config
 import trm.drivers.globals     as g
 import trm.drivers.drivers     as drvs
+import trm.drivers.slide       as slide
 import trm.drivers.uspec       as uspec
 import trm.drivers.filterwheel as fwheel
 
@@ -113,7 +114,7 @@ class GUI(tk.Tk):
         topLhsFrame = tk.Frame(self)
 
         # Focal plane slide frame
-        g.fpslide = drvs.FocalPlaneSlide(topLhsFrame)
+        g.fpslide = slide.FocalPlaneSlide(topLhsFrame)
 
         # Observing frame
         g.observe = uspec.Observe(topLhsFrame)
@@ -155,7 +156,8 @@ class GUI(tk.Tk):
         settingsMenu = tk.Menu(menubar, tearoff=0)
 
         # level of expertise
-        expertMenu   = drvs.ExpertMenu(settingsMenu, g.observe, g.setup, g.ipars)
+        expertMenu   = drvs.ExpertMenu(settingsMenu, g.observe, g.setup, 
+                                       g.ipars)
         settingsMenu.add_cascade(label='Expert', menu=expertMenu)
 
         # Some boolean switches
@@ -202,9 +204,9 @@ class GUI(tk.Tk):
             var=drvs.Boolean('servers_initialised', 
                              lambda flag: g.ipars.check() if flag else None))
 
-        # find index of last item added to the menu to allow it to be enabled/disabled.
-        # also pass it through to the expert menu so that its status is updated if that
-        # changes.
+        # find index of last item added to the menu to allow it to be
+        # enabled/disabled.  also pass it through to the expert menu
+        # so that its status is updated if that changes.
         lindex = settingsMenu.index(tk.END)
         if g.cpars['expert_level']:
             settingsMenu.entryconfig(lindex,state=tk.NORMAL)
@@ -302,9 +304,13 @@ class GUI(tk.Tk):
                 # never want this to be True on entry)
                 del g.cpars['servers_initialised']
 
+                # Reset expert mode to beginner
+                g.cpars['expert_level'] = 0
+
                 conf = os.path.join(config_dir, 'usdriver.conf')
                 config.writeCpars(config.ULTRASPEC, conf)
-                print('Saved usdriver configuration (including filters) to ' + conf)
+                print('Saved usdriver configuration (including filters) to ' + 
+                      conf)
 
                 self.destroy()
 
