@@ -449,48 +449,41 @@ class FocalPlaneSlide(tk.LabelFrame):
         # Top for table of buttons
         top = tk.Frame(self)
 
+        # Define the buttons
         width = 8
-        self.home     = tk.Button(top, fg='black', text='home',  width=width,
+        self.home     = tk.Button(top, fg='black', text='home', width=width,
                                   command=lambda: self.action('home'))
         self.block    = tk.Button(top, fg='black', text='block', width=width,
                                   command=lambda: self.action('block'))
-        self.unblock  = tk.Button(top, fg='black', text='unblock',  width=width,
+        self.unblock  = tk.Button(top, fg='black', text='unblock', width=width,
                                   command=lambda: self.action('unblock'))
-
         self.gval     = drvs.IntegerEntry(top, UNBLOCK_POS, None, True, width=4)
         self.goto     = tk.Button(top, fg='black', text='goto', width=width,
-                                  command=lambda: self.action('goto',
-                                                              self.gval.value()))
-
+                                  command=lambda: self.action(
+                                      'goto',self.gval.value()))
         self.position = tk.Button(top, fg='black', text='position', width=width,
                                   command=lambda: self.action('position'))
+        self.reset   = tk.Button(top, fg='black', text='reset', width=width,
+                                 command=lambda: self.action('reset'))
+        self.stop    = tk.Button(top, fg='black', text='stop', width=width,
+                                 command=lambda: self.action('stop'))
+        self.enable  = tk.Button(top, fg='black', text='enable', width=width,
+                                 command=lambda: self.action('enable'))
+        self.disable = tk.Button(top, fg='black', text='disable', width=width,
+                                 command=lambda: self.action('disable'))
+        self.restore = tk.Button(top, fg='black', text='restore', width=width,
+                                 command=lambda: self.action('restore'))
 
-#        self.reset   = tk.Button(top, fg='black', text='reset', width=width,
-#                                 command=lambda: self.wrap('reset'))
-#        self.stop    = tk.Button(top, fg='black', text='stop', width=width,
-#                                 command=lambda: self.wrap('stop'))
-#
-#        self.enable  = tk.Button(top, fg='black', text='enable', width=width,
-#                                 command=lambda: self.wrap('enable'))
-#        self.disable = tk.Button(top, fg='black', text='disable', width=width,
-#                                 command=lambda: self.wrap('disable'))
-#        self.restore = tk.Button(top, fg='black', text='restore', width=width,
-#                                 command=lambda: self.wrap('restore'))
-
+        # arrange the permanent ones
         self.home.grid(row=0,column=0)
         self.block.grid(row=0,column=1)
         self.unblock.grid(row=0,column=2)
-
         self.goto.grid(row=1,column=0)
         self.gval.grid(row=1,column=1)
         self.position.grid(row=1,column=2)
 
-#        self.reset.grid(row=2,column=0)
-#
-#        self.enable.grid(row=2,column=0)
-#        self.disable.grid(row=2,column=1)
-#        self.restore.grid(row=2,column=1)
-#        self.stop.grid(row=2,column=2)
+        # set others according to expertlevel
+        self.setExpertLevel()
 
         top.pack(pady=2)
 
@@ -521,13 +514,36 @@ class FocalPlaneSlide(tk.LabelFrame):
         self.where   = 'UNDEF'
         self.slide   = Slide(self.log)
 
+    def setExpertLevel(self):
+        """
+        Modifies widget according to expertise level, which in this
+        case is just matter of hiding or revealing the LED option
+        and changing the lower limit on the exposure button.
+        """
+
+        level = g.cpars['expert_level']
+
+        if level == 0:
+            self.reset.grid_forget()
+            self.enable.grid_forget()
+            self.disable.grid_forget()
+            self.restore.grid_forget()
+            self.stop.grid_forget()
+        else:
+            self.stop.grid(row=2,column=0)
+            self.disable.grid(row=2,column=1)
+            self.enable.grid(row=2,column=2)
+            self.reset.grid(row=3,column=0)
+            self.restore.grid(row=3,column=1)
+
+
     def action(self, *comm):
         """
         Send a command to the focal plane slide
         """
         if g.cpars['focal_plane_slide_on']:
 
-            self.log.info('\nExecuting command: ' + 
+            self.log.info('\nExecuting command: ' +
                           ' '.join([str(it) for it in comm]) + '\n')
 
             try:
