@@ -108,7 +108,7 @@ class InstPars(tk.LabelFrame):
         # Exposure delay
         tk.Label(lhs, text='Exposure delay').grid(row=4,column=0, sticky=tk.W)
         elevel = g.cpars['expert_level']
-        if elevel == 0:
+        if elevel == 0 and elevel == 1:
             self.expose = drvs.Expose(lhs, 0.0007, 0.0007, 1677.7207,
                                       self.check, width=7)
         else:
@@ -180,18 +180,27 @@ class InstPars(tk.LabelFrame):
     def setExpertLevel(self):
         """
         Modifies widget according to expertise level, which in this
-        case is just matter of hiding or revealing the LED option.
+        case is just matter of hiding or revealing the LED option
+        and changing the lower limit on the exposure button.
         """
 
         level = g.cpars['expert_level']
 
         if level == 0:
+            self.expose.fmin = 0.0007
             self.ledLab.grid_forget()
             self.led.grid_forget()
             self.ledValue = self.led.value()
             self.led.set(0)
 
-        elif level == 1 or level == 2:
+        elif level == 1:
+            self.expose.fmin = 0.0007
+            self.led.set(self.ledValue)
+            self.ledLab.grid(row=6,column=0, sticky=tk.W)
+            self.led.grid(row=6,column=1,pady=2,sticky=tk.W)
+
+        elif level == 2:
+            self.expose.fmin = 0
             self.led.set(self.ledValue)
             self.ledLab.grid(row=6,column=0, sticky=tk.W)
             self.led.grid(row=6,column=1,pady=2,sticky=tk.W)
@@ -744,7 +753,8 @@ class RunPars(tk.LabelFrame):
 
         # data type
         row += 1
-        self.dtype = drvs.Radio(self, RunPars.DTYPES, 3, values=RunPars.DVALS)
+        self.dtype = drvs.Radio(self, RunPars.DTYPES, 3, self.check,
+                                values=RunPars.DVALS)
         self.dtype.set('UNDEF')
         self.dtype.grid(row=row,column=column,sticky=tk.W)
 
@@ -779,6 +789,20 @@ class RunPars(tk.LabelFrame):
 
         ok  = True
         msg = ''
+
+        if self.dtype.value() == 'bias' or self.dtype.value() == 'flat' or \
+                self.dtype.value() == 'dark':
+            self.pi.configure(state='disable')
+            self.progid.configure(state='disable')
+            self.target.disable()
+        elif self.dtype.value() == 'technical':
+            self.pi.configure(state='disable')
+            self.progid.configure(state='disable')
+        else:
+            self.pi.configure(state='normal')
+            self.progid.configure(state='normal')
+            self.target.enable()
+
 
         if g.cpars['require_run_params']:
             dtype = self.dtype.value()
@@ -818,6 +842,30 @@ class RunPars(tk.LabelFrame):
                 msg += 'Observers field cannot be blank'
 
         return (ok,msg)
+
+    def freeze(self):
+        """
+        Freeze all settings so that they can't be altered
+        """
+        self.target.disable()
+        self.filter.disable()
+        self.progid.configure(state='disable')
+        self.pi.configure(state='disable')
+        self.observers.configure(state='disable')
+        self.comment.configure(state='disable')
+        self.dtype.disable()
+
+    def unfreeze(self):
+        """
+        Unfreeze all settings so that they can be altered
+        """
+        self.target.enable()
+        self.filter.enable()
+        self.progid.configure(state='normal')
+        self.pi.configure(state='normal')
+        self.observers.configure(state='normal')
+        self.comment.configure(state='disable')
+        self.dtype.enable()
 
 # Observing section. First a helper routine needed
 # by the 'Save' and 'Start' buttons
@@ -982,18 +1030,39 @@ def createXML(post):
     # Load the user parameters
     uconfig    = root.find('user')
 
+    flag = g.rpars.dtype.value()
+    if flag == 'bias':
+        target_str = 'Bias'
+        pi_str     = 'Calib'
+        progid_str = 'Calib'
+    elif flag == 'dark':
+        target_str = 'Dark'
+        pi_str     = 'Calib'
+        progid_str = 'Calib'
+    elif flag == 'technical':
+        pi_str     = 'Calib'
+        progid_str = 'Calib'
+    elif flag == 'flat':
+        target_str = 'Flat'
+        pi_str     = 'Calib'
+        progid_str = 'Calib'
+    else:
+        target_str = g.rpars.target.value()
+        pi_str     = g.rpars.pi.value() 
+        progid_str = g.rpars.progid.value() 
+    
     targ       = ET.SubElement(uconfig, 'target')
-    targ.text  = g.rpars.target.value()
+    targ.text  = target_str
     id         = ET.SubElement(uconfig, 'ID')
-    id.text    = g.rpars.progid.value()
+    id.text    = progid_str
     pi         = ET.SubElement(uconfig, 'PI')
-    pi.text    = g.rpars.pi.value()
+    pi.text    = pi_str
     obs        = ET.SubElement(uconfig, 'Observers')
     obs.text   = g.rpars.observers.value()
     comm       = ET.SubElement(uconfig, 'comment')
     comm.text  = g.rpars.comment.value()
     dtype      = ET.SubElement(uconfig, 'flags')
-    dtype.text = g.rpars.dtype.value()
+    dtype.text = flag
     filtr      = ET.SubElement(uconfig, 'filters')
     filtr.text = g.rpars.filter.value()
 
@@ -1217,8 +1286,9 @@ class Start(drvs.ActButton):
                     g.setup.powerOn.disable()
                     g.setup.powerOff.disable()
 
-                    # freeze instrument parameters
+                    # freeze instrument and run parameters
                     g.ipars.freeze()
+                    g.rpars.freeze()
 
                     # update the run number
                     try:
@@ -1354,6 +1424,7 @@ class Unfreeze(drvs.ActButton):
         Carries out the action associated with the Unfreeze button
         """
         g.ipars.unfreeze()
+        g.rpars.unfreeze()
         g.observe.load.enable()
         self.disable()
 
