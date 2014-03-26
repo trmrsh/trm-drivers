@@ -128,7 +128,7 @@ class Slide(object):
                              repr(intArr))
         return bytearray(intArr)
 
-    def _compute_timeout(self,nmicrostep):
+    def compute_timeout(self,nmicrostep):
         nstep = abs(nmicrostep)/MS_PER_STEP
         nacc  = (MAX_STEP_TIME - MIN_STEP_TIME)/STEP_TIME_ACCN
         if nacc > nstep:
@@ -183,7 +183,7 @@ class Slide(object):
         else:
             return False
 
-    def _move_absolute(self,nstep):
+    def _move_absolute(self,nstep,timeout=None):
         """
         move to a defined position in microsteps
         """
@@ -191,8 +191,8 @@ class Slide(object):
             raise SlideError("Attempting to set position = %d ms," + \
                                  " which is out of range %d to %d" %
                              (nstep,MIN_MS,MAX_MS) )
-        start_pos = self._getPosition()
-        timeout = self._compute_timeout(nstep-start_pos)
+        if not timeout:
+            timeout = time_for_absolute(nstep)
 
         # encode command bytes into bytearray
         byteArr = self._encodeCommandData(nstep)
@@ -207,7 +207,7 @@ class Slide(object):
         self._close_port()
         self.report_position()
 
-    def _move_relative(self,nstep):
+    def _move_relative(self,nstep,timeout=None):
         """
         move by nstep microsteps relative to the current position
         """
@@ -219,7 +219,8 @@ class Slide(object):
             raise SlideError("Attempting to set position = %d ms," + \
                                  " which is out of range %d to %d" %
                              (nstep,MIN_MS,MAX_MS) )
-        timeout = self._compute_timeout(nstep)
+        if not timeout:
+            timeout = self.compute_timeout(nstep)
 
         # encode command bytes into bytearray
         byteArr = self._encodeCommandData(nstep)
@@ -234,20 +235,55 @@ class Slide(object):
         self._close_port()
         self.report_position()
 
-    def home(self):
+    def _convert_to_microstep(self, amount, units):
+        """"
+        Converts amount to number of microsteps
         """
-        move the slide to the home position. This is needed after a power on
-        to calibrate the slide
+        if units.upper() not in ['MS','PX','MM']:
+            raise SlideError('unsupported units %s: only PX,' + \
+                                 ' MM or MS allowed' % units)
+
+        if units.upper() == 'MS':
+            nstep = int(amount)
+        elif units.upper() == 'PX':
+            nstep = MIN_MS + int( (MAX_MS-MIN_MS)*
+                                  (amount-MIN_PX) / (MAX_PX-MIN_PX) + 0.5 )
+        elif units.upper() == 'MS':
+            nstep = MIN_MS + int( (MAX_MS-MIN_MS)*
+                                  (amount-MIN_MM) / (MAX_MM-MIN_MM) + 0.5 )
+        return nstep
+
+    def time_to_absolute(self, nstep, units):
+        """
+        Returns estimate of time to carry out a move to absolute value nstep
+        Have to separate this from because of threading issues.
+        """
+        start_pos = self._getPosition()
+        return self.compute_timeout(nstep-start_pos)
+
+    def time_to_home(self):
+        """
+        Returns estimate of time to carry out the home command. Have to separate
+        this from home itself because of threading issues.
         """
         if self._hasBeenHomed():
             # if this throws an exception, then something is bad, so don't catch
             start_pos = self._getPosition()
-            timeout = self._compute_timeout(start_pos)
+            return self.compute_timeout(start_pos)
         else:
-            print('device position undefined: setting max timeout')
             if self.log is not None:
-                self.log.info('device position undefined: setting max timeout\n')
-            timeout = MAX_TIMEOUT
+                self.log.info('position undefined: setting max timeout for home\n')
+            else:
+                print('position undefined: setting max timeout for home\n')
+            return MAX_TIMEOUT
+
+    def home(self, timeout=None):
+        """
+        move the slide to the home position. This is needed after a power on
+        to calibrate the slide
+        """
+        if not timeout:
+            timeout = self.time_to_home()
 
         byteArr = self._encodeByteArr([UNIT,HOME,NULL,NULL,NULL,NULL])
         if not self.connected:
@@ -257,9 +293,10 @@ class Slide(object):
         self._close_port()
         if byteArr[1] == ERROR:
             raise SlideError('Error occurred setting to the home position')
-        print('Slide returned to home position')
         if self.log is not None:
             self.log.info('Slide returned to home position\n')
+        else:
+            print('Slide returned to home position')
 
     def reset(self):
         """
@@ -289,6 +326,8 @@ class Slide(object):
         self._close_port()
         if self.log is not None:
             self.log.info('finished restore\n')
+        else:
+            print('finished restore\n')
         return byteArr
 
     def disable(self):
@@ -305,6 +344,8 @@ class Slide(object):
         self._close_port()
         if self.log is not None:
             self.log.info('manual adjustment disabled\n')
+        else:
+            print('manual adjustment disabled\n')
         return byteArr
 
     def enable(self):
@@ -321,6 +362,8 @@ class Slide(object):
         self._close_port()
         if self.log is not None:
             self.log.info('manual adjustment enabled\n')
+        else:
+            print('manual adjustment enabled\n')
         return byteArr
 
     def stop(self):
@@ -334,17 +377,21 @@ class Slide(object):
         if byteArr[1] == ERROR:
             raise SlideError('Error stopping the slide')
         else:
-            print('Slide Stopped')
             if self.log is not None:
                 self.log.info('slide stopped\n')
+            else:
+                print('Slide Stopped')
             self.report_position()
 
     def park(self):
         self.move_absolute(PARK_POS, 'px')
         if self.log is not None:
             self.log.info('slide parked\n')
+        else:
+            print('slide parked\n')
 
-    def move_relative(self,amount,units):
+
+    def move_relative(self,amount,units,timeout=None):
         """
         move the slide by a relative amount.
 
@@ -353,44 +400,28 @@ class Slide(object):
         PX - pixels
         MM - millimeters
         """
-        if units.upper() not in ['MS','PX','MM']:
-            raise SlideError("unsupported units %s: " + \
-                                 "only PX, MM or MS allowed" % units)
+        nstep = self._convert_to_microstep(amount, units)
 
-        if units.upper() == 'MS':
-            nstep = int(amount)
-        elif units.upper() == 'PX':
-            nstep = int( (MAX_MS-MIN_MS)*amount / (MAX_PX-MIN_PX) + 0.5 )
-        elif units.upper() == 'MS':
-            nstep = int( (MAX_MS-MIN_MS)*amount / (MAX_MM-MIN_MM) + 0.5 )
-
-        self._move_relative(nstep)
+        self._move_relative(nstep,timeout)
         if self.log is not None:
             self.log.info('moved slide by ' + str(amount) + ' ' + units + '\n')
+        else:
+            print('moved slide by ' + str(amount) + ' ' + units + '\n')
 
-    def move_absolute(self,amount,units):
+    def move_absolute(self,amount,units,timeout=None):
         '''move the slide to an absolute position.
         available units are:
         MS - microsteps
         PX - pixels
         MM - millimeters
         '''
-        if units.upper() not in ['MS','PX','MM']:
-            raise SlideError('unsupported units %s: only PX,' + \
-                                 ' MM or MS allowed' % units)
+        nstep = self._convert_to_microstep(amount, units)
 
-        if units.upper() == 'MS':
-            nstep = int(amount)
-        elif units.upper() == 'PX':
-            nstep = MIN_MS + int( (MAX_MS-MIN_MS)*
-                                  (amount-MIN_PX) / (MAX_PX-MIN_PX) + 0.5 )
-        elif units.upper() == 'MS':
-            nstep = MIN_MS + int( (MAX_MS-MIN_MS)*
-                                  (amount-MIN_MM) / (MAX_MM-MIN_MM) + 0.5 )
-
-        self._move_absolute(nstep)
+        self._move_absolute(nstep,timeout)
         if self.log is not None:
             self.log.info('moved slide to ' + str(amount) + ' ' + units + '\n')
+        else:
+            print('moved slide to ' + str(amount) + ' ' + units + '\n')
 
     def return_position(self):
         """
@@ -408,7 +439,200 @@ class Slide(object):
         (ms,mm,px)
         """
         pos_ms,pos_mm,pos_px = self.return_position()
-        print("Current position = %d ms, %f mm, %f pixels" %
-              (pos_ms,pos_mm,pos_px))
         if self.log is not None:
             self.log.info('Current position = {0:6.1f} pixels\n'.format(pos_px))
+        else:
+            print("Current position = %d ms, %f mm, %f pixels" %
+                  (pos_ms,pos_mm,pos_px))
+
+
+class FocalPlaneSlide(tk.LabelFrame):
+    """
+    Self-contained widget to deal with the focal plane slide
+    """
+
+    def __init__(self, master):
+        """
+        master  : containing widget
+        """
+        tk.LabelFrame.__init__(
+            self, master, text='Focal plane slide',padx=10,pady=4)
+
+        # Top for table of buttons
+        top = tk.Frame(self)
+
+        width = 8
+        self.home     = tk.Button(top, fg='black', text='home',  width=width,
+                                  command=lambda: self.action('home'))
+        self.block    = tk.Button(top, fg='black', text='block', width=width,
+                                  command=lambda: self.action('block'))
+        self.unblock  = tk.Button(top, fg='black', text='unblock',  width=width,
+                                  command=lambda: self.action('unblock'))
+
+        self.gval     = IntegerEntry(top, 1100., None, True, width=4)
+        self.goto     = tk.Button(top, fg='black', text='goto', width=width,
+                                  command=lambda: self.action('goto',
+                                                              self.gval.value()))
+
+        self.position = tk.Button(top, fg='black', text='position', width=width,
+                                  command=lambda: self.action('position'))
+#        self.reset   = tk.Button(top, fg='black', text='reset', width=width,
+#                                 command=lambda: self.wrap('reset'))
+#        self.stop    = tk.Button(top, fg='black', text='stop', width=width,
+#                                 command=lambda: self.wrap('stop'))
+#
+#        self.enable  = tk.Button(top, fg='black', text='enable', width=width,
+#                                 command=lambda: self.wrap('enable'))
+#        self.disable = tk.Button(top, fg='black', text='disable', width=width,
+#                                 command=lambda: self.wrap('disable'))
+#        self.restore = tk.Button(top, fg='black', text='restore', width=width,
+#                                 command=lambda: self.wrap('restore'))
+
+        self.home.grid(row=0,column=0)
+        self.block.grid(row=0,column=1)
+        self.unblock.grid(row=0,column=2)
+
+        self.goto.grid(row=1,column=0)
+        self.gval.grid(row=1,column=1)
+        self.position.grid(row=1,column=2)
+
+#        self.reset.grid(row=2,column=0)
+#
+#        self.enable.grid(row=2,column=0)
+#        self.disable.grid(row=2,column=1)
+#        self.restore.grid(row=2,column=1)
+#        self.stop.grid(row=2,column=2)
+
+        top.pack(pady=2)
+
+        # make a region to display results of
+        # slide commands
+        bot = tk.Frame(self)
+        scrollbar = tk.Scrollbar(bot)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        console = tk.Text(bot, height=5, width=45, bg=g.COL['log'],
+                          yscrollcommand=scrollbar.set)
+        console.configure(state=tk.DISABLED)
+        console.pack(side=tk.LEFT)
+        scrollbar.config(command=console.yview)
+
+        # make a handler for GUIs
+        ltgh = LoggingToGUI(console)
+
+        # define the formatting
+        formatter = logging.Formatter('%(message)s')
+        ltgh.setFormatter(formatter)
+
+        # make a logger and set the handler
+        self.log = logging.getLogger('Slide log')
+        self.log.addHandler(ltgh)
+        bot.pack(pady=2)
+
+        # Finish off
+        self.where   = 'UNDEF'
+        self.running = False
+        self.slide   = slide.Slide(self.log)
+
+    def action(self, *comm):
+        """
+        Send a command to the focal plane slide
+        """
+        if g.cpars['focal_plane_slide_on']:
+
+            if self.running:
+                self.log.info('A focal plane slide command is already underway\n')
+                return
+
+            self.log.info('Command: ' + ' '.join(comm) + '\n')
+            try:
+                inback = False
+                if comm[0] == 'home':
+                    timeout = self.slide.time_to_home()
+                    if timeout > 3:
+                        self.log.info('Estimated time to home = ' +
+                                      str(timeout) + ' secs\n')
+                        t = threading.Thread(target=self.slide.home(timeout))
+                        inback = True
+                    else:
+                        self.slide.home(timeout)
+                elif comm[0] == 'unblock':
+                    timeout = self.slide.time_to_absolute(1100,'px')
+                    if timeout > 3:
+                        self.log.info('Estimated time to unblock = ' +
+                                      str(timeout) + ' secs\n')
+                        t = threading.Thread(target=self.slide.move_absolute(
+                            1100,'px',timeout))
+                        inback = True
+                    else:
+                        self.slide.move_to_absolute(1100,'px',timeout)
+                elif comm[0] == 'block':
+                    timeout = self.slide.time_to_absolute(-100,'px')
+                    if timeout > 3:
+                        self.log.info('Estimated time to block = ' +
+                                      str(timeout) + ' secs\n')
+                        t = threading.Thread(target=self.slide.move_absolute(
+                            -100,'px',timeout))
+                        inback = True
+                    else:
+                        self.slide.move_to_absolute(-100,'px',timeout)
+                elif comm[0] == 'position':
+                    self.slide.report_position()
+                    inback = True
+                elif comm[0] == 'reset':
+                    t = threading.Thread(target=self.slide.reset())
+                    inback = True
+                elif comm[0] == 'restore':
+                    t = threading.Thread(target=self.slide.restore())
+                    inback = True
+                elif comm[0] == 'enable':
+                    self.slide.enable()
+                elif comm[0] == 'disable':
+                    self.slide.disable()
+                elif comm[0] == 'stop':
+                    self.slide.stop()
+                elif comm[0] == 'goto':
+                    if comm[1] is not None:
+                        timeout = self.slide.time_to_absolute(comm[1],'px')
+                        if timeout > 3:
+                            self.log.info('Estimated time to move = ' +
+                                          str(timeout) + ' secs\n')
+                            t = threading.Thread(target=
+                                                 self.slide.move_absolute(
+                                                     comm[1],'px',timeout))
+                            inback = True
+                        else:
+                            self.slide.move_to_absolute(comm[1],'px',timeout)
+                    else:
+                        self.log.warn('You must enter an integer pixel position' +
+                                      ' for the mask first\n')
+                else:
+                    self.log.warn('Command = ' + str(comm) + ' not implemented yet.\n')
+
+                self.where = comm[0]
+                if inback:
+                    t.daemon = True
+                    t.start()
+                    self.running = True
+
+            except Exception, err:
+                self.log.warn('An error occured with command = ' + comm[0] + '\n')
+                self.log.warn('Error: ' + str(err) + '\n')
+                self.log.warn('The operation will be reported as having finished,\n' +
+                              'but may not have done so. The slide is unreliable\n' +
+                              'in reporting its status so you should check its position.\n')
+        else:
+            self.log.warn('Focal plane slide access is OFF; see settings.\n')
+
+       # flag to tell the check routine to stop
+        self.running = False
+
+    def check(self):
+        """
+        Check for the end of the focal plane command
+        """
+        if self.running:
+            # check once per second
+            self.after(1000, self.check)
+        else:
+            self.log.info('Focal plane slide operation finished\n')
+
