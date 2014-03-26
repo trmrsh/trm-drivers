@@ -156,8 +156,8 @@ class GUI(tk.Tk):
         settingsMenu = tk.Menu(menubar, tearoff=0)
 
         # level of expertise
-        expertMenu   = drvs.ExpertMenu(settingsMenu, g.observe, g.setup, 
-                                       g.ipars)
+        expertMenu   = drvs.ExpertMenu(settingsMenu, g.observe, g.setup,
+                                       g.ipars, g.fpslide)
         settingsMenu.add_cascade(label='Expert', menu=expertMenu)
 
         # Some boolean switches
