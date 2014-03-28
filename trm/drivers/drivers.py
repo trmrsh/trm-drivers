@@ -2623,7 +2623,7 @@ class InfoFrame(tk.LabelFrame):
     def update(self):
         """
         Updates run & tel status window. Runs
-        once every 10 seconds.
+        once every 2 seconds.
         """
 
         if g.astro is None or g.fpslide is None:
@@ -2838,14 +2838,19 @@ class InfoFrame(tk.LabelFrame):
                 self.fpslide.configure(text='UNDEF')
                 self.fpslide.configure(bg=g.COL['warn'])
 
-        # get the CCD temperature
-        # poll at 5x slower rate than the frame
+        # get the CCD temperature poll at 5x slower rate than the frame
         if self.count % 5 == 0 and g.cpars['ccd_temperature_on']:
             try:
                 if g.lakeshore is None:
                     g.lakeshore = lake.Lakeshore()
                 ccd_temp = g.lakeshore.tempa()
                 self.lake.configure(text='{0:5.1f}'.format(ccd_temp))
+                if ccd_temp > 165:
+                    self.lake.configure(bg=g.COL['error'])
+                elif ccd_temp > 162.:
+                    self.lake.configure(bg=g.COL['warn'])
+                else:
+                    self.lake.configure(bg=g.COL['main'])
             except Exception, err:
                 self.clog.log.warn(str(err) + '\n')
                 self.lake.configure(text='UNDEF')
