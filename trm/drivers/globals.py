@@ -67,15 +67,17 @@ HTTP_SEARCH_ATTR_NAME = 'filename'
 
 # Colours
 COL = {\
-    'main' : '#d0d0ff',     # Colour for the surrounds
-    'text' : '#000050',     # Text colour
-    'debug' : '#a0a0ff',    # Text background for debug messages
-    'warn' : '#f0c050',     # Text background for warnings
-    'error' : '#ffa0a0',    # Text background for errors
+    'main' :     '#d0d0ff', # Colour for the surrounds
+    'text' :     '#000050', # Text colour
+    'debug' :    '#a0a0ff', # Text background for debug messages
+    'warn' :     '#f0c050', # Text background for warnings
+    'error' :    '#ffa0a0', # Text background for errors
     'critical' : '#ff0000', # Text background for disasters
-    'start' : '#aaffaa',    # Start button colour
-    'stop' : '#ffaaaa',     # Stop button colour
-    'log' : '#e0d4ff',      # Logger windows
+    'start' :    '#00e000', # Start / Success button colour when enabled
+    'stop' :     '#ff5050', # Stop / Failure button colour when enabled
+    'startD' :   '#d0e0d0', # Start / Success button colour when disabled
+    'stopD' :    '#ffe0e0', # Stop / Failure button colour when disabled
+    'log' :      '#e0d4ff', # Logger windows
     }
 
 # Telescope / instrument info. Most of this is do with estimating count rates
