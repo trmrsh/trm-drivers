@@ -42,7 +42,7 @@ rpars   : run parameter widget
 setup   : setup widget
 wheel   : filter wheel controller
 star_filter : filter at last press of 'Start'
-
+lakeshore : connection to Lakeshore CCD temperature
 """
 
 from __future__ import print_function
@@ -158,4 +158,7 @@ wheel = None
 
 # Filter when 'start' last pressed
 start_filter = None
+
+# Lakeshore temperature control
+lakeshore = None
 
