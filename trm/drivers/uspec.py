@@ -1238,9 +1238,10 @@ class Start(drvs.ActButton):
             if not g.wheel.connected:
                 g.wheel.connect()
                 g.wheel.init()
-            currentPosition = g.wheel.getPos()
 
+            currentPosition = g.wheel.getPos()
             desiredPosition = g.rpars.filter.getIndex() + 1
+
             if currentPosition != desiredPosition:
                 # We must change the filter before starting the run. This means
                 # that we also have to update the filters element of the 'user'
@@ -1252,11 +1253,13 @@ class Start(drvs.ActButton):
                                     '"\n')
                 g.wheel.goto(desiredPosition)
                 g.wheel.close()
-
-                uconfig    = root.find('user')
-                filtr      = ET.SubElement(uconfig, 'filters')
-                filtr.text = g.cpars['active_filter_names'][desiredPosition-1]
                 current_filter = g.cpars['active_filter_names'][desiredPosition-1]
+
+                # update the XML
+                uconfig    = root.find('user')
+                filtr      = uconfig.find('filters')
+                filtr.text = current_filter
+
             else:
                 # No action needed
                 g.clog.log.info('No filter change needed\n')
