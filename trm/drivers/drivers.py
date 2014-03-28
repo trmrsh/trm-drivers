@@ -1410,6 +1410,10 @@ class Stop(ActButton):
         """
         ActButton.__init__(self, master, width, bg=g.COL['stop'], text='Stop')
 
+        # flags to help with stopping in background
+        self.stopped_ok = True
+        self.stopping   = False
+
     def enable(self):
         """
         Enable the button.
@@ -1429,8 +1433,8 @@ class Stop(ActButton):
 
     def setExpert(self):
         """
-        Turns on 'expert' status whereby the button is always enabled, regardless of
-        its activity status.
+        Turns on 'expert' status whereby the button is always enabled,
+        regardless of its activity status.
         """
         ActButton.setExpert(self)
         self.config(bg=g.COL['stop'])
@@ -1452,11 +1456,36 @@ class Stop(ActButton):
 
         g.clog.log.debug('Stop pressed\n')
 
-        if execCommand('EX,0'):
-            # Report that run has stopped
-            g.clog.log.info('Run stopped\n')
+        def stop_in_background():
+            try:
+                self.stopping   = True
+                if execCommand('EX,0'):
+                    # Report that run has stopped
+                    g.clog.log.info('Run stopped\n')
+                    self.stopped_ok = True
+                else:
+                    g.clog.log.warn('Failed to stop run\n')
+                    self.stopped_ok = False
+                self.stopping   = False
+            except Exception, err:
+                g.clog.log.warn('Failed to stop run. Error = ' + str(err))
+                self.stopping   = False
+                self.stopped_ok = False
 
-            # Modify buttons
+        # stopping can take a while during which the GUI freezes so run in
+        # background.
+        t = threading.Thread(target=stop_in_background)
+        t.daemon = True
+        t.start()
+
+    def check(self):
+        """
+        Checks the status of the stop exposure command
+        This is run in background and can take a few seconds
+        """
+
+        if self.stopped_ok:
+            # Exposure stopped OK; modify buttons
             self.disable()
             g.observe.start.enable()
             g.setup.resetSDSUhard.enable()
@@ -1466,11 +1495,34 @@ class Stop(ActButton):
             g.setup.powerOn.disable()
             g.setup.powerOff.enable()
 
-            # stop exposure meter
+            # Stop exposure meter
             g.info.timer.stop()
             return True
+
+        elif self.stopping:
+            # Exposure in process of stopping
+            # Disable lots of buttons
+            self.disable()
+            g.observe.start.disable()
+            g.setup.resetSDSUhard.disable()
+            g.setup.resetSDSUsoft.disable()
+            g.setup.resetPCI.disable()
+            g.setup.setupServers.disable()
+            g.setup.powerOn.disable()
+            g.setup.powerOff.disable()
+
+            # wait a second before trying again
+            self.after(1000, self.check)
+
         else:
-            g.clog.log.warn('Failed to stop run\n')
+            self.enable()
+            g.observe.start.disable()
+            g.setup.resetSDSUhard.disable()
+            g.setup.resetSDSUsoft.disable()
+            g.setup.resetPCI.disable()
+            g.setup.setupServers.disable()
+            g.setup.powerOn.disable()
+            g.setup.powerOff.disable()
             return False
 
 class Target(tk.Frame):
@@ -2498,6 +2550,7 @@ class InfoFrame(tk.LabelFrame):
         self.focus   = Ilabel(self,text='UNDEF')
         self.mdist   = Ilabel(self,text='UNDEF')
         self.fpslide = Ilabel(self,text='UNDEF')
+        self.lake    = Ilabel(self,text='UNDEF')
 
         # left-hand side
         tk.Label(self,text='Run:').grid(row=0,column=0,padx=5,sticky=tk.W)
@@ -2542,7 +2595,6 @@ class InfoFrame(tk.LabelFrame):
         tk.Label(self,text='PA:').grid(row=0,column=6,padx=5,sticky=tk.W)
         self.pa.grid(row=0,column=7,padx=5,sticky=tk.W)
 
-        # right-hand side
         tk.Label(self,text='Eng. PA:').grid(row=1,column=6,padx=5,sticky=tk.W)
         self.engpa.grid(row=1,column=7,padx=5,sticky=tk.W)
 
@@ -2554,6 +2606,9 @@ class InfoFrame(tk.LabelFrame):
 
         tk.Label(self,text='FP slide:').grid(row=4,column=6,padx=5,sticky=tk.W)
         self.fpslide.grid(row=4,column=7,padx=5,sticky=tk.W)
+
+        tk.Label(self,text='CCD temp:').grid(row=5,column=6,padx=5,sticky=tk.W)
+        self.lake.grid(row=5,column=7,padx=5,sticky=tk.W)
 
         # these are used to judge whether we are tracking or not
         self.ra_old    = 0.
@@ -2753,10 +2808,12 @@ class InfoFrame(tk.LabelFrame):
                         self.frame.configure(text='{0:d}'.format(nframe))
                 except Exception, err:
                     if err.code == 404:
-                        g.clog.log.debug('Error trying to set frame: ' + str(err) + '\n')
+                        g.clog.log.debug('Error trying to set frame: ' +
+                                         str(err) + '\n')
                         self.frame.configure(text='0')
                     else:
-                        g.clog.log.debug('Error trying to set occurred trying to set run\n')
+                        g.clog.log.debug('Error trying to set' +
+                                         ' occurred trying to set run\n')
                         self.frame.configure(text='UNDEF')
 
             except Exception, err:
@@ -2780,6 +2837,19 @@ class InfoFrame(tk.LabelFrame):
                 print(str(err))
                 self.fpslide.configure(text='UNDEF')
                 self.fpslide.configure(bg=g.COL['warn'])
+
+        # get the CCD temperature
+        # poll at 5x slower rate than the frame
+        if self.count % 5 == 0 and g.cpars['ccd_temperature_on']:
+            try:
+                if g.lakeshore is None:
+                    g.lakeshore = lake.Lakeshore()
+                ccd_temp = g.lakeshore.tempa()
+                self.lake.configure(text='{0:5.1f}'.format(ccd_temp))
+            except Exception, err:
+                self.clog.log.warn(str(err) + '\n')
+                self.lake.configure(text='UNDEF')
+                self.lake.configure(bg=g.COL['warn'])
 
         # run every 2 seconds
         self.count += 1
