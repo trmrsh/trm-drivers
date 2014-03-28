@@ -3,7 +3,7 @@ import serial
 # error class for lakeshore
 class LakeshoreError(Exception):
     pass
-    
+
 # Lakshore device serial interface
 class Lakeshore(object):
     '''python class to communicate with the lakeshore temperature controller'''
@@ -54,7 +54,7 @@ class Lakeshore(object):
             val = val[1:]
             return float(val)
         except:
-            e = LakeshoreError('Cannot get temp from lakeshore')
+            e = LakeshoreError('Cannot get temperature from lakeshore')
             raise e
 
     def tempb(self):
@@ -69,7 +69,7 @@ class Lakeshore(object):
             raise e
 
     def heater(self):
-        '''gets the heater power, in percent'''    
+        '''gets the heater power, in percent'''
         try:
             val = self._cmd('HTR? ')
             #strip off sign

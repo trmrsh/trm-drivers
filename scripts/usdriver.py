@@ -128,6 +128,11 @@ class GUI(tk.Tk):
         # Astronomical information frame
         g.astro = drvs.AstroFrame(self)
 
+        # CCD temperature
+        if g.cpars['ccd_temperature_on']:
+            g.lakeshore = lake.Lakeshore()
+
+
         # Switcher frame to select between setup, observe, focal plane slide
         switch = drvs.Switch(topLhsFrame)
 
@@ -201,7 +206,7 @@ class GUI(tk.Tk):
         # if appropriate
         settingsMenu.add_checkbutton(
             label='Assume servers initialised',
-            var=drvs.Boolean('servers_initialised', 
+            var=drvs.Boolean('servers_initialised',
                              lambda flag: g.ipars.check() if flag else None))
 
         # find index of last item added to the menu to allow it to be
@@ -229,7 +234,7 @@ class GUI(tk.Tk):
         filterMenu.add_command(label='Change filter', command=setwheel)
 
         # and the filter editor
-        filterMenu.add_command(label='Edit filters', 
+        filterMenu.add_command(label='Edit filters',
                                command=lambda : fwheel.FilterEditor())
 
         menubar.add_cascade(label='Filters', menu=filterMenu)

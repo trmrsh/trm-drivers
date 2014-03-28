@@ -1158,8 +1158,8 @@ class Start(drvs.ActButton):
 
     def setExpert(self):
         """
-        Turns on 'expert' status whereby the button is always enabled, regardless of
-        its activity status.
+        Turns on 'expert' status whereby the button is always enabled,
+        regardless of its activity status.
         """
         drvs.ActButton.setExpert(self)
         self.config(bg=g.COL['start'])
@@ -1320,6 +1320,16 @@ class Start(drvs.ActButton):
             fpslide = ET.SubElement(uconfig, 'slide_pos')
             fpslide.text = '{0:d}'.format(int(round(pos_px)))
 
+            # Get CCD temperature data
+            if g.lakeshore is None:
+                g.lakeshore = lake.Lakeshore()
+            ccd_temp = ET.SubElement(uconfig, 'ccd_temp')
+            ccd_temp.text = '{0:5.1f}'.format(g.lakeshore.tempa())
+            finger_temp = ET.SubElement(uconfig, 'finger_temp')
+            finger_temp.text = '{0:5.1f}'.format(g.lakeshore.tempb())
+            heater_percent = ET.SubElement(uconfig, 'heater_percent')
+            heater_percent.text = '{0:4.1f}'.format(g.lakeshore.heater())
+
             # Post the XML it to the server
             g.clog.log.info('Posting application to the servers\n')
 
@@ -1331,7 +1341,7 @@ class Start(drvs.ActButton):
                     g.info.timer.start()
 
                     g.clog.log.info('Run started on target = ' + \
-                                        g.rpars.target.value() + '\n')
+                                    g.rpars.target.value() + '\n')
 
                     # configure buttons
                     self.disable()
