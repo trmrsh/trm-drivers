@@ -1361,7 +1361,7 @@ class ActButton(tk.Button):
         """
         Enable the button, set its activity flag.
         """
-        self.configure(state='normal')
+        self.config(state='normal')
         self._active = True
 
     def disable(self):
@@ -1370,7 +1370,7 @@ class ActButton(tk.Button):
         unset its activity flag come-what-may.
         """
         if not self._expert:
-            self.configure(state='disable')
+            self.config(state='disable')
         self._active = False
 
     def setExpert(self):
@@ -1409,6 +1409,41 @@ class Stop(ActButton):
         width    : width of button
         """
         ActButton.__init__(self, master, width, bg=g.COL['stop'], text='Stop')
+
+    def enable(self):
+        """
+        Enable the button.
+        """
+        ActButton.enable(self)
+        self.config(bg=g.COL['stop'])
+
+    def disable(self):
+        """
+        Disable the button, if in non-expert mode.
+        """
+        ActButton.disable(self)
+        if self._expert:
+            self.config(bg=g.COL['stop'])
+        else:
+            self.config(bg=g.COL['stopD'])
+
+    def setExpert(self):
+        """
+        Turns on 'expert' status whereby the button is always enabled, regardless of
+        its activity status.
+        """
+        ActButton.setExpert(self)
+        self.config(bg=g.COL['stop'])
+
+    def setNonExpert(self):
+        """
+        Turns off 'expert' status whereby to allow a button to be disabled
+        """
+        self._expert = False
+        if self._active:
+            self.enable()
+        else:
+            self.disable()
 
     def act(self):
         """
@@ -1466,6 +1501,9 @@ class Target(tk.Frame):
         self.entry.pack(side=tk.LEFT,anchor=tk.W)
         self.verify.pack(side=tk.LEFT,anchor=tk.W,padx=5)
         self.verify.config(state='disable')
+        # track successed and failures
+        self.successes = []
+        self.failures  = []
         self.callback = callback
 
     def value(self):
@@ -1482,11 +1520,37 @@ class Target(tk.Frame):
 
     def disable(self):
         self.entry.configure(state='disable')
-        self.verify.configure(state='disable')
+        if self.ok():
+            tname = self.val.get()
+            if tname in self.successes:
+                # known to be in simbad
+                self.verify.config(bg=g.COL['startD'])
+            elif tname in self.failures:
+                # known not to be in simbad
+                self.verify.config(bg=g.COL['stopD'])
+            else:
+                # not known whether in simbad
+                self.verify.config(bg=g.COL['main'])
+        else:
+            self.verify.config(bg=g.COL['main'])
+        self.verify.config(state='disable')
 
     def enable(self):
         self.entry.configure(state='normal')
-        self.verify.configure(state='normal')
+        if self.ok():
+            tname = self.val.get()
+            if tname in self.successes:
+                # known to be in simbad
+                self.verify.config(bg=g.COL['start'])
+            elif tname in self.failures:
+                # known not to be in simbad
+                self.verify.config(bg=g.COL['stop'])
+            else:
+                # not known whether in simbad
+                self.verify.config(bg=g.COL['main'])
+        else:
+            self.verify.config(bg=g.COL['main'])
+        self.verify.config(state='normal')
 
     def ok(self):
         if self.val.get() == '' or self.val.get().isspace():
@@ -1499,7 +1563,16 @@ class Target(tk.Frame):
         Switches colour of verify button
         """
         if self.ok():
-            self.verify.config(bg=g.COL['main'])
+            tname = self.val.get()
+            if tname in self.successes:
+                # known to be in simbad
+                self.verify.config(bg=g.COL['start'])
+            elif tname in self.failures:
+                # known not to be in simbad
+                self.verify.config(bg=g.COL['stop'])
+            else:
+                # not known whether in simbad
+                self.verify.config(bg=g.COL['main'])
             self.verify.config(state='normal')
         else:
             self.verify.config(bg=g.COL['main'])
@@ -1515,21 +1588,38 @@ class Target(tk.Frame):
 
         tname = self.val.get()
 
-        g.clog.log.debug('Checking "' + tname + '" with simbad\n')
+        g.clog.log.info('Checking ' + tname + ' in simbad\n')
         ret = checkSimbad(tname)
         if len(ret) == 0:
-            self.verify.config(bg=g.COL['error'])
+            self.verify.config(bg=g.COL['stop'])
             g.clog.log.warn('No matches to "' + tname + '" found\n')
+            if tname not in self.failures:
+                self.failures.append(tname)
         else:
-            self.verify.config(bg=g.COL['main'])
-            self.verify.config(state='disable')
-            g.rlog.log.info('Target verified OK\n')
-            g.rlog.log.info(
-                'Found ' + str(len(ret)) + ' matches to "' + tname + '"\n')
             for entry in ret:
-                g.rlog.log.info(
-                    'Name: ' + entry['Name'] + ', position: ' +
-                    entry['Position'] + '\n')
+                # get around simbad's annoying 'V*'
+                if entry['Name'].strip().lower() == tname.lower() or \
+                   entry['Name'].strip().lower() == ('V* ' + tname).lower():
+                    self.verify.config(bg=g.COL['start'])
+                    g.clog.log.info(tname + ' verified OK in simbad\n')
+                    if len(ret) == 1:
+                        g.rlog.log.info(
+                            'Found ' + str(len(ret)) + ' match to "' + tname + '"\n')
+                    else:
+                        g.rlog.log.info(
+                            'Found ' + str(len(ret)) + ' matches to "' + tname + '"\n')
+                    for ent in ret:
+                        g.rlog.log.info(
+                            'Name: "' + ent['Name'] + '", position: ' +
+                            ent['Position'] + '\n')
+                    if tname not in self.successes:
+                        self.successes.append(tname)
+                    break
+            else:
+                g.clog.log.warn('Could not match "' + tname + '"\n')
+                self.verify.config(bg=g.COL['stop'])
+                if tname not in self.failures:
+                    self.failures.append(tname)
 
 class ReadServer(object):
     """
