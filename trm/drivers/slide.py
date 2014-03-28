@@ -290,7 +290,8 @@ class Slide(object):
         if byteArr[1] == ERROR:
             raise SlideError('Error occurred setting to the home position')
         if self.log is not None:
-            self.log.info('Slide returned to home position\n')
+            self.log.info('Slide returned to home position' +
+                          ' (click "position" to confirm)\n')
         else:
             print('Slide returned to home position')
 
@@ -392,7 +393,8 @@ class Slide(object):
         nstep = self._convert_to_microstep(amount, units)
         self._move_relative(nstep,timeout)
         if self.log is not None:
-            self.log.info('moved slide by ' + str(amount) + ' ' + units + '\n')
+            self.log.info('moved slide by ' + str(amount) + ' ' + units +
+                          ' (click "position" to confirm)\n')
         else:
             print('moved slide by ' + str(amount) + ' ' + units + '\n')
 
@@ -407,7 +409,8 @@ class Slide(object):
         nstep = self._convert_to_microstep(amount, units)
         self._move_absolute(nstep,timeout)
         if self.log is not None:
-            self.log.info('Moved slide to ' + str(amount) + ' ' + units + '\n')
+            self.log.info('Moved slide to ' + str(amount) + ' ' + units +
+                          ' (click "position" to confirm)\n')
         else:
             print('Moved slide to ' + str(amount) + ' ' + units + '\n')
 
