@@ -1122,9 +1122,46 @@ class Start(drvs.ActButton):
         width    : width of button
         """
 
-        drvs.ActButton.__init__(self, master, width, bg=g.COL['start'], 
+        drvs.ActButton.__init__(self, master, width, bg=g.COL['start'],
                                 text='Start')
         self.target = None
+
+    def enable(self):
+        """
+        Enable the button.
+        """
+        drvs.ActButton.enable(self)
+        self.config(bg=g.COL['start'])
+        print('enabled start button. expert = ',self._expert)
+
+    def disable(self):
+        """
+        Disable the button, if in non-expert mode.
+        """
+        drvs.ActButton.disable(self)
+        if self._expert:
+            self.config(bg=g.COL['start'])
+        else:
+            self.config(bg=g.COL['startD'])
+        print('disabled start button. expert = ',self._expert)
+
+    def setExpert(self):
+        """
+        Turns on 'expert' status whereby the button is always enabled, regardless of
+        its activity status.
+        """
+        drvs.ActButton.setExpert(self)
+        self.config(bg=g.COL['start'])
+
+    def setNonExpert(self):
+        """
+        Turns off 'expert' status whereby to allow a button to be disabled
+        """
+        self._expert = False
+        if self._active:
+            self.enable()
+        else:
+            self.disable()
 
     def act(self):
         """
