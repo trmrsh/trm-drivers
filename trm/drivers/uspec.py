@@ -1040,6 +1040,7 @@ def createXML(post):
         pi_str     = 'Calib'
         progid_str = 'Calib'
     elif flag == 'technical':
+        target_str = g.rpars.target.value()
         pi_str     = 'Calib'
         progid_str = 'Calib'
     elif flag == 'flat':
