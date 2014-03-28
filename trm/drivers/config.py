@@ -77,10 +77,10 @@ ULTRASPEC = \
      ['tcs_on', False],
      ['expert_level', 0],
      ['file_logging_on', True],
-     ['filter_names', ('kg5','clear','NaI','u','g','r','i','z','iz',
+     ['filter_names', ('KG5','clear','NaI','u','g','r','i','z','iz',
                        'Bowen+HeII','rCont','Ha_broad','bCont','Ha_narr')],
      ['filter_ids', (30, 7, 12, 18, 19, 20, 21, 22, 29, 23, 24, 25, 26, 27)],
-     ['active_filter_names', ['kg5','g','r', 'i', 'z', 'iz']],
+     ['active_filter_names', ['KG5','g','r', 'i', 'z', 'iz']],
      ['telins_name', 'TNO-USPEC'],
      """
 # ===========================================
