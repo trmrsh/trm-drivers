@@ -539,7 +539,6 @@ class FocalPlaneSlide(tk.LabelFrame):
             self.reset.grid(row=3,column=0)
             self.restore.grid(row=3,column=1)
 
-
     def action(self, *comm):
         """
         Send a command to the focal plane slide
@@ -603,7 +602,7 @@ class FocalPlaneSlide(tk.LabelFrame):
                         timeout = self.slide.time_absolute(comm[1],'px')
                         if timeout > 3:
                             inback = True
-                            t = threading.Thread(target=self.slide.move_absolute, 
+                            t = threading.Thread(target=self.slide.move_absolute,
                                                  args=(comm[1],'px',timeout))
                         else:
                             self.slide.move_absolute(comm[1],'px',timeout)
