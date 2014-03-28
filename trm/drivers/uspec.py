@@ -941,6 +941,9 @@ def createXML(post):
     pdict['SPEED']['value'] = '0' if g.ipars.readSpeed.value() == 'Slow' \
         else '1' if g.ipars.readSpeed.value() == 'Medium' else '2'
 
+    # Find the user parameters
+    uconfig    = root.find('user')
+
     if app == 'Windows':
         # Clear or not
         pdict['EN_CLR']['value'] = str(g.ipars.clear())
@@ -964,6 +967,10 @@ def createXML(post):
             xs, ys, nx, ny = w.xs[nw].value(), w.ys[nw].value(), \
                 w.nx[nw].value(), w.ny[nw].value()
 
+            # save for Vik's autologger
+            xstart = ET.SubElement(uconfig, 'X' + str(nw+1) + '_START')
+            xstart.text  = str(xs)
+
             # re-jig so that user always refers to same part of
             # the CCD regardless of the output being used. 'Derek coords'
             xs = 1074 - xs - nx if g.ipars.avalanche() else xs + 16
@@ -972,6 +979,7 @@ def createXML(post):
             pdict['X' + str(nw+1) + '_SIZE']['value']  = str(nx // xbin)
             pdict['Y' + str(nw+1) + '_SIZE']['value']  = str(ny // ybin)
             npix += (nx // xbin)*(ny // ybin)
+
 
         for nw in xrange(nwin,4):
             pdict['X' + str(nw+1) + '_START']['value'] = '1'
@@ -1002,6 +1010,12 @@ def createXML(post):
         xsl, xsr, ys, nx, ny = p.xsl[0].value(), p.xsr[0].value(), \
             p.ys[0].value(), p.nx[0].value(), p.ny[0].value()
 
+        # save for Vik's autologger
+        x1start = ET.SubElement(uconfig, 'X1_START')
+        x1start.text  = str(xsl)
+        x2start = ET.SubElement(uconfig, 'X2_START')
+        x2start.text  = str(xsr)
+
         # re-jig so that user always refers to same part of
         # the CCD regardless of the output being used. 'Derek coords'
         if g.ipars.avalanche():
@@ -1026,9 +1040,6 @@ def createXML(post):
 
     pdict['X_SIZE']['value']  = str(npix)
     pdict['Y_SIZE']['value']  = '1'
-
-    # Load the user parameters
-    uconfig    = root.find('user')
 
     flag = g.rpars.dtype.value()
     if flag == 'bias':
@@ -1205,10 +1216,14 @@ class Start(drvs.ActButton):
                 g.clog.log.warn('Start operation cancelled\n')
                 return False
 
+
         try:
             # Get XML from template and modify according to the
             # current settings
             root = createXML(True)
+
+            # locate user stuff
+            uconfig    = root.find('user')
 
             if g.cpars['tcs_on']:
                 # get positional info from telescope
@@ -1236,7 +1251,6 @@ class Start(drvs.ActButton):
                             return False
 
                         # all systems are go...
-                        uconfig     = root.find('user')
                         tra         = ET.SubElement(uconfig, 'RA')
                         tra.text    = drvs.d2hms(ra/15., 1, False)
                         tdec        = ET.SubElement(uconfig, 'Dec')
@@ -1293,7 +1307,6 @@ class Start(drvs.ActButton):
                 current_filter = g.cpars['active_filter_names'][desiredPosition-1]
 
                 # update the XML
-                uconfig    = root.find('user')
                 filtr      = uconfig.find('filters')
                 filtr.text = current_filter
 
@@ -1301,6 +1314,11 @@ class Start(drvs.ActButton):
                 # No action needed
                 g.clog.log.info('No filter change needed\n')
                 current_filter = g.cpars['active_filter_names'][currentPosition-1]
+
+            # Set position of slide
+            pos_ms,pos_mm,pos_px = g.fpslide.slide.return_position()
+            fpslide = ET.SubElement(uconfig, 'slide_pos')
+            fpslide.text = '{0:d}'.format(int(round(pos_px)))
 
             # Post the XML it to the server
             g.clog.log.info('Posting application to the servers\n')
