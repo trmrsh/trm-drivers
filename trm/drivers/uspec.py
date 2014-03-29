@@ -803,7 +803,6 @@ class RunPars(tk.LabelFrame):
             self.progid.configure(state='normal')
             self.target.enable()
 
-
         if g.cpars['require_run_params']:
             dtype = self.dtype.value()
             if dtype not in RunPars.DVALS:
@@ -864,7 +863,7 @@ class RunPars(tk.LabelFrame):
         self.progid.configure(state='normal')
         self.pi.configure(state='normal')
         self.observers.configure(state='normal')
-        self.comment.configure(state='disable')
+        self.comment.configure(state='normal')
         self.dtype.enable()
 
 # Observing section. First a helper routine needed
