@@ -32,6 +32,7 @@ import trm.drivers.drivers     as drvs
 import trm.drivers.slide       as slide
 import trm.drivers.uspec       as uspec
 import trm.drivers.filterwheel as fwheel
+import trm.drivers.lakeshore   as lake
 
 class SetWheel(object):
     """
