@@ -1310,7 +1310,7 @@ class Start(drvs.ActButton):
 
             # Set position of slide
             pos_ms,pos_mm,pos_px = g.fpslide.slide.return_position()
-            fpslide = ET.SubElement(uconfig, 'slide_pos')
+            fpslide = ET.SubElement(uconfig, 'SlidePos')
             fpslide.text = '{0:d}'.format(int(round(pos_px)))
 
             # Get CCD temperature data
