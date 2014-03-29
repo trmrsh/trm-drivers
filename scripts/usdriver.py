@@ -98,7 +98,7 @@ class GUI(tk.Tk):
         # of the 'globals' sub-module.
 
         # First the logging windows, command and response
-        g.clog = drvs.LogDisplay(self, 5, 50, 'Command log')
+        g.clog = drvs.LogDisplay(self, 5, 56, 'Command log')
         g.rlog = drvs.LogDisplay(self, 5, 56, 'Response log')
 
         # Instrument parameters frame.
