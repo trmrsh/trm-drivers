@@ -3566,7 +3566,6 @@ class Windows (tk.Frame):
         tk.Label(bottom, text='nx').grid(row=row,column=3,ipady=5,sticky=tk.S)
         tk.Label(bottom, text='ny').grid(row=row,column=4,ipady=5,sticky=tk.S)
 
-        print('making windows')
         self.label, self.xs, self.ys, self.nx, self.ny = [],[],[],[], []
         nr = 0
         row += 1
@@ -3704,7 +3703,6 @@ class Windows (tk.Frame):
         with a full-frame binned version. This does nothing if the
         binning factor == 1
         """
-        print('syncing windows ',args)
         xbin = self.xbin.value()
         ybin = self.ybin.value()
         n = 0
@@ -3740,7 +3738,6 @@ class Windows (tk.Frame):
         """
         Unfreeze all settings
         """
-        print('unfreezing windows')
         self.enable()
         self.frozen = False
         self.check()

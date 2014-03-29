@@ -885,30 +885,25 @@ def createXML(post):
     """
     # identify the template
     app = g.ipars.app.value()
-    if g.cpars['debug']:
-        print('DEBUG: createXML: application = ' + app)
-        print('DEBUG: createXML: application vals = ' + \
-                  str(g.cpars['templates'][app]))
+    g.clog.log.debug('createXML: application = ' + app + '\n')
+    g.clog.log.debug('createXML: application vals = ' + \
+                     str(g.cpars['templates'][app]) + '\n')
 
     if g.cpars['template_from_server']:
-        print('Getting template from server')
         # get template from server
         url = g.cpars['http_camera_server'] + g.HTTP_PATH_GET + '?' + \
               g.HTTP_SEARCH_ATTR_NAME + '=' + g.cpars['templates'][app]['app']
-        if g.cpars['debug']:
-            print ('DEBUG: url = ' + url)
+        g.clog.log.debug('url = ' + url + '\n')
         sxml = urllib2.urlopen(url).read()
         root = ET.fromstring(sxml)
 
     else:
-        print('Getting template from local filesystem')
         # get template from local file
-        if g.cpars['debug']:
-            print ('DEBUG: directory = ' + g.cpars['template_directory'])
+        g.clog.log.debug('directory = ' + g.cpars['template_directory'] + '\n')
+
         lfile = os.path.join(g.cpars['template_directory'],
                              g.cpars['templates'][app]['app'])
-        if g.cpars['debug']:
-            print ('DEBUG: local file = ' + lfile)
+        g.clog.log.debug('local file = ' + lfile + '\n')
         tree = ET.parse(lfile)
         root = tree.getroot()
 
@@ -1143,7 +1138,6 @@ class Start(drvs.ActButton):
         """
         drvs.ActButton.enable(self)
         self.config(bg=g.COL['start'])
-        print('enabled start button. expert = ',self._expert)
 
     def disable(self):
         """
@@ -1154,7 +1148,6 @@ class Start(drvs.ActButton):
             self.config(bg=g.COL['start'])
         else:
             self.config(bg=g.COL['startD'])
-        print('disabled start button. expert = ',self._expert)
 
     def setExpert(self):
         """
@@ -1676,7 +1669,6 @@ class CountsFrame(tk.LabelFrame):
             status = False
 
         if self.seeing.ok():
-            print('seeing = ',self.seeing.value())
             self.seeing.config(bg=g.COL['main'])
         else:
             self.seeing.config(bg=g.COL['warn'])
@@ -1806,7 +1798,7 @@ class CountsFrame(tk.LabelFrame):
         # which the seeing profile is added. sigma is the
         # RMS seeing in terms of pixels.
         sigma = seeing/g.EFAC/plateScale
-        print(seeing,plateScale,sigma)
+
         sum = 0.
         for iyp in range(ybin):
             yoff = -ybin/2.+iyp
