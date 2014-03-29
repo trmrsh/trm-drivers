@@ -129,10 +129,14 @@ class GUI(tk.Tk):
         # Astronomical information frame
         g.astro = drvs.AstroFrame(self)
 
-        # CCD temperature
         if g.cpars['ccd_temperature_on']:
-            g.lakeshore = lake.Lakeshore()
-
+            try:
+                # CCD temperature
+                g.lakeshore = lake.Lakeshore()
+            except Exception, err:
+                g.clog.log.warn('Lakeshore error: ' + str(err) + '\n')
+                g.clog.log.warn('Switching off Lakeshore access (settings)\n')
+                g.cpars['ccd_temperature_on'] = False
 
         # Switcher frame to select between setup, observe, focal plane slide
         switch = drvs.Switch(topLhsFrame)

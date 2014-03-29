@@ -23,7 +23,7 @@ import ephem
 import tcs
 import slide
 import globals as g
-import Lakeshore as lake
+import lakeshore as lake
 
 def addStyle(root):
     """
