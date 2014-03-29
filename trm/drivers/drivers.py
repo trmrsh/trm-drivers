@@ -75,7 +75,7 @@ class Boolean(tk.IntVar):
             g.cpars[self.flag] = False
         if self.callback:
             self.callback(g.cpars[self.flag])
-            
+
 
 class IntegerEntry(tk.Entry):
     """
@@ -504,9 +504,7 @@ class RangedInt (IntegerEntry):
         Adds num to the current value
         """
         try:
-            print('1: ',self.value(),num)
             val = self.value() + num
-            print('2: ',val,self.value(),num,self.imin,self.imax)
         except:
             val = num
         self.set(min(self.imax,max(self.imin,val)))
@@ -550,7 +548,6 @@ class RangedMint (RangedInt):
         self.unbind('<Prior>')
         self.bind('<Next>', lambda e: self.set(self._min()))
         self.bind('<Prior>', lambda e: self.set(self._max()))
-        print(ival,imin,imax,mfac.value())
 
     def set_bind(self):
         """
@@ -627,7 +624,6 @@ class RangedMint (RangedInt):
     def _min(self):
         chunk = self.mfac.value()
         mval  = chunk*(self.imin // chunk)
-        print(chunk,mval,self.imin,mval+chunk if mval < self.imin else mval)
         return mval+chunk if mval < self.imin else mval
 
     def _max(self):
@@ -1656,10 +1652,12 @@ class Target(tk.Frame):
                     g.clog.log.info(tname + ' verified OK in simbad\n')
                     if len(ret) == 1:
                         g.rlog.log.info(
-                            'Found ' + str(len(ret)) + ' match to "' + tname + '"\n')
+                            'Found ' + str(len(ret)) + ' match to "' +
+                            tname + '"\n')
                     else:
                         g.rlog.log.info(
-                            'Found ' + str(len(ret)) + ' matches to "' + tname + '"\n')
+                            'Found ' + str(len(ret)) + ' matches to "' +
+                            tname + '"\n')
                     for ent in ret:
                         g.rlog.log.info(
                             'Name: "' + ent['Name'] + '", position: ' +
@@ -1818,8 +1816,6 @@ def execServer(name, app):
     if not g.cpars['cdf_servers_on']:
         g.clog.log.warn('execServer: servers are not active\n')
         return False
-
-    print(g.cpars['http_camera_server'], g.HTTP_PATH_CONFIG, '?', app)
 
     if name == 'camera':
         url = g.cpars['http_camera_server'] + g.HTTP_PATH_CONFIG + \
@@ -2743,12 +2739,6 @@ class InfoFrame(tk.LabelFrame):
                     else:
                         self.mdist.configure(bg=g.COL['main'])
 
-                    # calculate cosine of angle between vertical and celestial
-                    # North cpan =
-                    # (math.sin(g.astro.obs.lat)-math.sin(star._dec)
-                    # *math.sin(star.alt))/(math.cos(star._dec)*math.cos(
-                    # star.alt)) pan = math.acos(cpan)
-
                 except Exception, err:
                     self.ra.configure(text='UNDEF')
                     self.dec.configure(text='UNDEF')
@@ -2759,6 +2749,9 @@ class InfoFrame(tk.LabelFrame):
                     self.airmass.configure(text='UNDEF')
                     self.mdist.configure(text='UNDEF')
                     print(err)
+            else:
+                g.clog.log.debug('Could not recognise ' +
+                                 g.cpars['telins_name'] + '\n')
 
         if g.cpars['cdf_servers_on'] and g.cpars['servers_initialised']:
 
@@ -2838,8 +2831,8 @@ class InfoFrame(tk.LabelFrame):
                 self.fpslide.configure(text='UNDEF')
                 self.fpslide.configure(bg=g.COL['warn'])
 
-        # get the CCD temperature poll at 5x slower rate than the frame
-        if self.count % 5 == 0 and g.cpars['ccd_temperature_on']:
+        # get the CCD temperature poll at 15x slower rate than the frame
+        if self.count % 15 == 0 and g.cpars['ccd_temperature_on']:
             try:
                 if g.lakeshore is None:
                     g.lakeshore = lake.Lakeshore()
