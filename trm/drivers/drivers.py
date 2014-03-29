@@ -2489,23 +2489,29 @@ class Timer(tk.Label):
         Updates @ 10Hz to give smooth running clock, checks
         run status @1Hz to reduce load on servers.
         """
-        delta = int(round(time.time()-self.startTime))
-        self.configure(text='{0:<d} s'.format(delta))
+        try:
+            self.count += 1
+            delta = int(round(time.time()-self.startTime))
+            self.configure(text='{0:<d} s'.format(delta))
 
-        self.count += 1
-        if self.count % 10 == 0:
-            if not isRunActive():
-                g.observe.start.enable()
-                g.observe.stop.disable()
-                g.setup.resetSDSUhard.enable()
-                g.setup.resetSDSUsoft.enable()
-                g.setup.resetPCI.disable()
-                g.setup.setupServers.disable()
-                g.setup.powerOn.disable()
-                g.setup.powerOff.enable()
-                g.clog.log.info('Run stopped')
-                self.stop()
-                return
+            if self.count % 10 == 0:
+                if not isRunActive():
+                    g.observe.start.enable()
+                    g.observe.stop.disable()
+                    g.setup.resetSDSUhard.enable()
+                    g.setup.resetSDSUsoft.enable()
+                    g.setup.resetPCI.disable()
+                    g.setup.setupServers.disable()
+                    g.setup.powerOn.disable()
+                    g.setup.powerOff.enable()
+                    g.clog.log.info('Run stopped')
+                    self.stop()
+                    return
+
+        except Exception, err:
+            if self.count % 100 == 0:
+                g.clog.warn('Timer.update: error = ' +
+                            str(err) + '\n')
 
         self.id = self.after(100, self.update)
 
@@ -2627,228 +2633,240 @@ class InfoFrame(tk.LabelFrame):
             self.after(100, self.update)
             return
 
-        if g.cpars['tcs_on']:
-            if g.cpars['telins_name'] == 'TNO-USPEC':
-                try:
-                    # Poll TCS for ra,dec etc.
-                    ra,dec,pa,focus,tflag,engpa = tcs.getTntTcs()
+        try:
 
-                    self.ra.configure(text=d2hms(ra/15., 1, False))
-                    self.dec.configure(text=d2hms(dec, 0, True))
-                    while pa < 0.:
-                        pa += 360.
-                    while pa > 360.:
-                        pa -= 360.
-                    self.pa.configure(text='{0:6.2f}'.format(pa))
+            if g.cpars['tcs_on']:
+                if g.cpars['telins_name'] == 'TNO-USPEC':
+                    try:
+                        # Poll TCS for ra,dec etc.
+                        ra,dec,pa,focus,tflag,engpa = tcs.getTntTcs()
 
-                    # check for significant changes in position to flag
-                    # tracking failures. I have removed a test of tflag
-                    # to be True because the telescope often switches to
-                    # "slewing" status even when nominally tracking.
-                    if abs(ra-self.ra_old) < 1.e-3 and \
-                            abs(dec-self.dec_old) < 1.e-3:
-                        self.tracking = True
-                        self.ra.configure(bg=g.COL['main'])
-                        self.dec.configure(bg=g.COL['main'])
-                    else:
-                        self.tracking = False
-                        self.ra.configure(bg=g.COL['warn'])
-                        self.dec.configure(bg=g.COL['warn'])
+                        self.ra.configure(text=d2hms(ra/15., 1, False))
+                        self.dec.configure(text=d2hms(dec, 0, True))
+                        while pa < 0.:
+                            pa += 360.
+                        while pa > 360.:
+                            pa -= 360.
+                        self.pa.configure(text='{0:6.2f}'.format(pa))
 
-                    # check for changing sky PA
-                    if abs(pa-self.pa_old) > 0.1 and \
-                            abs(pa-self.pa_old-360.) > 0.1 and \
-                            abs(pa-self.pa_old+360.) > 0.1:
-                        self.pa.configure(bg=g.COL['warn'])
-                    else:
-                        self.pa.configure(bg=g.COL['main'])
+                        # check for significant changes in position to flag
+                        # tracking failures. I have removed a test of tflag
+                        # to be True because the telescope often switches to
+                        # "slewing" status even when nominally tracking.
+                        if abs(ra-self.ra_old) < 1.e-3 and \
+                           abs(dec-self.dec_old) < 1.e-3:
+                            self.tracking = True
+                            self.ra.configure(bg=g.COL['main'])
+                            self.dec.configure(bg=g.COL['main'])
+                        else:
+                            self.tracking = False
+                            self.ra.configure(bg=g.COL['warn'])
+                            self.dec.configure(bg=g.COL['warn'])
 
-                    # store current values for comparison with next
-                    self.ra_old  = ra
-                    self.dec_old = dec
-                    self.pa_old  = pa
+                        # check for changing sky PA
+                        if abs(pa-self.pa_old) > 0.1 and \
+                           abs(pa-self.pa_old-360.) > 0.1 and \
+                           abs(pa-self.pa_old+360.) > 0.1:
+                            self.pa.configure(bg=g.COL['warn'])
+                        else:
+                            self.pa.configure(bg=g.COL['main'])
 
-                    # set engineering PA, warn if within 20 degrees
-                    # of limits
-                    self.engpa.configure(text='{0:+6.1f}'.format(engpa))
+                        # store current values for comparison with next
+                        self.ra_old  = ra
+                        self.dec_old = dec
+                        self.pa_old  = pa
 
-                    # rotator limits are -220, +250. Warn when within 20
-                    # degrees of these. (I carried out a test and the
-                    # upper rotator limit was actually hit at +255 but
-                    # I have stuck to 250).
-                    if engpa < -200 or engpa > 230:
-                        self.engpa.configure(bg=g.COL['warn'])
-                    else:
-                        self.engpa.configure(bg=g.COL['main'])
+                        # set engineering PA, warn if within 20 degrees
+                        # of limits
+                        self.engpa.configure(text='{0:+6.1f}'.format(engpa))
 
-                    # set focus
-                    self.focus.configure(text='{0:+5.2f}'.format(focus))
+                        # rotator limits are -220, +250. Warn when within 20
+                        # degrees of these. (I carried out a test and the
+                        # upper rotator limit was actually hit at +255 but
+                        # I have stuck to 250).
+                        if engpa < -200 or engpa > 230:
+                            self.engpa.configure(bg=g.COL['warn'])
+                        else:
+                            self.engpa.configure(bg=g.COL['main'])
 
-                    # create a Body for the target, calculate most of the stuff
-                    # that we don't get from the telescope
-                    star = ephem.FixedBody()
-                    star._ra  = math.radians(ra)
-                    star._dec = math.radians(dec)
-                    star.compute(g.astro.obs)
+                        # set focus
+                        self.focus.configure(text='{0:+5.2f}'.format(focus))
 
-                    lst = g.astro.obs.sidereal_time()
-                    ha  = (math.degrees(lst)-ra)/15.
-                    if ha > 12.:
-                        ha -= 12.
-                    elif ha < -12.:
-                        ha += 12.
-                    self.ha.configure(text=d2hms(ha, 0, True))
+                        # create a Body for the target, calculate most of the
+                        # stuff that we don't get from the telescope
+                        star = ephem.FixedBody()
+                        star._ra  = math.radians(ra)
+                        star._dec = math.radians(dec)
+                        star.compute(g.astro.obs)
 
-                    dalt = math.degrees(star.alt)
-                    daz  = math.degrees(star.az)
-                    self.alt.configure(text='{0:<4.1f}'.format(dalt))
-                    self.az.configure(text='{0:<5.1f}'.format(daz))
+                        lst = g.astro.obs.sidereal_time()
+                        ha  = (math.degrees(lst)-ra)/15.
+                        if ha > 12.:
+                            ha -= 12.
+                        elif ha < -12.:
+                            ha += 12.
+                        self.ha.configure(text=d2hms(ha, 0, True))
 
-                    # warn about the TV mast. Basically checks whether
-                    # alt and az lie in roughly triangular shape
-                    # presented by the mast. First move azimuth 5 deg closer
-                    # to the mast to give a bit of warning.
-                    if daz > 33.5:
-                        daz = min(33.5,daz-5.)
-                    else:
-                        daz = max(33.5,daz+5.)
+                        dalt = math.degrees(star.alt)
+                        daz  = math.degrees(star.az)
+                        self.alt.configure(text='{0:<4.1f}'.format(dalt))
+                        self.az.configure(text='{0:<5.1f}'.format(daz))
 
-                    if daz > 25.5 and daz < 50.0 and \
-                            dalt < 73.5 and \
-                            ((daz < 33.5 and \
-                                  dalt < 73.5-(33.5-daz)/ \
-                                  (33.5-25.5)*(73.5-21.5)) or \
-                                 (daz > 33.5 and \
-                                      dalt < 73.5- \
-                                      (daz-33.5)/(50.0-33.5)*(73.5-21.5))):
-                        self.alt.configure(bg=g.COL['warn'])
-                        self.az.configure(bg=g.COL['warn'])
-                    else:
-                        self.alt.configure(bg=g.COL['main'])
-                        self.az.configure(bg=g.COL['main'])
+                        # warn about the TV mast. Basically checks whether alt
+                        # and az lie in roughly triangular shape presented by
+                        # the mast. First move azimuth 5 deg closer to the
+                        # mast to give a bit of warning.
+                        if daz > 33.5:
+                            daz = min(33.5,daz-5.)
+                        else:
+                            daz = max(33.5,daz+5.)
 
-                    # set airmass
-                    self.airmass.configure(text='{0:<4.2f}'.format(
+                        if daz > 25.5 and daz < 50.0 and \
+                           dalt < 73.5 and \
+                           ((daz < 33.5 and \
+                             dalt < 73.5-(33.5-daz)/ \
+                             (33.5-25.5)*(73.5-21.5)) or \
+                            (daz > 33.5 and \
+                             dalt < 73.5- \
+                             (daz-33.5)/(50.0-33.5)*(73.5-21.5))):
+                            self.alt.configure(bg=g.COL['warn'])
+                            self.az.configure(bg=g.COL['warn'])
+                        else:
+                            self.alt.configure(bg=g.COL['main'])
+                            self.az.configure(bg=g.COL['main'])
+
+                        # set airmass
+                        self.airmass.configure(
+                            text='{0:<4.2f}'.format(
                             1./math.sin(star.alt)))
 
-                    # distance to the moon. Warn if too close (configurable)
-                    # to it.
-                    md = math.degrees(ephem.separation(g.astro.moon,star))
-                    self.mdist.configure(text='{0:<7.2f}'.format(md))
-                    if md < g.cpars['mdist_warn']:
-                        self.mdist.configure(bg=g.COL['warn'])
-                    else:
-                        self.mdist.configure(bg=g.COL['main'])
+                        # distance to the moon. Warn if too close
+                        # (configurable) to it.
+                        md = math.degrees(ephem.separation(g.astro.moon,star))
+                        self.mdist.configure(text='{0:<7.2f}'.format(md))
+                        if md < g.cpars['mdist_warn']:
+                            self.mdist.configure(bg=g.COL['warn'])
+                        else:
+                            self.mdist.configure(bg=g.COL['main'])
 
-                except Exception, err:
-                    self.ra.configure(text='UNDEF')
-                    self.dec.configure(text='UNDEF')
-                    self.pa.configure(text='UNDEF')
-                    self.ha.configure(text='UNDEF')
-                    self.alt.configure(text='UNDEF')
-                    self.az.configure(text='UNDEF')
-                    self.airmass.configure(text='UNDEF')
-                    self.mdist.configure(text='UNDEF')
-                    g.clog.log.warn('TCS error: ' + str(err) + '\n')
-            else:
-                g.clog.log.debug('TCS error: could not recognise ' +
-                                 g.cpars['telins_name'] + '\n')
-
-        if g.cpars['cdf_servers_on'] and g.cpars['servers_initialised']:
-
-            # get run number (set by the 'Start' button')
-            try:
-                # if no run is active, get run number from
-                # ultracam servers
-                if not isRunActive():
-                    run = getRunNumber(True)
-                    self.run.configure(text='{0:03d}'.format(run))
-
-                # get the value of the run being displayed, regardless
-                # of whether we just managed to update it
-                rtxt = self.run.cget('text')
-
-                # if the value comes back as undefined, try to work
-                # out the run number from the FileServer directory
-                # listing
-                if rtxt == 'UNDEF':
-                    url = g.cpars['http_file_server'] + '?action=dir'
-                    response = urllib2.urlopen(url)
-                    resp = response.read()
-
-                    # parse response from server
-                    ldir = resp.split('<li>')
-                    runs = [entry[entry.find('>run')+1:entry.find('>run')+7] \
-                            for entry in ldir \
-                            if entry.find('getdata">run') > -1]
-                    runs.sort()
-                    rtxt = runs[-1][3:]
-                    run = int(rtxt)
-                    self.run.configure(text='{0:03d}'.format(run))
+                    except Exception, err:
+                        self.ra.configure(text='UNDEF')
+                        self.dec.configure(text='UNDEF')
+                        self.pa.configure(text='UNDEF')
+                        self.ha.configure(text='UNDEF')
+                        self.alt.configure(text='UNDEF')
+                        self.az.configure(text='UNDEF')
+                        self.airmass.configure(text='UNDEF')
+                        self.mdist.configure(text='UNDEF')
+                        g.clog.log.warn('TCS error: ' + str(err) + '\n')
                 else:
-                    run = int(rtxt)
+                    g.clog.log.debug('TCS error: could not recognise ' +
+                                     g.cpars['telins_name'] + '\n')
 
-                # OK, we have managed to get the run number
-                rstr = 'run{0:03d}'.format(run)
+            if g.cpars['cdf_servers_on'] and \
+               g.cpars['servers_initialised']:
+
+                # get run number (set by the 'Start' button')
                 try:
-                    url = g.cpars['http_file_server'] + rstr + \
-                          '?action=get_num_frames'
-                    response = urllib2.urlopen(url)
-                    rstr = response.read()
-                    ind = rstr.find('nframes="')
-                    if ind > -1:
-                        ind += 9
-                        nframe = int(rstr[ind:ind+rstr[ind:].find('"')])
-                        self.frame.configure(text='{0:d}'.format(nframe))
-                except Exception, err:
-                    if err.code == 404:
-                        g.clog.log.debug('Error trying to set frame: ' +
-                                         str(err) + '\n')
-                        self.frame.configure(text='0')
+                    # if no run is active, get run number from
+                    # ultracam servers
+                    if not isRunActive():
+                        run = getRunNumber(True)
+                        self.run.configure(text='{0:03d}'.format(run))
+
+                    # get the value of the run being displayed, regardless of
+                    # whether we just managed to update it
+                    rtxt = self.run.cget('text')
+
+                    # if the value comes back as undefined, try to work out
+                    # the run number from the FileServer directory listing
+                    if rtxt == 'UNDEF':
+                        url = g.cpars['http_file_server'] + '?action=dir'
+                        response = urllib2.urlopen(url)
+                        resp = response.read()
+
+                        # parse response from server
+                        ldir = resp.split('<li>')
+                        runs = [entry[entry.find('>run')+1:\
+                                      entry.find('>run')+7] \
+                                for entry in ldir \
+                                if entry.find('getdata">run') > -1]
+                        runs.sort()
+                        rtxt = runs[-1][3:]
+                        run = int(rtxt)
+                        self.run.configure(text='{0:03d}'.format(run))
                     else:
-                        g.clog.log.debug('Error trying to set' +
-                                         ' occurred trying to set run\n')
-                        self.frame.configure(text='UNDEF')
+                        run = int(rtxt)
 
-            except Exception, err:
-                g.clog.log.debug('Error trying to set run: ' + str(err) + '\n')
+                    # OK, we have managed to get the run number
+                    rstr = 'run{0:03d}'.format(run)
+                    try:
+                        url = g.cpars['http_file_server'] + rstr + \
+                              '?action=get_num_frames'
+                        response = urllib2.urlopen(url)
+                        rstr = response.read()
+                        ind = rstr.find('nframes="')
+                        if ind > -1:
+                            ind += 9
+                            nframe = int(rstr[ind:ind+rstr[ind:].find('"')])
+                            self.frame.configure(text='{0:d}'.format(nframe))
+                    except Exception, err:
+                        if err.code == 404:
+                            g.clog.log.debug('Error trying to set frame: ' +
+                                             str(err) + '\n')
+                            self.frame.configure(text='0')
+                        else:
+                            g.clog.log.debug('Error trying to set' +
+                                             ' occurred trying to set run\n')
+                            self.frame.configure(text='UNDEF')
 
-        # get the current filter, which is set during the start operation
-        if g.start_filter:
-            self.filter.configure(text=g.start_filter)
+                except Exception, err:
+                    g.clog.log.debug('Error trying to set run: ' +
+                                     str(err) + '\n')
 
-        # get the slide position
-        # poll at 5x slower rate than the frame
-        if self.count % 5 == 0 and g.cpars['focal_plane_slide_on']:
-            try:
-                pos_ms,pos_mm,pos_px = g.fpslide.slide.return_position()
-                self.fpslide.configure(text='{0:d}'.format(int(round(pos_px))))
-                if pos_px < 1050.:
+            # get the current filter, which is set during the start
+            # operation
+            if g.start_filter:
+                self.filter.configure(text=g.start_filter)
+
+            # get the slide position
+            # poll at 5x slower rate than the frame
+            if self.count % 5 == 0 and g.cpars['focal_plane_slide_on']:
+                try:
+                    pos_ms,pos_mm,pos_px = g.fpslide.slide.return_position()
+                    self.fpslide.configure(text='{0:d}'.format(
+                        int(round(pos_px))))
+                    if pos_px < 1050.:
+                        self.fpslide.configure(bg=g.COL['warn'])
+                    else:
+                        self.fpslide.configure(bg=g.COL['main'])
+                except Exception, err:
+                    g.clog.log.warn('Slide error: ' + str(err) + '\n')
+                    self.fpslide.configure(text='UNDEF')
                     self.fpslide.configure(bg=g.COL['warn'])
-                else:
-                    self.fpslide.configure(bg=g.COL['main'])
-            except Exception, err:
-                g.clog.log.warn('Slide error: ' + str(err) + '\n')
-                self.fpslide.configure(text='UNDEF')
-                self.fpslide.configure(bg=g.COL['warn'])
 
-        # get the CCD temperature poll at 15x slower rate than the frame
-        if self.count % 15 == 0 and g.cpars['ccd_temperature_on']:
-            try:
-                if g.lakeshore is None:
-                    g.lakeshore = lake.Lakeshore()
-                ccd_temp = g.lakeshore.tempa()
-                self.lake.configure(text='{0:5.1f}'.format(ccd_temp))
-                if ccd_temp > 165:
-                    self.lake.configure(bg=g.COL['error'])
-                elif ccd_temp > 162.:
+            # get the CCD temperature poll at 15x slower rate than the frame
+            if self.count % 15 == 0 and g.cpars['ccd_temperature_on']:
+                try:
+                    if g.lakeshore is None:
+                        g.lakeshore = lake.Lakeshore()
+                    ccd_temp = g.lakeshore.tempa()
+                    self.lake.configure(text='{0:5.1f}'.format(ccd_temp))
+                    if ccd_temp > 165:
+                        self.lake.configure(bg=g.COL['error'])
+                    elif ccd_temp > 162.:
+                        self.lake.configure(bg=g.COL['warn'])
+                    else:
+                        self.lake.configure(bg=g.COL['main'])
+                except Exception, err:
+                    g.clog.log.warn('Lakeshore error: ' + str(err) + '\n')
+                    self.lake.configure(text='UNDEF')
                     self.lake.configure(bg=g.COL['warn'])
-                else:
-                    self.lake.configure(bg=g.COL['main'])
-            except Exception, err:
-                g.clog.log.warn('Lakeshore error: ' + str(err) + '\n')
-                self.lake.configure(text='UNDEF')
-                self.lake.configure(bg=g.COL['warn'])
+
+        except Exception, err:
+            # this is a safety catchall trap as it is important
+            # that this routine keeps going
+            g.clog.log.warn('Unexpected error: ' + str(err) + '\n')
 
         # run every 2 seconds
         self.count += 1
@@ -2947,102 +2965,113 @@ class AstroFrame(tk.LabelFrame):
         """
         Updates @ 10Hz to give smooth running clock.
         """
-        # current time in seconds since start of UNIX
-        utc = time.time()
-        self.obs.date = ephem.Date(g.UNIX0-g.EPH0+utc/g.DAY)
 
-        # configure times
-        self.utc.configure(text=time.strftime('%H:%M:%S',time.gmtime(utc)))
-        self.mjd.configure(text='{0:11.5f}'.format(g.UNIX0-g.MJD0+utc/g.DAY))
-        lst = g.DAY*(self.obs.sidereal_time()/math.pi/2.)
-        self.lst.configure(text=time.strftime('%H:%M:%S',time.gmtime(lst)))
+        try:
 
-        if self.counter % 100 == 0:
-            # only re-compute Sun & Moon info once every 100 calls
+            # update counter
+            self.counter += 1
 
-            # re-compute sun
-            self.obs.pressure = 1010.
-            self.sun.compute(self.obs)
+            # current time in seconds since start of UNIX
+            utc = time.time()
+            self.obs.date = ephem.Date(g.UNIX0-g.EPH0+utc/g.DAY)
 
-            self.sunalt.configure(\
-                text='{0:+03d} deg'.format(
-                    int(round(math.degrees(self.sun.alt)))))
+            # configure times
+            self.utc.configure(text=time.strftime('%H:%M:%S',time.gmtime(utc)))
+            self.mjd.configure(text='{0:11.5f}'.format(
+                g.UNIX0-g.MJD0+utc/g.DAY))
+            lst = g.DAY*(self.obs.sidereal_time()/math.pi/2.)
+            self.lst.configure(text=time.strftime('%H:%M:%S',time.gmtime(lst)))
 
-            if self.obs.date > self.lastRiset and \
-                    self.obs.date > self.lastAstro:
-                # Only re-compute rise and setting times when necessary,
-                # and only re-compute when both rise/set and astro twilight
-                # times have gone by
+            if self.counter % 100 == 1:
+                # only re-compute Sun & Moon info once every 100 calls
 
-                # turn off refraction for both sunrise & set and astro
-                # twilight calculation.
-                self.obs.pressure = 0.
+                # re-compute sun
+                self.obs.pressure = 1010.
+                self.sun.compute(self.obs)
 
-                # For sunrise and set we set the horizon down to match
-                # a standard amount of refraction at the horizon
-                self.obs.horizon  = '-0:34'
-                sunset  = self.obs.next_setting(self.sun)
-                sunrise = self.obs.next_rising(self.sun)
+                self.sunalt.configure(
+                    text='{0:+03d} deg'.format(
+                        int(round(math.degrees(self.sun.alt)))))
 
-                # Astro twilight: geometric centre at -18 deg
-                self.obs.horizon = '-18'
-                astroset  = self.obs.next_setting(self.sun, use_center=True)
-                astrorise = self.obs.next_rising(self.sun, use_center=True)
+                if self.obs.date > self.lastRiset and \
+                   self.obs.date > self.lastAstro:
+                    # Only re-compute rise and setting times when necessary,
+                    # and only re-compute when both rise/set and astro
+                    # twilight times have gone by
 
-                if sunrise > sunset:
-                    # In the day time we report the upcoming sunset and
-                    # end of evening twilight
-                    self.lriset.configure(text='Sets:', font=g.DEFAULT_FONT)
-                    self.lastRiset = sunset
-                    self.lastAstro = astroset
+                    # turn off refraction for both sunrise & set and astro
+                    # twilight calculation.
+                    self.obs.pressure = 0.
 
-                elif astrorise > astroset and astrorise < sunrise:
-                    # During evening twilight, we report the sunset just
-                    # passed and end of evening twilight
-                    self.lriset.configure(text='Sets:', font=g.DEFAULT_FONT)
+                    # For sunrise and set we set the horizon down to match a
+                    # standard amount of refraction at the horizon
                     self.obs.horizon  = '-0:34'
-                    self.lastRiset = self.obs.previous_setting(self.sun)
-                    self.lastAstro = astroset
+                    sunset  = self.obs.next_setting(self.sun)
+                    sunrise = self.obs.next_rising(self.sun)
 
-                elif astrorise > astroset and astrorise < sunrise:
-                    # During night, report upcoming start of morning
-                    # twilight and sunrise
-                    self.lriset.configure(text='Rises:', font=g.DEFAULT_FONT)
-                    self.obs.horizon  = '-0:34'
-                    self.lastRiset = sunrise
-                    self.lastAstro = astrorise
+                    # Astro twilight: geometric centre at -18 deg
+                    self.obs.horizon = '-18'
+                    astroset  = self.obs.next_setting(self.sun, use_center=True)
+                    astrorise = self.obs.next_rising(self.sun, use_center=True)
 
-                else:
-                    # During morning twilight report start of twilight
-                    # just passed and upcoming sunrise
-                    self.lriset.configure(text='Rises:', font=g.DEFAULT_FONT)
-                    self.obs.horizon  = '-18'
-                    self.lastRiset = sunrise
-                    self.lastAstro = self.obs.previous_rising(
-                        self.sun, use_center=True)
+                    if sunrise > sunset:
+                        # In the day time we report the upcoming sunset and
+                        # end of evening twilight
+                        self.lriset.configure(text='Sets:', font=g.DEFAULT_FONT)
+                        self.lastRiset = sunset
+                        self.lastAstro = astroset
 
-                # Configure the corresponding text fields
-                ntime = g.DAY*(self.lastRiset + g.EPH0 - g.UNIX0)
-                self.riset.configure(
-                    text=time.strftime('%H:%M:%S',time.gmtime(ntime)))
-                ntime = g.DAY*(self.lastAstro + g.EPH0 - g.UNIX0)
-                self.astro.configure(
-                    text=time.strftime('%H:%M:%S',time.gmtime(ntime)))
+                    elif astrorise > astroset and astrorise < sunrise:
+                        # During evening twilight, we report the sunset just
+                        # passed and end of evening twilight
+                        self.lriset.configure(text='Sets:', font=g.DEFAULT_FONT)
+                        self.obs.horizon  = '-0:34'
+                        self.lastRiset = self.obs.previous_setting(self.sun)
+                        self.lastAstro = astroset
 
-            # re-compute moon
-            self.obs.pressure = 1010.
-            self.moon.compute(self.obs)
-            self.moonra.configure(text='{0}'.format(self.moon.ra))
-            self.moondec.configure(text='{0}'.format(self.moon.dec))
-            self.moonalt.configure(\
-                                   text='{0:+03d} deg'.format(
-                                       int(round(math.degrees(self.moon.alt)))))
-            self.moonphase.configure(\
-                                     text='{0:02d} %'.format(
-                                         int(round(100.*self.moon.moon_phase))))
+                    elif astrorise > astroset and astrorise < sunrise:
+                        # During night, report upcoming start of morning
+                        # twilight and sunrise
+                        self.lriset.configure(text='Rises:',
+                                              font=g.DEFAULT_FONT)
+                        self.obs.horizon  = '-0:34'
+                        self.lastRiset = sunrise
+                        self.lastAstro = astrorise
 
-        # update counter
-        self.counter += 1
+                    else:
+                        # During morning twilight report start of twilight
+                        # just passed and upcoming sunrise
+                        self.lriset.configure(text='Rises:',
+                                              font=g.DEFAULT_FONT)
+                        self.obs.horizon  = '-18'
+                        self.lastRiset = sunrise
+                        self.lastAstro = self.obs.previous_rising(
+                            self.sun, use_center=True)
+
+                    # Configure the corresponding text fields
+                    ntime = g.DAY*(self.lastRiset + g.EPH0 - g.UNIX0)
+                    self.riset.configure(
+                        text=time.strftime('%H:%M:%S',time.gmtime(ntime)))
+                    ntime = g.DAY*(self.lastAstro + g.EPH0 - g.UNIX0)
+                    self.astro.configure(
+                        text=time.strftime('%H:%M:%S',time.gmtime(ntime)))
+
+                # re-compute moon
+                self.obs.pressure = 1010.
+                self.moon.compute(self.obs)
+                self.moonra.configure(text='{0}'.format(self.moon.ra))
+                self.moondec.configure(text='{0}'.format(self.moon.dec))
+                self.moonalt.configure(
+                    text='{0:+03d} deg'.format(
+                        int(round(math.degrees(self.moon.alt)))))
+                self.moonphase.configure(
+                    text='{0:02d} %'.format(
+                        int(round(100.*self.moon.moon_phase))))
+
+        except Exception, err:
+            # catchall
+            g.clog.log.warn('AstroFrame.update: error = ' +
+                            str(err) + '\n')
 
         # run again after 100 milli-seconds
         self.after(100, self.update)
