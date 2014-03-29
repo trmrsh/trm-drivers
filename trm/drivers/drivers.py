@@ -23,6 +23,7 @@ import ephem
 import tcs
 import slide
 import globals as g
+import Lakeshore as lake
 
 def addStyle(root):
     """
@@ -2748,9 +2749,9 @@ class InfoFrame(tk.LabelFrame):
                     self.az.configure(text='UNDEF')
                     self.airmass.configure(text='UNDEF')
                     self.mdist.configure(text='UNDEF')
-                    print(err)
+                    g.clog.log.warn('TCS error: ' + str(err) + '\n')
             else:
-                g.clog.log.debug('Could not recognise ' +
+                g.clog.log.debug('TCS error: could not recognise ' +
                                  g.cpars['telins_name'] + '\n')
 
         if g.cpars['cdf_servers_on'] and g.cpars['servers_initialised']:
@@ -2827,7 +2828,7 @@ class InfoFrame(tk.LabelFrame):
                 else:
                     self.fpslide.configure(bg=g.COL['main'])
             except Exception, err:
-                print(str(err))
+                g.clog.log.warn('Slide error: ' + str(err) + '\n')
                 self.fpslide.configure(text='UNDEF')
                 self.fpslide.configure(bg=g.COL['warn'])
 
@@ -2845,7 +2846,7 @@ class InfoFrame(tk.LabelFrame):
                 else:
                     self.lake.configure(bg=g.COL['main'])
             except Exception, err:
-                self.clog.log.warn(str(err) + '\n')
+                g.clog.log.warn('Lakeshore error: ' + str(err) + '\n')
                 self.lake.configure(text='UNDEF')
                 self.lake.configure(bg=g.COL['warn'])
 
