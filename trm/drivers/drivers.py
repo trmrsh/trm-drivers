@@ -1641,36 +1641,20 @@ class Target(tk.Frame):
         ret = checkSimbad(tname)
         if len(ret) == 0:
             self.verify.config(bg=g.COL['stop'])
-            g.clog.log.warn('No matches to "' + tname + '" found\n')
+            g.clog.log.warn('No matches to "' + tname + '" found.\n')
             if tname not in self.failures:
                 self.failures.append(tname)
+        elif len(ret) == 1:
+            self.verify.config(bg=g.COL['start'])
+            g.clog.log.info(tname + ' verified OK in simbad\n')
+            g.clog.log.info('Primary simbad name = ' + ret[0]['Name'] + '\n')
+            if tname not in self.successes:
+                self.successes.append(tname)
         else:
-            for entry in ret:
-                # get around simbad's annoying 'V*'
-                if entry['Name'].strip().lower() == tname.lower() or \
-                   entry['Name'].strip().lower() == ('V* ' + tname).lower():
-                    self.verify.config(bg=g.COL['start'])
-                    g.clog.log.info(tname + ' verified OK in simbad\n')
-                    if len(ret) == 1:
-                        g.rlog.log.info(
-                            'Found ' + str(len(ret)) + ' match to "' +
-                            tname + '"\n')
-                    else:
-                        g.rlog.log.info(
-                            'Found ' + str(len(ret)) + ' matches to "' +
-                            tname + '"\n')
-                    for ent in ret:
-                        g.rlog.log.info(
-                            'Name: "' + ent['Name'] + '", position: ' +
-                            ent['Position'] + '\n')
-                    if tname not in self.successes:
-                        self.successes.append(tname)
-                    break
-            else:
-                g.clog.log.warn('Could not match "' + tname + '"\n')
-                self.verify.config(bg=g.COL['stop'])
-                if tname not in self.failures:
-                    self.failures.append(tname)
+            g.clog.log.warn('More than one match to "' + tname + '" found\n')
+            self.verify.config(bg=g.COL['stop'])
+            if tname not in self.failures:
+                self.failures.append(tname)
 
 class ReadServer(object):
     """
