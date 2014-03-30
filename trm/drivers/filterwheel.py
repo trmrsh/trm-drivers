@@ -37,7 +37,6 @@ class FilterWheel(object):
         """
         self.ser = serial.Serial(self.port,baudrate=self.baudrate,
                                  timeout=self.default_timeout)
-        print('connected to filter wheel')
         self.connected = True
 
     def init(self):
@@ -49,18 +48,18 @@ class FilterWheel(object):
         response = self.sendCommand('WSMODE')
         if response != "!":
             raise FilterWheelError('Could not initialise wheel for' + \
-                                       ' serial commands')
+                                   ' serial commands')
         self.initialised = True
 
     def sendCommand(self,comm):
         """
         wrapper function to send commands to filter wheel
         """
-        if not self.initialised and comm != 'WSMODE':
-            raise FilterWheelError('Filter wheel not initialised')
-
         if not self.connected:
             raise FilterWheelError('Filter wheel not connected')
+
+        if not self.initialised and comm != 'WSMODE':
+            raise FilterWheelError('Filter wheel not initialised')
 
         if comm == 'WHOME' or comm.startswith('WGOTO'):
             self.ser.setTimeout(30)
@@ -75,6 +74,7 @@ class FilterWheel(object):
     def close(self):
         """
         disables serial mode and disconnects from serial port
+        note this could throw
         """
         # disable serial mode operation for the serial port
         self.sendCommand('WEXITS')
@@ -177,7 +177,7 @@ class WheelController(tk.Toplevel):
                 self.wheel.init()
 
             findex = self.wheel.getPos()-1
-            
+
             self.current = drvs.Ilabel(self,
                                        text=g.cpars['active_filter_names'][findex])
 
@@ -217,7 +217,7 @@ class WheelController(tk.Toplevel):
                 self.wheel.connect()
                 self.wheel.init()
             findex = self.filter.options.index(self.filter.value())+1
-            g.clog.log.info('Moving to filter position = ' + str(findex) + 
+            g.clog.log.info('Moving to filter position = ' + str(findex) +
                             ', name = ' + g.cpars['active_filter_names'][findex-1] +
                             '\n')
             self.wheel.goto(findex)
@@ -261,7 +261,7 @@ class WheelController(tk.Toplevel):
             self.wheel.close()
             g.clog.log.info('Filter wheel closed\n')
         except Exception, err:
-            g.clog.log.warn('Could not close wheel.\n')
+            g.clog.log.warn('Problem closing wheel.\n')
             g.clog.log.warn('Error: ' + str(err) + '\n')
         self.destroy()
 
@@ -280,7 +280,7 @@ class FilterEditor(tk.Toplevel):
 
         tk.Label(self,text='Pos.').grid(row=0,column=0)
         tk.Label(self,text='Filter').grid(row=0,column=1)
-        
+
         self.fnames = []
         row = 1
         for i, fname in enumerate(g.cpars['active_filter_names']):
@@ -314,7 +314,7 @@ class FilterEditor(tk.Toplevel):
                 # report changes
                 g.clog.log.info('Filter change: ' + ofilter + ' ---> ' + \
                                     nfilter + '\n')
-                
+
                 nchange += 1
         if nchange:
             g.clog.log.warn('You must physically change the filter(s) as well!\n')

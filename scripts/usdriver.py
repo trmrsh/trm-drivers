@@ -292,9 +292,14 @@ class GUI(tk.Tk):
            not tkMessageBox.askokcancel('Quit', 'Really quit usdriver?'):
             g.clog.log.warn('Quit usdriver cancelled.\n')
         else:
-            if g.wheel.connected:
-                g.wheel.close()
-                print('closed filter wheel')
+
+            try:
+                if g.wheel.connected:
+                    g.wheel.close()
+                    g.clog.log.warn('closed filter wheel')
+            except Exception, err:
+                g.clog.log.warn('Error closing filter wheel: ' +
+                                str(err) + '\n')
 
             try:
 
@@ -319,7 +324,7 @@ class GUI(tk.Tk):
 
                 conf = os.path.join(config_dir, 'usdriver.conf')
                 config.writeCpars(config.ULTRASPEC, conf)
-                print('Saved usdriver configuration (including filters) to ' + 
+                print('Saved usdriver configuration (including filters) to ' +
                       conf)
 
                 self.destroy()
