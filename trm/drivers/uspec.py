@@ -1462,8 +1462,9 @@ class Save(drvs.ActButton):
             g.observe.load.enable()
             g.observe.unfreeze.disable()
 
-            # unfreeze the instrument params
+            # unfreeze the instrument and run params
             g.ipars.unfreeze()
+            g.rpars.unfreeze()
             return True
         else:
             return False
