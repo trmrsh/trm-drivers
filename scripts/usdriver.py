@@ -21,7 +21,7 @@ any of these can be switched off.
 # core
 import argparse, os
 import Tkinter as tk
-import tkFont, tkMessageBox
+import tkFont, tkMessageBox, tkFileDialog
 import logging, Queue, threading
 import xml.etree.ElementTree as ET
 
@@ -274,6 +274,20 @@ class GUI(tk.Tk):
         else:
             print('rtplot server was not started')
 
+        if g.cpars['file_logging_on']:
+            # get name of file to log messages to. If set
+            # it will be connected
+            g.logfile = tkFileDialog.asksaveasfile(
+                mode='a',initialdir=g.cpars['log_file_directory'],
+                defaultextension='.log', filetypes=[('log files', '.log'),],
+                title='Name of usdriver log file')
+
+            if not g.logfile:
+                g.clog.log.warn('Will not log usdriver messages\n')
+
+            # update the command logger
+            g.clog.update()
+
     def startRtplotServer(self, x):
         """
         Starts up the server to handle GET requests from rtplot
@@ -363,16 +377,19 @@ if __name__ == '__main__':
         try:
             config.readCpars(config.ULTRASPEC, args.cpars)
             print('Loaded configuration from ' +  args.cpars)
+
         except KeyError, err:
             print('Failed to load configuration from  ' +  args.cpars)
             print('KeyError = ' + str(err))
             print('Possibly a corrupt configuration file.')
-            print('Will start with a default configuration; a config file will be saved on exit.\n')
+            print('Will start with a default configuration;' +
+                  ' a config file will be saved on exit.\n')
             config.loadCpars(config.ULTRASPEC)
         except IOError, err:
             print('Failed to load configuration from  ' +  args.cpars)
             print('Error = ' + str(err))
-            print('Will start with a default configuration; a config file will be saved on exit.\n')
+            print('Will start with a default configuration;' +
+                  ' a config file will be saved on exit.\n')
             config.loadCpars(config.ULTRASPEC)
 
         # add one extra that there is no point getting from a file as
