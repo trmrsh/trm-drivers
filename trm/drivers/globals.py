@@ -43,6 +43,7 @@ setup   : setup widget
 wheel   : filter wheel controller
 star_filter : filter at last press of 'Start'
 lakeshore : connection to Lakeshore CCD temperature
+logfile : file to log usdriver messages
 """
 
 from __future__ import print_function
@@ -162,3 +163,5 @@ start_filter = None
 # Lakeshore temperature control
 lakeshore = None
 
+# Logging file
+logfile = None
