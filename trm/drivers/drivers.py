@@ -2301,6 +2301,39 @@ class LoggingToGUI(logging.Handler):
         self.console.configure(state=tk.DISABLED)
         self.console.see(tk.END)
 
+class LoggingToFile(logging.Handler):
+    """
+    Used to send logging output to a file
+    """
+    def __init__(self, fout):
+        """
+        fout: file pointer to send messages to
+        """
+        logging.Handler.__init__(self)
+        self.fout = fout
+
+    def emit(self, message):
+        """
+        Overwrites the default handler's emit method:
+
+        message : the message to display
+        """
+        formattedMessage = self.format(message)
+
+        # Write message to console
+        if message.levelname == 'DEBUG':
+            self.fout.write('D. ' + formattedMessage)
+        elif message.levelname == 'INFO':
+            self.fout.write('I. ' + formattedMessage)
+        elif message.levelname == 'WARNING':
+            self.fout.write('W. ' + formattedMessage)
+        elif message.levelname == 'ERROR':
+            self.fout.write('E. ' + formattedMessage)
+        elif message.levelname == 'CRITICAL':
+            self.fout.write('C. ' + formattedMessage)
+        else:
+            print('Do not recognise level = ' + message.levelname)
+
 class LogDisplay(tk.LabelFrame):
     """
     A simple logging console
@@ -2331,6 +2364,16 @@ class LogDisplay(tk.LabelFrame):
         self.log = logging.getLogger(text)
         self.log.addHandler(ltgh)
 
+    def update(self):
+        """
+        Adds a handler to save to a file
+        """
+        if g.logfile:
+            ltfh = LoggingToFile(g.logfile)
+            logging.Formatter.converter = time.gmtime
+            formatter = logging.Formatter('%(asctime)s - %(message)s','%H:%M:%S')
+            ltfh.setFormatter(formatter)
+            self.log.addHandler(ltfh)
 
 class Switch(tk.Frame):
     """
