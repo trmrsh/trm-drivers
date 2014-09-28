@@ -221,9 +221,8 @@ def unfix_templates():
     del g.cpars['templates']
 
 def readCpars(guide, fname):
-    """
-    Loads dictionary of configuration parameters from a file 'fname' consisting of a series of
-    entries of the form::
+    """Loads dictionary of configuration parameters from a file 'fname'
+    consisting of a series of entries of the form::
 
       key = value
 
@@ -236,13 +235,14 @@ def readCpars(guide, fname):
       key = value1; value2; value3;
             value4; value5
 
-    Take care with '=' and ';' because of their special meanings. '#' at the start
-    of a line denotes a comment. A ';' at the end of a line indicates more values
-    will follow in the next line.
+    Take care with '=' and ';' because of their special meanings. '#' at the
+    start of a line denotes a comment. A ';' at the end of a line indicates
+    more values will follow in the next line.
 
-    The routine loads the values straight into the global cpars as a dictionary.
-    The values it looks for and their types are defined by 'guide' which
-    contains a list. See config.ULTRASPEC for an example.
+    The routine loads the values straight into the global cpars as a
+    dictionary.  The values it looks for and their types are defined by
+    'guide' which contains a list. See config.ULTRASPEC for an example.
+
     """
 
     # first load the file into a dictionary
@@ -291,12 +291,15 @@ def readCpars(guide, fname):
         if isinstance(entry, (list, tuple)):
             key, value = entry
             if isinstance(value,bool):
-                if item[key].lower() == 'false' or item[key] == '0' or item[key].lower() == 'no':
+                if item[key].lower() == 'false' or item[key] == '0' or \
+                   item[key].lower() == 'no':
                     g.cpars[key.lower()] = False
-                elif item[key].lower() == 'true' or item[key] == '1' or item[key].lower() == 'yes':
+                elif item[key].lower() == 'true' or item[key] == '1' or \
+                     item[key].lower() == 'yes':
                     g.cpars[key.lower()] = True
                 else:
-                    raise drvs.DriverError('Could not understand: ' + key + ' = ' + item[key] + ' as a bollean')
+                    raise drvs.DriverError('Could not understand: ' + key + \
+                                           ' = ' + item[key] + ' as a bollean')
             elif isinstance(value,str):
                 g.cpars[key.lower()] = item[key]
             elif isinstance(value,int):
@@ -313,6 +316,7 @@ def loadCpars(guide):
     """
     Loads dictionary of configuration parameters from a default guide such as
     config.ULTRASPEC. This is used when there is no file to read.
+
     """
 
     # intialise dictionary
