@@ -2318,21 +2318,7 @@ class LoggingToFile(logging.Handler):
 
         message : the message to display
         """
-        formattedMessage = self.format(message)
-
-        # Write message to console
-        if message.levelname == 'DEBUG':
-            self.fout.write('D. ' + formattedMessage)
-        elif message.levelname == 'INFO':
-            self.fout.write('I. ' + formattedMessage)
-        elif message.levelname == 'WARNING':
-            self.fout.write('W. ' + formattedMessage)
-        elif message.levelname == 'ERROR':
-            self.fout.write('E. ' + formattedMessage)
-        elif message.levelname == 'CRITICAL':
-            self.fout.write('C. ' + formattedMessage)
-        else:
-            print('Do not recognise level = ' + message.levelname)
+        self.fout.write(self.format(message))
 
 class LogDisplay(tk.LabelFrame):
     """
@@ -2371,7 +2357,7 @@ class LogDisplay(tk.LabelFrame):
         if g.logfile:
             ltfh = LoggingToFile(g.logfile)
             logging.Formatter.converter = time.gmtime
-            formatter = logging.Formatter('%(asctime)s - %(message)s','%H:%M:%S')
+            formatter = logging.Formatter('%(asctime)s %(levelname)-7s %(message)s','%Y-%m-%d %H:%M:%S')
             ltfh.setFormatter(formatter)
             self.log.addHandler(ltfh)
 

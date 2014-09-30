@@ -19,7 +19,7 @@ any of these can be switched off.
 """
 
 # core
-import argparse, os
+import argparse, os, time
 import Tkinter as tk
 import tkFont, tkMessageBox, tkFileDialog
 import logging, Queue, threading
@@ -307,6 +307,7 @@ class GUI(tk.Tk):
             g.clog.log.warn('Quit usdriver cancelled.\n')
         else:
 
+            # try to close the filter wheel; trap errors
             try:
                 if g.wheel.connected:
                     g.wheel.close()
@@ -314,6 +315,7 @@ class GUI(tk.Tk):
             except Exception, err:
                 g.clog.log.warn('Error closing filter wheel: ' +
                                 str(err) + '\n')
+
 
             try:
 
@@ -323,14 +325,9 @@ class GUI(tk.Tk):
                 if not os.path.exists(config_dir):
                     os.makedirs(config_dir)
 
-                # Save current settings
-                root  = uspec.createXML(False)
-                settings = os.path.join(config_dir, 'settings.xml')
-                ET.ElementTree(root).write(settings)
-                print('Saved instrument and run setting to ' + settings)
-
                 # Save configuration (- 'servers_initialised' as one would
-                # never want this to be True on entry)
+                # never want this to be True on entry). We save the config
+                # file first since it does need the servers to be running.
                 del g.cpars['servers_initialised']
 
                 # Reset expert mode to beginner
@@ -338,22 +335,41 @@ class GUI(tk.Tk):
 
                 conf = os.path.join(config_dir, 'usdriver.conf')
                 config.writeCpars(config.ULTRASPEC, conf)
-                print('Saved usdriver configuration (including filters) to ' +
-                      conf)
+                g.clog.log.info('Saved usdriver configuration to ' + conf + '\n')
+
+                try:
+
+                    # Save current settings
+                    root  = uspec.createXML(False)
+                    settings = os.path.join(config_dir, 'settings.xml')
+                    ET.ElementTree(root).write(settings)
+                    g.clog.log.info('Saved instrument and run settings to ' +
+                                    settings + '\n')
+                except Exception, err:
+                    g.clog.log.warn("""
+Failed to save the instrument settings to disk. This
+could be because you have already killed the servers
+which are needed to define the XML to save the settings.
+This is not a disaster, so the program will still exit
+but in future, exit usdriver before ctrl-C-ing the
+server windows.
+
+Exiting in 5 seconds.
+""")
+                    time.sleep(5)
 
                 self.destroy()
 
             except Exception, err:
                 g.clog.log.warn("""
-Failed to save the usdriver configuration and/or the
-instrument settings to disk. Directory of saved files
-should be = {0}
+Failed to save the usdriver configuration to disk.
+Directory of saved files should be = {0}.
 Please check that this directory is writeable and try
 again. Failure to save the configuration could cause
 the filters to become mis-labelled on next startup. If
 you cannot get it to work, then at least note down the
-order of the filters before hitting ctrl-C.
-Error = ' {1}""".format(config_dir, str(err)))
+current order of the filters before hitting ctrl-C.
+Error = ' {1}\n""".format(config_dir, str(err)))
 
 
 if __name__ == '__main__':
