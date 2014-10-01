@@ -11,7 +11,7 @@ Two main classes::
  WheelController : creates a window with buttons which use the FilterWheel
 """
 import Tkinter as tk
-import serial
+import serial, time
 
 import globals as g
 import drivers as drvs
