@@ -36,6 +36,7 @@ class FilterWheel(object):
         """
         Connects to the serial port of the filter wheel
         """
+        g.clog.log.debug('Filterwheel: connecting to serial port\n')
         self.ser = serial.Serial(self.port,baudrate=self.baudrate,
                                  timeout=self.default_timeout)
         self.connected = True
@@ -47,6 +48,8 @@ class FilterWheel(object):
         should always be the first command run after
         connecting to the wheel
         """
+        g.clog.log.debug('Filterwheel: initialising\n')
+
         response = self.sendCommand('WSMODE')
         if response != "!":
             raise FilterWheelError('Could not initialise wheel for' + \
@@ -58,6 +61,7 @@ class FilterWheel(object):
         """
         wrapper function to send commands to filter wheel
         """
+
         if not self.connected:
             raise FilterWheelError('Filter wheel not connected')
 
@@ -65,11 +69,13 @@ class FilterWheel(object):
             raise FilterWheelError('Filter wheel not initialised')
 
         if comm == 'WHOME' or comm.startswith('WGOTO'):
+            g.clog.log.debug('Filterwheel: setting timeout to 30 secs\n')
             self.ser.setTimeout(30)
-            g.clog.log.debug('Filterwheel: set timeout to 30 secs\n')
         else:
+            g.clog.log.debug('Filterwheel: setting timeout to ' +
+                             str(self.default_timeout) + ' secs\n')
             self.ser.setTimeout(self.default_timeout)
-            g.clog.log.debug('Filterwheel: set timeout to ' + str(self.default_timeout) + ' secs\n')
+
         g.clog.log.debug('Filterwheel: sending command = ' + comm + '\n')
         self.ser.write(comm+'\r\n',)
         retVal = self.ser.readline()
@@ -84,6 +90,7 @@ class FilterWheel(object):
         note this could throw
         """
         # disable serial mode operation for the serial port
+        g.clog.log.debug('Filterwheel: closing serial port\n')
         self.sendCommand('WEXITS')
         self.ser.close()
         g.clog.log.debug('Filterwheel: closed serial port\n')
@@ -96,6 +103,7 @@ class FilterWheel(object):
         needed very often, only if the slide has got into a
         confused state
         """
+        g.clog.log.debug('Filterwheel: homing the wheel\n')
         response = self.sendCommand('WHOME')
         if response == 'ER=1':
             raise FilterWheelError('Filter wheel homing took too many steps')
@@ -108,6 +116,7 @@ class FilterWheel(object):
         """
         returns ID of filter wheel, and checks for valid response
         """
+        g.clog.log.debug('Filterwheel: getting ID\n')
         response = self.sendCommand('WIDENT').strip()
         validIDs = ['A','B','C','D','E']
         if not response in validIDs:
@@ -118,6 +127,7 @@ class FilterWheel(object):
         """
         gets current position of wheel (from 1 to 6)
         """
+        g.clog.log.debug('Filterwheel: getting position\n')
         response = self.sendCommand('WFILTR')
         filtNum = int(response)
         return filtNum
@@ -126,6 +136,7 @@ class FilterWheel(object):
         """
         returns the possible names. should always be 123456
         """
+        g.clog.log.debug('Filterwheel: getting names\n')
         response = self.sendCommand("WREAD")
         return response.split()
 
@@ -133,6 +144,9 @@ class FilterWheel(object):
         """
         moves to desired position. positions 1 thru 6 are valid
         """
+        g.clog.log.debug('Filterwheel: changing to position ' +
+                         str(position) + '\n')
+
         if position > 6 or position < 1:
             raise FilterWheelError('Invalid filter wheel position')
         response = self.sendCommand('WGOTO'+repr(position))
@@ -151,6 +165,7 @@ class FilterWheel(object):
         """
         use this to fix a non-responding filter wheel
         """
+        g.clog.log.debug('Filterwheel: rebooting\n')
         self.close()
         time.sleep(2)
         self.connect()
@@ -259,7 +274,7 @@ class WheelController(tk.Toplevel):
         except Exception, err:
             g.clog.log.warn('Could not initialise wheel.\n')
             g.clog.log.warn('Error: ' + str(err) + '\n')
-            g.clog.log.warn('You might want to stop & restart usdriver, or perhaps the wheel needs adjusting.See the online ultraspec manual.\n')
+            g.clog.log.warn('You might want to try again once or twice, or stop & restart usdriver, or perhaps the wheel needs adjusting. See the online ultraspec manual.\n')
 
     def _close(self, *args):
         """
