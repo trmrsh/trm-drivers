@@ -190,7 +190,7 @@ class Slide(object):
                                  " which is out of range %d to %d" %
                              (nstep,MIN_MS,MAX_MS) )
         if not timeout:
-            timeout = time_for_absolute(nstep)
+            timeout = time_absolute(nstep)
 
         # encode command bytes into bytearray
         byteArr = self._encodeCommandData(nstep)
@@ -433,8 +433,7 @@ class Slide(object):
         if self.log is not None:
             self.log.info('Current position = {0:6.1f} pixels\n'.format(pos_px))
         else:
-            print("Current position = %d ms, %f mm, %f pixels" %
-                  (pos_ms,pos_mm,pos_px))
+            print("Current position = %d ms, %f mm, %f pixels" % (pos_ms,pos_mm,pos_px))
 
 
 class FocalPlaneSlide(tk.LabelFrame):
