@@ -251,10 +251,14 @@ class GUI(tk.Tk):
         settings = os.path.join(os.path.expanduser('~'),'.usdriver',
                                 'settings.xml')
         if os.path.isfile(settings):
-            xml = ET.parse(settings).getroot()
-            g.ipars.loadXML(xml)
-            g.rpars.loadXML(xml)
-            print('Loaded instrument and run settings from ' + settings)
+            try:
+                xml = ET.parse(settings).getroot()
+                g.ipars.loadXML(xml)
+                g.rpars.loadXML(xml)
+                print('Loaded instrument and run settings from ' + settings)
+            except Exception, err:
+                g.clog.log.warn('Failed to load saved settings.\n')
+                g.clog.log.warn(str(err) + '\n')
 
         # run instrument setting checks
         g.ipars.check()
