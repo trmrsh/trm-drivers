@@ -86,8 +86,7 @@ class LakeFile(object):
     interacting via serial port
     """
 
-#   DDIR = '/home/observer/Lakeshore/'
-    DDIR = 'data'
+    DDIR = '/home/observer/Lakeshore/'
 
     def __init__(self):
         """
