@@ -554,8 +554,7 @@ class FocalPlaneSlide(tk.LabelFrame):
                     timeout = self.slide.time_home()
                     if timeout > 3:
                         inback = True
-                        t = threading.Thread(target=self.slide.home,
-                                             args=(timeout))
+                        t = threading.Thread(target=self.slide.home,args=(timeout,))
                     else:
                         self.slide.home(timeout)
 
