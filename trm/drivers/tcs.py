@@ -41,10 +41,9 @@ def getTntTcs():
     # for judging rotator limit issues
     ignore,ra,dec,pa,focus,tracking,engpa = listData
 
-    # 270 is an experimental offset which could be refined ??
     ra     = math.degrees(float(ra))
     dec    = math.degrees(float(dec))
-    pa     = math.degrees(float(pa))+270.
+    pa     = math.degrees(float(pa))
     if pa < 0:
         pa += 360.
     elif pa >= 360.:
