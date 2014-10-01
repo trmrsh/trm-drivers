@@ -13,6 +13,7 @@ import os, urllib2, math
 # mine
 import globals as g
 import drivers as drvs
+import lakeshore as lake
 import tcs
 
 # Timing, gain, noise parameters lifted from java usdriver
