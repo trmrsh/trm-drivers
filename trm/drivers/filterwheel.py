@@ -39,6 +39,7 @@ class FilterWheel(object):
         self.ser = serial.Serial(self.port,baudrate=self.baudrate,
                                  timeout=self.default_timeout)
         self.connected = True
+        g.clog.log.debug('Filterwheel: connected to serial port\n')
 
     def init(self):
         """
@@ -51,6 +52,7 @@ class FilterWheel(object):
             raise FilterWheelError('Could not initialise wheel for' + \
                                    ' serial commands')
         self.initialised = True
+        g.clog.log.debug('Filterwheel: serial mode enabled (WSMODE)\n')
 
     def sendCommand(self,comm):
         """
@@ -64,10 +66,14 @@ class FilterWheel(object):
 
         if comm == 'WHOME' or comm.startswith('WGOTO'):
             self.ser.setTimeout(30)
+            g.clog.log.debug('Filterwheel: set timeout to 30 secs\n')
         else:
             self.ser.setTimeout(self.default_timeout)
+            g.clog.log.debug('Filterwheel: set timeout to ' + str(self.default_timeout) + ' secs\n')
+        g.clog.log.debug('Filterwheel: sending command = ' + comm + '\n')
         self.ser.write(comm+'\r\n',)
         retVal = self.ser.readline()
+        g.clog.log.debug('Filterwheel: received = ' + retVal.strip() + '\n')
 
         # return command with leading and trailing whitespace removed
         return retVal.strip()
@@ -80,6 +86,7 @@ class FilterWheel(object):
         # disable serial mode operation for the serial port
         self.sendCommand('WEXITS')
         self.ser.close()
+        g.clog.log.debug('Filterwheel: closed serial port\n')
         self.connected   = False
         self.initialised = False
 
