@@ -108,8 +108,9 @@ class InstPars(tk.LabelFrame):
 
         # Exposure delay
         tk.Label(lhs, text='Exposure delay (s)').grid(row=4,column=0, sticky=tk.W)
+
         elevel = g.cpars['expert_level']
-        if elevel == 0 and elevel == 1:
+        if elevel == 0 or elevel == 1:
             self.expose = drvs.Expose(lhs, 0.0007, 0.0007, 1677.7207,
                                       self.check, width=7)
         else:
