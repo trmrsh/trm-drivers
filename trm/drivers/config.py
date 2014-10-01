@@ -69,7 +69,7 @@ ULTRASPEC = \
 # TELINS_NAME           = name of telescope - instrument. Must correpond with one of
 #                         the keys in trm.drivers.globals.TINS
 """,
-     ['rtplot_server_on', False],
+     ['rtplot_server_on', True],
      ['cdf_servers_on', False],
      ['filter_wheel_on', False],
      ['focal_plane_slide_on', False],
