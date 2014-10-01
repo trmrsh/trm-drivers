@@ -2857,7 +2857,7 @@ class InfoFrame(tk.LabelFrame):
                     self.fpslide.configure(bg=g.COL['warn'])
 
             # get the CCD temperature poll at 15x slower rate than the frame
-            if self.count % 15 == 0 and g.cpars['ccd_temperature_on']:
+            if self.count % 100 == 0 and g.cpars['ccd_temperature_on']:
                 try:
                     if g.lakeshore is None:
                         g.lakeshore = lake.Lakeshore()
