@@ -795,9 +795,6 @@ class RunPars(tk.LabelFrame):
             self.pi.configure(state='disable')
             self.progid.configure(state='disable')
             self.target.disable()
-        elif self.dtype.value() == 'technical':
-            self.pi.configure(state='disable')
-            self.progid.configure(state='disable')
         else:
             self.pi.configure(state='normal')
             self.progid.configure(state='normal')
