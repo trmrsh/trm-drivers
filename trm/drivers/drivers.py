@@ -2102,8 +2102,6 @@ class PowerOff(ActButton):
         Power off action
         """
         g.clog.log.debug('Power off pressed\n')
-        g.clog.log.debug('This is a placeholder as there is no Power' + \
-                             ' off application so it will fail\n')
 
         if execRemoteApp(g.cpars['power_off_app']) and execCommand('GO'):
 

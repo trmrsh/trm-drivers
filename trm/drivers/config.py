@@ -166,6 +166,8 @@ ULTRASPEC = \
 #
 # POWER_ON_APP          = name of the power on application
 #
+# POWER_OFF_APP         = name of the power off application
+#
 # INSTRUMENT_APP        = Generic application for server setup
 """,
      ['template_labels', ('Windows', 'Drift')],
@@ -173,6 +175,7 @@ ULTRASPEC = \
      ['template_apps', ('ccd201_winbin_app.xml', 'ccd201_driftscan_app.xml')],
      ['template_ids', ('ccd201_winbin_app', 'ccd201_driftscan_app')],
      ['power_on_app','ccd201_pon_cfg.xml'],
+     ['power_off_app','ccd201_pon_dsp.xml'],
      ['instrument_app', 'ultraspec.xml'],
      ]
 
