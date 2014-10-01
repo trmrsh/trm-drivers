@@ -51,9 +51,17 @@ MM_PER_MS        = 0.00015619
 MIN_MM           = MM_PER_MS*MIN_MS
 MAX_MM           = MM_PER_MS*MAX_MS
 
-# these set the limits in pixel numbers. They are telescope dependent
-MIN_PX           = 1230.0
-MAX_PX           = -798.
+# Next numbers set the limits in pixel numbers. They are telescope dependent.
+
+# TNT values before re-calibration of March 2014:
+#MIN_PX           = 1230.0
+#MAX_PX           = -798.
+
+# TNT values March 2014 -- present
+MIN_PX           = 1240.0
+MAX_PX           = -788.
+
+# Standard pixel positions for unblocking and blocking the CCD
 UNBLOCK_POS      = 1100.
 BLOCK_POS        = -100.
 
