@@ -2856,21 +2856,21 @@ class InfoFrame(tk.LabelFrame):
                     self.fpslide.configure(text='UNDEF')
                     self.fpslide.configure(bg=g.COL['warn'])
 
-            # get the CCD temperature poll at 15x slower rate than the frame
-            if self.count % 100 == 0 and g.cpars['ccd_temperature_on']:
+            # get the CCD temperature poll at 5x slower rate than the frame
+            if self.count % 5 == 0 and g.cpars['ccd_temperature_on']:
                 try:
                     if g.lakeshore is None:
-                        g.lakeshore = lake.Lakeshore()
-                    ccd_temp = g.lakeshore.tempa()
-                    self.lake.configure(text='{0:5.1f}'.format(ccd_temp))
-                    if ccd_temp > 165:
+                        g.lakeshore = lake.LakeFile()
+                    tempa, tempb, heater = g.lakeshore.temps()
+                    self.lake.configure(text='{0:5.1f}'.format(tempa))
+                    if tempa > 165:
                         self.lake.configure(bg=g.COL['error'])
-                    elif ccd_temp > 162.:
+                    elif tempa > 162.:
                         self.lake.configure(bg=g.COL['warn'])
                     else:
                         self.lake.configure(bg=g.COL['main'])
                 except Exception, err:
-                    g.clog.log.warn('Lakeshore error: ' + str(err) + '\n')
+                    g.clog.log.warn(str(err) + '\n')
                     self.lake.configure(text='UNDEF')
                     self.lake.configure(bg=g.COL['warn'])
 

@@ -1309,15 +1309,30 @@ class Start(drvs.ActButton):
             fpslide = ET.SubElement(uconfig, 'SlidePos')
             fpslide.text = '{0:d}'.format(int(round(pos_px)))
 
-            # Get CCD temperature data
-            if g.lakeshore is None:
-                g.lakeshore = lake.Lakeshore()
+            # Attempt to get CCD temperature data. Abort if it fails and
+            # the Lakeshore is said to be working.
             ccd_temp = ET.SubElement(uconfig, 'ccd_temp')
-            ccd_temp.text = '{0:5.1f}'.format(g.lakeshore.tempa())
             finger_temp = ET.SubElement(uconfig, 'finger_temp')
-            finger_temp.text = '{0:5.1f}'.format(g.lakeshore.tempb())
             heater_percent = ET.SubElement(uconfig, 'heater_percent')
-            heater_percent.text = '{0:4.1f}'.format(g.lakeshore.heater())
+
+            try:
+                if g.lakeshore is None:
+                    g.lakeshore = lake.LakeFile()
+
+                tempa, tempb, heater = g.lakeshore.temps()
+                ccd_temp.text = '{0:5.1f}'.format(tempa)
+                finger_temp.text = '{0:5.1f}'.format(tempb)
+                heater_percent.text = '{0:4.1f}'.format(heater)
+
+            except:
+                if g.cpars['ccd_temperature_on']:
+                    raise
+                else:
+                    g.clog.log.warn('Failed to read temperature but will start anyway.\n')
+                    g.clog.log.warn(str(err) + '\n')
+                    ccd_temp.text = 'UNDEF'
+                    finger_temp.text = 'UNDEF'
+                    heater_percent.text = 'UNDEF'
 
             # Post the XML it to the server
             g.clog.log.info('Posting application to the servers\n')

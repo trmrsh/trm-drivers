@@ -132,9 +132,9 @@ class GUI(tk.Tk):
         if g.cpars['ccd_temperature_on']:
             try:
                 # CCD temperature
-                g.lakeshore = lake.Lakeshore()
+                g.lakeshore = lake.LakeFile()
             except Exception, err:
-                g.clog.log.warn('Lakeshore error: ' + str(err) + '\n')
+                g.clog.log.warn(str(err) + '\n')
                 g.clog.log.warn('Switching off Lakeshore access (settings)\n')
                 g.cpars['ccd_temperature_on'] = False
 
