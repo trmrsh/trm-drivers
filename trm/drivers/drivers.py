@@ -2265,6 +2265,10 @@ class LoggingToGUI(logging.Handler):
         console : widget to display logging messages
         """
         logging.Handler.__init__(self)
+        logging.Formatter.converter = time.gmtime
+        formatter = logging.Formatter('%(asctime)s - %(message)s','%H:%M:%S')
+        self.setFormatter(formatter)
+        self.setLevel(logging.INFO)
         self.console = console
         self.console.tag_config('debug', background=g.COL['debug'])
         self.console.tag_config('warn', background=g.COL['warn'])
@@ -2283,8 +2287,7 @@ class LoggingToGUI(logging.Handler):
         # Write message to console
         self.console.configure(state=tk.NORMAL,font=g.ENTRY_FONT)
         if message.levelname == 'DEBUG':
-#            self.console.insert(tk.END, formattedMessage, ('debug'))
-            pass
+            self.console.insert(tk.END, formattedMessage, ('debug'))
         elif message.levelname == 'INFO':
             self.console.insert(tk.END, formattedMessage)
         elif message.levelname == 'WARNING':
@@ -2300,25 +2303,27 @@ class LoggingToGUI(logging.Handler):
         self.console.configure(state=tk.DISABLED)
         self.console.see(tk.END)
 
-class LoggingToFile(logging.Handler):
+class LoggingToFile(logging.FileHandler):
     """
     Used to send logging output to a file
     """
-    def __init__(self, fout):
+    def __init__(self, fname):
         """
         fout: file pointer to send messages to
         """
-        logging.Handler.__init__(self)
-        self.fout = fout
+        logging.FileHandler.__init__(self, fname)
+        logging.Formatter.converter = time.gmtime
+        formatter = logging.Formatter('%(asctime)s %(levelname)-7s %(message)s','%Y-%m-%d %H:%M:%S')
+        self.setFormatter(formatter)
 
-    def emit(self, message):
-        """
-        Overwrites the default handler's emit method:
-
-        message : the message to display
-        """
-        self.fout.write(self.format(message))
-        self.fout.flush()
+#    def emit(self, message):
+#        """
+#        Overwrites the default handler's emit method:
+#
+#        message : the message to display
+#        """
+#        self.fout.write(self.format(message))
+#        self.fout.flush()
 
 
 class LogDisplay(tk.LabelFrame):
@@ -2342,11 +2347,6 @@ class LogDisplay(tk.LabelFrame):
         # make a handler for GUIs
         ltgh = LoggingToGUI(self.console)
 
-        # define the formatting
-        logging.Formatter.converter = time.gmtime
-        formatter = logging.Formatter('%(asctime)s - %(message)s','%H:%M:%S')
-        ltgh.setFormatter(formatter)
-
         # make a logger and set the handler
         self.log = logging.getLogger(text)
         self.log.addHandler(ltgh)
@@ -2357,9 +2357,6 @@ class LogDisplay(tk.LabelFrame):
         """
         if g.logfile:
             ltfh = LoggingToFile(g.logfile)
-            logging.Formatter.converter = time.gmtime
-            formatter = logging.Formatter('%(asctime)s %(levelname)-7s %(message)s','%Y-%m-%d %H:%M:%S')
-            ltfh.setFormatter(formatter)
             self.log.addHandler(ltfh)
 
 class Switch(tk.Frame):
@@ -2816,8 +2813,7 @@ class InfoFrame(tk.LabelFrame):
                     # OK, we have managed to get the run number
                     rstr = 'run{0:03d}'.format(run)
                     try:
-                        url = g.cpars['http_file_server'] + rstr + \
-                              '?action=get_num_frames'
+                        url = g.cpars['http_file_server'] + rstr + '?action=get_num_frames'
                         response = urllib2.urlopen(url)
                         rstr = response.read()
                         ind = rstr.find('nframes="')
@@ -2835,8 +2831,7 @@ class InfoFrame(tk.LabelFrame):
                             self.frame.configure(text='UNDEF')
 
                 except Exception, err:
-                    g.clog.log.debug('Error trying to set run: ' +
-                                     str(err) + '\n')
+                    g.clog.log.debug('Error trying to set run: ' + str(err) + '\n')
 
             # get the current filter, which is set during the start
             # operation
