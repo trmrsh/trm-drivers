@@ -139,7 +139,7 @@ ULTRASPEC = \
      ['app_directory', 'data/applications'],
      ['template_from_server', False],
      ['template_directory', 'data/templates'],
-     ['log_file_directory', 'data/logs'],
+     ['log_file_directory', '~/.usdriver/logs'],
      ['require_run_params', True],
      ['confirm_on_change', True],
      ['confirm_hv_gain_on', True],
