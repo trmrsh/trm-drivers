@@ -796,11 +796,11 @@ class RunPars(tk.LabelFrame):
                 self.dtype.value() == 'dark':
             self.pi.configure(state='disable')
             self.progid.configure(state='disable')
-            self.target.disable()
+#            self.target.disable()
         else:
             self.pi.configure(state='normal')
             self.progid.configure(state='normal')
-            self.target.enable()
+#            self.target.enable()
 
         if g.cpars['require_run_params']:
             dtype = self.dtype.value()
