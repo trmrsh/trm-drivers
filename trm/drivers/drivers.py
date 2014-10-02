@@ -2317,6 +2317,8 @@ class LoggingToFile(logging.Handler):
         message : the message to display
         """
         self.fout.write(self.format(message))
+        self.fout.flush()
+
 
 class LogDisplay(tk.LabelFrame):
     """
