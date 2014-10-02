@@ -281,8 +281,8 @@ class GUI(tk.Tk):
         if g.cpars['file_logging_on']:
             # get name of file to log messages to. If set
             # it will be connected
-            g.logfile = tkFileDialog.asksaveasfile(
-                mode='a',initialdir=g.cpars['log_file_directory'],
+            g.logfile = tkFileDialog.asksaveasfilename(
+                initialdir=g.cpars['log_file_directory'],
                 defaultextension='.log', filetypes=[('log files', '.log'),],
                 title='Name of usdriver log file')
 
@@ -291,6 +291,10 @@ class GUI(tk.Tk):
 
             # update the command logger
             g.clog.update()
+
+        else:
+            g.clog.log.warn('Logging to a file is disabled\n')
+
 
     def startRtplotServer(self, x):
         """
