@@ -2827,12 +2827,11 @@ class InfoFrame(tk.LabelFrame):
                             self.frame.configure(text='{0:d}'.format(nframe))
                     except Exception, err:
                         if err.code == 404:
-                            g.clog.log.debug('Error trying to set frame: ' +
-                                             str(err) + '\n')
+#                            g.clog.log.debug('Error trying to set frame: ' +
+#                                             str(err) + '\n')
                             self.frame.configure(text='0')
                         else:
-                            g.clog.log.debug('Error trying to set' +
-                                             ' occurred trying to set run\n')
+                            g.clog.log.debug('Error occurred trying to set frame\n')
                             self.frame.configure(text='UNDEF')
 
                 except Exception, err:
