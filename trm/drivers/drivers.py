@@ -2649,6 +2649,8 @@ class InfoFrame(tk.LabelFrame):
             if g.cpars['tcs_on']:
                 if g.cpars['telins_name'] == 'TNO-USPEC':
                     try:
+                        print('Accessing TCS\n')
+
                         # Poll TCS for ra,dec etc.
                         ra,dec,pa,focus,tflag,engpa = tcs.getTntTcs()
 
