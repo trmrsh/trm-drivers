@@ -2282,9 +2282,10 @@ class LoggingToGUI(logging.Handler):
 
         # Write message to console
         self.console.configure(state=tk.NORMAL,font=g.ENTRY_FONT)
-#        if message.levelname == 'DEBUG':
+        if message.levelname == 'DEBUG':
 #            self.console.insert(tk.END, formattedMessage, ('debug'))
-        if message.levelname == 'INFO':
+            pass
+        elif message.levelname == 'INFO':
             self.console.insert(tk.END, formattedMessage)
         elif message.levelname == 'WARNING':
             self.console.insert(tk.END, formattedMessage, ('warn'))
