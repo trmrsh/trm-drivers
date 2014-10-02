@@ -240,6 +240,7 @@ class InstPars(tk.LabelFrame):
             pdict[param.attrib['ref']] = param.attrib['value']
 
         xbin, ybin = int(pdict['X_BIN']), int(pdict['Y_BIN'])
+        print('xb,yb = ', xbin, ybin)
 
         # Set them.
 
@@ -1232,14 +1233,14 @@ class Start(drvs.ActButton):
                         # only bother about the telescope's tracking flag
                         # if we have not over-ridden the more reliable flag
                         # from 'info'
-                        if g.info.tracking and not tflag and \
-                                not tkMessageBox.askokcancel(
-                            'TCS error',
-                            'The telescope reports that it is not tracking;\n' +
-                            'the RA, Dec and or PA could be wrong as a result.\n' +
-                            'Continue?'):
-                            g.clog.log.warn('Start operation cancelled\n')
-                            return False
+#                        if g.info.tracking and not tflag and \
+#                                not tkMessageBox.askokcancel(
+#                            'TCS error',
+#                            'The telescope reports that it is not tracking;\n' +
+#                            'the RA, Dec and or PA could be wrong as a result.\n' +
+#                            'Continue?'):
+#                            g.clog.log.warn('Start operation cancelled\n')
+#                            return False
 
                         # all systems are go...
                         tra         = ET.SubElement(uconfig, 'RA')
