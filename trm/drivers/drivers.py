@@ -1270,11 +1270,11 @@ def saveXML(root):
     fname = tkFileDialog.asksaveasfilename(
         defaultextension='.xml', filetypes=[('xml files', '.xml'),])
     if not fname:
-        g.clog.log.warn('Aborted save to disk\n')
+        g.clog.log.warn('Aborted save to disk')
         return False
     tree = ET.ElementTree(root)
     tree.write(fname)
-    g.clog.log.info('Saved setup to' + fname + '\n')
+    g.clog.log.info('Saved setup to' + fname)
     return True
 
 def postXML(root):
@@ -1285,10 +1285,10 @@ def postXML(root):
     The current setup.
 
     """
-    g.clog.log.debug('Entering postXML\n')
+    g.clog.log.debug('Entering postXML')
 
     if not g.cpars['cdf_servers_on']:
-        g.clog.log.warn('postXML: servers are not active\n')
+        g.clog.log.warn('postXML: servers are not active')
         return False
 
     # Write setup to an xml string
@@ -1296,30 +1296,30 @@ def postXML(root):
 
     # Send the xml to the camera server
     url = g.cpars['http_camera_server'] + g.HTTP_PATH_CONFIG
-    g.clog.log.debug('Camera URL = ' + url +'\n')
+    g.clog.log.debug('Camera URL = ' + url)
 
     opener = urllib2.build_opener()
-    g.clog.log.debug('content length = ' + str(len(sxml)) + '\n')
+    g.clog.log.debug('content length = ' + str(len(sxml)))
     req = urllib2.Request(url, data=sxml, headers={'Content-type': 'text/xml'})
     response = opener.open(req, timeout=5)
     csr = ReadServer(response.read())
-    g.rlog.log.warn(csr.resp() + '\n')
+    g.rlog.log.warn(csr.resp())
     if not csr.ok:
-        g.clog.log.warn('Camera response was not OK\n')
+        g.clog.log.warn('Camera response was not OK')
         return False
 
     # Send the xml to the data server
     url = g.cpars['http_data_server'] + g.HTTP_PATH_CONFIG
-    g.clog.log.debug('Data server URL = ' + url + '\n')
+    g.clog.log.debug('Data server URL = ' + url)
     req = urllib2.Request(url, data=sxml, headers={'Content-type': 'text/xml'})
     response = opener.open(req, timeout=5) # ?? need to check whether this is needed
     fsr = ReadServer(response.read())
-    g.rlog.log.warn(fsr.resp() + '\n')
+    g.rlog.log.warn(fsr.resp())
     if not csr.ok:
-        g.clog.log.warn('Fileserver response was not OK\n')
+        g.clog.log.warn('Fileserver response was not OK')
         return False
 
-    g.clog.log.debug('Leaving postXML\n')
+    g.clog.log.debug('Leaving postXML')
     return True
 
 class ActButton(tk.Button):
@@ -1450,17 +1450,17 @@ class Stop(ActButton):
         Carries out the action associated with Stop button
         """
 
-        g.clog.log.debug('Stop pressed\n')
+        g.clog.log.debug('Stop pressed')
 
         def stop_in_background():
             try:
                 self.stopping   = True
                 if execCommand('EX,0'):
                     # Report that run has stopped
-                    g.clog.log.info('Run stopped\n')
+                    g.clog.log.info('Run stopped')
                     self.stopped_ok = True
                 else:
-                    g.clog.log.warn('Failed to stop run\n')
+                    g.clog.log.warn('Failed to stop run')
                     self.stopped_ok = False
                 self.stopping   = False
             except Exception, err:
@@ -1636,21 +1636,21 @@ class Target(tk.Frame):
 
         tname = self.val.get()
 
-        g.clog.log.info('Checking ' + tname + ' in simbad\n')
+        g.clog.log.info('Checking ' + tname + ' in simbad')
         ret = checkSimbad(tname)
         if len(ret) == 0:
             self.verify.config(bg=g.COL['stop'])
-            g.clog.log.warn('No matches to "' + tname + '" found.\n')
+            g.clog.log.warn('No matches to "' + tname + '" found.')
             if tname not in self.failures:
                 self.failures.append(tname)
         elif len(ret) == 1:
             self.verify.config(bg=g.COL['start'])
-            g.clog.log.info(tname + ' verified OK in simbad\n')
-            g.clog.log.info('Primary simbad name = ' + ret[0]['Name'] + '\n')
+            g.clog.log.info(tname + ' verified OK in simbad')
+            g.clog.log.info('Primary simbad name = ' + ret[0]['Name'])
             if tname not in self.successes:
                 self.successes.append(tname)
         else:
-            g.clog.log.warn('More than one match to "' + tname + '" found\n')
+            g.clog.log.warn('More than one match to "' + tname + '" found')
             self.verify.config(bg=g.COL['stop'])
             if tname not in self.failures:
                 self.failures.append(tname)
@@ -1759,27 +1759,27 @@ def execCommand(command):
     succeeded or not.
     """
     if not g.cpars['cdf_servers_on']:
-        g.clog.log.warn('execCommand: servers are not active\n')
+        g.clog.log.warn('execCommand: servers are not active')
         return False
 
     try:
         url = g.cpars['http_camera_server'] + g.HTTP_PATH_EXEC + \
             '?' + command
-        g.clog.log.info('execCommand, command = "' + command + '"\n')
+        g.clog.log.info('execCommand, command = "' + command + '"')
         response = urllib2.urlopen(url)
         rs  = ReadServer(response.read())
 
-        g.rlog.log.info('Camera response =\n' + rs.resp() + '\n')
+        g.rlog.log.info('Camera response =\n' + rs.resp())
         if rs.ok:
-            g.clog.log.info('Response from camera server was OK\n')
+            g.clog.log.info('Response from camera server was OK')
             return True
         else:
-            g.clog.log.warn('Response from camera server was not OK\n')
-            g.clog.log.warn('Reason: ' + rs.err + '\n')
+            g.clog.log.warn('Response from camera server was not OK')
+            g.clog.log.warn('Reason: ' + rs.err)
             return False
     except urllib2.URLError, err:
-        g.clog.log.warn('execCommand failed\n')
-        g.clog.log.warn(str(err) + '\n')
+        g.clog.log.warn('execCommand failed')
+        g.clog.log.warn(str(err))
 
     return False
 
@@ -1798,7 +1798,7 @@ def execServer(name, app):
     Returns True/False according to success or otherwise
     """
     if not g.cpars['cdf_servers_on']:
-        g.clog.log.warn('execServer: servers are not active\n')
+        g.clog.log.warn('execServer: servers are not active')
         return False
 
     if name == 'camera':
@@ -1809,16 +1809,16 @@ def execServer(name, app):
     else:
         raise Exception('Server name = ' + name + ' not recognised.')
 
-    g.clog.log.debug('execServer, url = ' + url + '\n')
+    g.clog.log.debug('execServer, url = ' + url)
 
     response = urllib2.urlopen(url)
     rs  = ReadServer(response.read())
     if not rs.ok:
-        g.clog.log.warn('Response from ' + name + ' server not OK\n')
-        g.clog.log.warn('Reason: ' + rs.err + '\n')
+        g.clog.log.warn('Response from ' + name + ' server not OK')
+        g.clog.log.warn('Reason: ' + rs.err)
         return False
 
-    g.clog.log.debug('execServer command was successful\n')
+    g.clog.log.debug('execServer command was successful')
     return True
 
 def execRemoteApp(app):
@@ -1854,10 +1854,10 @@ class ResetSDSUhard(ActButton):
         Carries out the action associated with the Reset SDSU hardware button
         """
 
-        g.clog.log.debug('Reset SDSU hardware pressed\n')
+        g.clog.log.debug('Reset SDSU hardware pressed')
 
         if execCommand('RCO'):
-            g.clog.log.info('Reset SDSU hardware succeeded\n')
+            g.clog.log.info('Reset SDSU hardware succeeded')
 
             # adjust buttons
             self.disable()
@@ -1870,7 +1870,7 @@ class ResetSDSUhard(ActButton):
             g.setup.powerOff.disable()
             return True
         else:
-            g.clog.log.warn('Reset SDSU hardware failed\n')
+            g.clog.log.warn('Reset SDSU hardware failed')
             return False
 
 class ResetSDSUsoft(ActButton):
@@ -1889,10 +1889,10 @@ class ResetSDSUsoft(ActButton):
         """
         Carries out the action associated with the Reset SDSU software button
         """
-        g.clog.log.debug('Reset SDSU software pressed\n')
+        g.clog.log.debug('Reset SDSU software pressed')
 
         if execCommand('RS'):
-            g.clog.log.info('Reset SDSU software succeeded\n')
+            g.clog.log.info('Reset SDSU software succeeded')
 
             # alter buttons
             self.disable()
@@ -1905,7 +1905,7 @@ class ResetSDSUsoft(ActButton):
             g.setup.powerOff.disable()
             return True
         else:
-            g.clog.log.warn('Reset SDSU software failed\n')
+            g.clog.log.warn('Reset SDSU software failed')
             return False
 
 class ResetPCI(ActButton):
@@ -1924,10 +1924,10 @@ class ResetPCI(ActButton):
         """
         Carries out the action associated with the Reset PCI button
         """
-        g.clog.log.debug('Reset PCI pressed\n')
+        g.clog.log.debug('Reset PCI pressed')
 
         if execCommand('RST'):
-            g.clog.log.info('Reset PCI succeeded\n')
+            g.clog.log.info('Reset PCI succeeded')
 
             # alter buttons
             self.disable()
@@ -1941,7 +1941,7 @@ class ResetPCI(ActButton):
             g.setup.powerOff.disable()
             return True
         else:
-            g.clog.log.warn('Reset PCI failed\n')
+            g.clog.log.warn('Reset PCI failed')
             return False
 
 class SystemReset(ActButton):
@@ -1962,10 +1962,10 @@ class SystemReset(ActButton):
         Carries out the action associated with the System Reset
         """
 
-        g.clog.log.debug('System Reset pressed\n')
+        g.clog.log.debug('System Reset pressed')
 
         if execCommand('SRS'):
-            g.clog.log.info('System Reset succeeded\n')
+            g.clog.log.info('System Reset succeeded')
 
             # alter buttons here
             g.observe.start.disable()
@@ -1978,7 +1978,7 @@ class SystemReset(ActButton):
             g.setup.powerOff.disable()
             return True
         else:
-            g.clog.log.warn('System Reset failed\n')
+            g.clog.log.warn('System Reset failed')
             return False
 
 class SetupServers(ActButton):
@@ -1998,7 +1998,7 @@ class SetupServers(ActButton):
         Carries out the action associated with the 'Setup servers' button
         """
 
-        g.clog.log.debug('Setup servers pressed\n')
+        g.clog.log.debug('Setup servers pressed')
         tapp = g.TINS[g.cpars['telins_name']]['app']
 
         if execServer('camera', tapp) and \
@@ -2006,7 +2006,7 @@ class SetupServers(ActButton):
                 execServer('data', tapp) and \
                 execServer('data', g.cpars['instrument_app']):
 
-            g.clog.log.info('Setup servers succeeded\n')
+            g.clog.log.info('Setup servers succeeded')
 
             # alter buttons
             self.disable()
@@ -2022,7 +2022,7 @@ class SetupServers(ActButton):
             g.cpars['servers_initialised'] = True
             return True
         else:
-            g.clog.log.warn('Setup servers failed\n')
+            g.clog.log.warn('Setup servers failed')
             return False
 
 class PowerOn(ActButton):
@@ -2041,11 +2041,11 @@ class PowerOn(ActButton):
         """
         Power on action
         """
-        g.clog.log.debug('Power on pressed\n')
+        g.clog.log.debug('Power on pressed')
 
         if execRemoteApp(g.cpars['power_on_app']) and execCommand('GO'):
 
-            g.clog.log.info('Power on successful\n')
+            g.clog.log.info('Power on successful')
 
             # change other buttons
             self.disable()
@@ -2074,8 +2074,8 @@ class PowerOn(ActButton):
                     g.info.run.configure(text='{0:03d}'.format(getRunNumber(True)))
             except Exception, err:
                 g.clog.log.warn(\
-                    'Failed to determine run number at start of run\n')
-                g.clog.log.warn(str(err) + '\n')
+                    'Failed to determine run number at start of run')
+                g.clog.log.warn(str(err))
                 g.info.run.configure(text='UNDEF')
             return True
         else:
@@ -2100,11 +2100,11 @@ class PowerOff(ActButton):
         """
         Power off action
         """
-        g.clog.log.debug('Power off pressed\n')
+        g.clog.log.debug('Power off pressed')
 
         if execRemoteApp(g.cpars['power_off_app']) and execCommand('GO'):
 
-            g.clog.log.info('Powered off SDSU\n')
+            g.clog.log.info('Powered off SDSU')
 
             # alter buttons
             self.disable()
@@ -2117,7 +2117,7 @@ class PowerOff(ActButton):
             g.setup.powerOn.enable()
             return True
         else:
-            g.clog.log.warn('Power off failed\n')
+            g.clog.log.warn('Power off failed')
             return False
 
 class Initialise(ActButton):
@@ -2137,21 +2137,21 @@ class Initialise(ActButton):
         """
         Initialise action
         """
-        g.clog.log.debug('Initialise pressed\n')
+        g.clog.log.debug('Initialise pressed')
 
         if not g.setup.systemReset.act():
-            g.clog.log.warn('Initialise failed on system reset\n')
+            g.clog.log.warn('Initialise failed on system reset')
             return False
 
         if not g.setup.setupServers.act():
-            g.clog.log.warn('Initialise failed on server setup\n')
+            g.clog.log.warn('Initialise failed on server setup')
             return False
 
         if not g.setup.powerOn.act():
-            g.clog.log.warn('Initialise failed on power on\n')
+            g.clog.log.warn('Initialise failed on power on')
             return False
 
-        g.clog.log.info('Initialise succeeded\n')
+        g.clog.log.info('Initialise succeeded')
         return True
 
 class InstSetup(tk.LabelFrame):
@@ -2269,11 +2269,11 @@ class LoggingToGUI(logging.Handler):
         self.setFormatter(formatter)
         self.setLevel(logging.INFO)
         self.console = console
-        self.console.tag_config('debug', background=g.COL['debug'])
-        self.console.tag_config('warn', background=g.COL['warn'])
-        self.console.tag_config('error', background=g.COL['error'])
-        self.console.tag_config('critical', background=g.COL['critical'])
-        self.console.tag_config('debug', background=g.COL['debug'])
+        self.console.tag_config('DEBUG', background=g.COL['debug'])
+        self.console.tag_config('INFO')
+        self.console.tag_config('WARNING', background=g.COL['warn'])
+        self.console.tag_config('ERROR', background=g.COL['error'])
+        self.console.tag_config('CRITICAL', background=g.COL['critical'])
 
     def emit(self, message):
         """
@@ -2285,19 +2285,8 @@ class LoggingToGUI(logging.Handler):
 
         # Write message to console
         self.console.configure(state=tk.NORMAL,font=g.ENTRY_FONT)
-        if message.levelname == 'DEBUG':
-            self.console.insert(tk.END, formattedMessage, ('debug'))
-        elif message.levelname == 'INFO':
-            self.console.insert(tk.END, formattedMessage)
-        elif message.levelname == 'WARNING':
-            self.console.insert(tk.END, formattedMessage, ('warn'))
-        elif message.levelname == 'ERROR':
-            self.console.insert(tk.END, formattedMessage, ('error'))
-        elif message.levelname == 'CRITICAL':
-            self.console.insert(tk.END, formattedMessage, ('critical'))
-        else:
-            print('Do not recognise level = ' + message.levelname)
-
+        self.console.insert(tk.END, formattedMessage + '\n',
+                            (message.levelname))
         # Prevent further input
         self.console.configure(state=tk.DISABLED)
         self.console.see(tk.END)
@@ -2520,8 +2509,7 @@ class Timer(tk.Label):
 
         except Exception, err:
             if self.count % 100 == 0:
-                g.clog.warn('Timer.update: error = ' +
-                            str(err) + '\n')
+                g.clog.warn('Timer.update: error = ' + str(err))
 
         self.id = self.after(100, self.update)
 
@@ -2769,10 +2757,10 @@ class InfoFrame(tk.LabelFrame):
                         self.az.configure(text='UNDEF')
                         self.airmass.configure(text='UNDEF')
                         self.mdist.configure(text='UNDEF')
-                        g.clog.log.warn('TCS error: ' + str(err) + '\n')
+                        g.clog.log.warn('TCS error: ' + str(err))
                 else:
                     g.clog.log.debug('TCS error: could not recognise ' +
-                                     g.cpars['telins_name'] + '\n')
+                                     g.cpars['telins_name'])
 
             if g.cpars['cdf_servers_on'] and \
                g.cpars['servers_initialised']:
@@ -2823,14 +2811,14 @@ class InfoFrame(tk.LabelFrame):
                     except Exception, err:
                         if err.code == 404:
 #                            g.clog.log.debug('Error trying to set frame: ' +
-#                                             str(err) + '\n')
+#                                             str(err))
                             self.frame.configure(text='0')
                         else:
-                            g.clog.log.debug('Error occurred trying to set frame\n')
+                            g.clog.log.debug('Error occurred trying to set frame')
                             self.frame.configure(text='UNDEF')
 
                 except Exception, err:
-                    g.clog.log.debug('Error trying to set run: ' + str(err) + '\n')
+                    g.clog.log.debug('Error trying to set run: ' + str(err))
 
             # get the current filter, which is set during the start
             # operation
@@ -2849,7 +2837,7 @@ class InfoFrame(tk.LabelFrame):
                     else:
                         self.fpslide.configure(bg=g.COL['main'])
                 except Exception, err:
-                    g.clog.log.warn('Slide error: ' + str(err) + '\n')
+                    g.clog.log.warn('Slide error: ' + str(err))
                     self.fpslide.configure(text='UNDEF')
                     self.fpslide.configure(bg=g.COL['warn'])
 
@@ -2867,14 +2855,14 @@ class InfoFrame(tk.LabelFrame):
                     else:
                         self.lake.configure(bg=g.COL['main'])
                 except Exception, err:
-                    g.clog.log.warn(str(err) + '\n')
+                    g.clog.log.warn(str(err))
                     self.lake.configure(text='UNDEF')
                     self.lake.configure(bg=g.COL['warn'])
 
         except Exception, err:
             # this is a safety catchall trap as it is important
             # that this routine keeps going
-            g.clog.log.warn('Unexpected error: ' + str(err) + '\n')
+            g.clog.log.warn('Unexpected error: ' + str(err))
 
         # run every 2 seconds
         self.count += 1
@@ -2955,10 +2943,10 @@ class AstroFrame(tk.LabelFrame):
 
         # report back to the user
         tins = g.TINS[g.cpars['telins_name']]
-        g.clog.log.info('Tel/ins  = ' + g.cpars['telins_name'] + '\n')
-        g.clog.log.info('Longitude = ' + tins['longitude'] + ' E\n')
-        g.clog.log.info('Latitude   = ' + tins['latitude'] + ' N\n')
-        g.clog.log.info('Elevation  = ' + str(tins['elevation']) + ' m\n')
+        g.clog.log.info('Tel/ins  = ' + g.cpars['telins_name'])
+        g.clog.log.info('Longitude = ' + tins['longitude'] + ' E')
+        g.clog.log.info('Latitude   = ' + tins['latitude'] + ' N')
+        g.clog.log.info('Elevation  = ' + str(tins['elevation']) + ' m')
 
         # parameters used to reduce re-calculation of sun rise etc, and
         # to provide info for other widgets
@@ -3078,8 +3066,7 @@ class AstroFrame(tk.LabelFrame):
 
         except Exception, err:
             # catchall
-            g.clog.log.warn('AstroFrame.update: error = ' +
-                            str(err) + '\n')
+            g.clog.log.warn('AstroFrame.update: error = ' + str(err))
 
         # run again after 100 milli-seconds
         self.after(100, self.update)

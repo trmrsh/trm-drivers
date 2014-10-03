@@ -49,8 +49,8 @@ class SetWheel(object):
                 try:
                     self.wc = fwheel.WheelController(self.wheel)
                 except Exception, err:
-                    g.clog.log.warn('Failed to open filter control window\n')
-                    g.clog.log.warn('Error = ' + str(err) + '\n')
+                    g.clog.log.warn('Failed to open filter control window')
+                    g.clog.log.warn('Error = ' + str(err))
                     self.wc = None
             else:
                 g.clog.log.info('There already is a wheel control window')
@@ -70,8 +70,8 @@ class EditFilter(object):
             try:
                 self.ef = fwheel.FilterEditor()
             except Exception, err:
-                g.clog.log.warn('Failed to open filter editor window\n')
-                g.clog.log.warn('Error = ' + str(err) + '\n')
+                g.clog.log.warn('Failed to open filter editor window')
+                g.clog.log.warn('Error = ' + str(err))
                 self.ef = None
         else:
             g.clog.log.info('There already is a filter editor window')
@@ -134,8 +134,8 @@ class GUI(tk.Tk):
                 # CCD temperature
                 g.lakeshore = lake.LakeFile()
             except Exception, err:
-                g.clog.log.warn(str(err) + '\n')
-                g.clog.log.warn('Switching off Lakeshore access (settings)\n')
+                g.clog.log.warn(str(err))
+                g.clog.log.warn('Switching off Lakeshore access (settings)')
                 g.cpars['ccd_temperature_on'] = False
 
         # Switcher frame to select between setup, observe, focal plane slide
@@ -257,8 +257,8 @@ class GUI(tk.Tk):
                 g.rpars.loadXML(xml)
                 print('Loaded instrument and run settings from ' + settings)
             except Exception, err:
-                g.clog.log.warn('Failed to load saved settings.\n')
-                g.clog.log.warn(str(err) + '\n')
+                g.clog.log.warn('Failed to load saved settings.')
+                g.clog.log.warn(str(err))
 
         # run instrument setting checks
         g.ipars.check()
@@ -287,13 +287,13 @@ class GUI(tk.Tk):
                 title='Name of usdriver log file')
 
             if not g.logfile:
-                g.clog.log.warn('Will not log usdriver messages\n')
+                g.clog.log.warn('Will not log usdriver messages')
 
             # update the command logger
             g.clog.update()
 
         else:
-            g.clog.log.warn('Logging to a file is disabled\n')
+            g.clog.log.warn('Logging to a file is disabled')
 
 
     def startRtplotServer(self, x):
@@ -312,7 +312,7 @@ class GUI(tk.Tk):
 
         if g.cpars['confirm_on_quit'] and \
            not tkMessageBox.askokcancel('Quit', 'Really quit usdriver?'):
-            g.clog.log.warn('Quit usdriver cancelled.\n')
+            g.clog.log.warn('Quit usdriver cancelled.')
         else:
 
             # try to close the filter wheel; trap errors
@@ -321,8 +321,7 @@ class GUI(tk.Tk):
                     g.wheel.close()
                     g.clog.log.warn('closed filter wheel')
             except Exception, err:
-                g.clog.log.warn('Error closing filter wheel: ' +
-                                str(err) + '\n')
+                g.clog.log.warn('Error closing filter wheel: ' + str(err))
 
 
             try:
@@ -343,7 +342,7 @@ class GUI(tk.Tk):
 
                 conf = os.path.join(config_dir, 'usdriver.conf')
                 config.writeCpars(config.ULTRASPEC, conf)
-                g.clog.log.info('Saved usdriver configuration to ' + conf + '\n')
+                g.clog.log.info('Saved usdriver configuration to ' + conf)
 
                 try:
 
@@ -352,7 +351,7 @@ class GUI(tk.Tk):
                     settings = os.path.join(config_dir, 'settings.xml')
                     ET.ElementTree(root).write(settings)
                     g.clog.log.info('Saved instrument and run settings to ' +
-                                    settings + '\n')
+                                    settings)
                 except Exception, err:
                     g.clog.log.warn("""
 Failed to save the instrument settings to disk. This
@@ -361,11 +360,8 @@ which are needed to define the XML to save the settings.
 This is not a disaster, so the program will still exit
 but in future, exit usdriver before ctrl-C-ing the
 server windows.
-
-Exiting in 5 seconds.
 """)
-                    time.sleep(5)
-
+                time.sleep(2)
                 self.destroy()
 
             except Exception, err:

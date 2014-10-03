@@ -880,25 +880,25 @@ def createXML(post):
     """
     # identify the template
     app = g.ipars.app.value()
-    g.clog.log.debug('createXML: application = ' + app + '\n')
+    g.clog.log.debug('createXML: application = ' + app)
     g.clog.log.debug('createXML: application vals = ' + \
-                     str(g.cpars['templates'][app]) + '\n')
+                     str(g.cpars['templates'][app]))
 
     if g.cpars['template_from_server']:
         # get template from server
         url = g.cpars['http_camera_server'] + g.HTTP_PATH_GET + '?' + \
               g.HTTP_SEARCH_ATTR_NAME + '=' + g.cpars['templates'][app]['app']
-        g.clog.log.debug('url = ' + url + '\n')
+        g.clog.log.debug('url = ' + url)
         sxml = urllib2.urlopen(url).read()
         root = ET.fromstring(sxml)
 
     else:
         # get template from local file
-        g.clog.log.debug('directory = ' + g.cpars['template_directory'] + '\n')
+        g.clog.log.debug('directory = ' + g.cpars['template_directory'])
 
         lfile = os.path.join(g.cpars['template_directory'],
                              g.cpars['templates'][app]['app'])
-        g.clog.log.debug('local file = ' + lfile + '\n')
+        g.clog.log.debug('local file = ' + lfile)
         tree = ET.parse(lfile)
         root = tree.getroot()
 
@@ -1077,22 +1077,22 @@ def createXML(post):
             try:
                 url = g.cpars['http_camera_server'] + g.HTTP_PATH_EXEC + \
                     '?RM,X,0x2E'
-                g.clog.log.info('exec = "' + url + '"\n')
+                g.clog.log.info('exec = "' + url + '"')
                 response = urllib2.urlopen(url)
                 rs = drvs.ReadServer(response.read())
-                g.rlog.log.info('Camera response =\n' + rs.resp() + '\n')
+                g.rlog.log.info('Camera response =\n' + rs.resp())
                 if rs.ok:
-                    g.clog.log.info('Response from camera server was OK\n')
+                    g.clog.log.info('Response from camera server was OK')
                     csfind = rs.root.find('command_status')
                     createXML.revision = int(csfind.attrib['readback'],16)
                 else:
-                    g.clog.log.warn('Response from camera server was not OK\n')
-                    g.clog.log.warn('Reason: ' + rs.err + '\n')
+                    g.clog.log.warn('Response from camera server was not OK')
+                    g.clog.log.warn('Reason: ' + rs.err)
                     raise Exception()
 
             except urllib2.URLError, err:
-                g.clog.log.warn('Failed to get version from camera server\n')
-                g.clog.log.warn(str(err) + '\n')
+                g.clog.log.warn('Failed to get version from camera server')
+                g.clog.log.warn(str(err))
                 raise Exception()
 
         revision      = ET.SubElement(uconfig, 'revision')
@@ -1169,7 +1169,7 @@ class Start(drvs.ActButton):
 
         # Check the instrument parameters
         if not g.ipars.check():
-            g.clog.log.warn('Invalid instrument parameters.\n')
+            g.clog.log.warn('Invalid instrument parameters.')
             tkMessageBox.showwarning('Start failure',
                                      'Please check the instrument setup.')
             return False
@@ -1177,8 +1177,8 @@ class Start(drvs.ActButton):
         # Check the run parameters
         rok, msg = g.rpars.check()
         if not rok:
-            g.clog.log.warn('Invalid run parameters.\n')
-            g.clog.log.warn(msg + '\n')
+            g.clog.log.warn('Invalid run parameters.')
+            g.clog.log.warn(msg)
             tkMessageBox.showwarning('Start failure',
                                      'Please check the run parameters:\n' + msg)
             return False
@@ -1190,7 +1190,7 @@ class Start(drvs.ActButton):
             if not tkMessageBox.askokcancel(
                 'Avalanche','Avalanche gain is on at level = ' +
                 str(g.ipars.avgain.value()) + '\n' + 'Continue?'):
-                g.clog.log.warn('Start operation cancelled\n')
+                g.clog.log.warn('Start operation cancelled')
                 return False
 
         # Confirm when the target name has changed
@@ -1201,7 +1201,7 @@ class Start(drvs.ActButton):
             if not tkMessageBox.askokcancel(
                 'Confirm target', 'Target name has changed\n' +
                  'Continue?'):
-                g.clog.log.warn('Start operation cancelled\n')
+                g.clog.log.warn('Start operation cancelled')
                 return False
 
 
@@ -1223,7 +1223,7 @@ class Start(drvs.ActButton):
                                 'The telescope does not appear to be tracking and the\n' +
                                 'RA, Dec and/or PA could be wrong as a result.\n' +
                                 'Continue?'):
-                            g.clog.log.warn('Start operation cancelled\n')
+                            g.clog.log.warn('Start operation cancelled')
                             return False
 
                         # only bother about the telescope's tracking flag
@@ -1235,7 +1235,7 @@ class Start(drvs.ActButton):
 #                            'The telescope reports that it is not tracking;\n' +
 #                            'the RA, Dec and or PA could be wrong as a result.\n' +
 #                            'Continue?'):
-#                            g.clog.log.warn('Start operation cancelled\n')
+#                            g.clog.log.warn('Start operation cancelled')
 #                            return False
 
                         # all systems are go...
@@ -1260,7 +1260,7 @@ class Start(drvs.ActButton):
                             'TCS error',
                             'Could not get RA, Dec from telescope.\n' +
                             'Continue?'):
-                            g.clog.log.warn('Start operation cancelled\n')
+                            g.clog.log.warn('Start operation cancelled')
                             return False
                 else:
                     if not tkMessageBox.askokcancel(
@@ -1269,7 +1269,7 @@ class Start(drvs.ActButton):
                         g.cpars['telins_name'] + '\n' +
                         'Could not get RA, Dec from telescope.\n' +
                         'Continue?'):
-                        g.clog.log.warn('Start operation cancelled\n')
+                        g.clog.log.warn('Start operation cancelled')
                         return False
 
             # Change the filter if necessary. Try to connect to the
@@ -1289,7 +1289,7 @@ class Start(drvs.ActButton):
                                     g.cpars['active_filter_names'][currentPosition-1] + \
                                     '" to "' + \
                                     g.cpars['active_filter_names'][desiredPosition-1] + \
-                                    '"\n')
+                                    '"')
                 g.wheel.goto(desiredPosition)
                 g.wheel.close()
                 current_filter = g.cpars['active_filter_names'][desiredPosition-1]
@@ -1300,7 +1300,7 @@ class Start(drvs.ActButton):
 
             else:
                 # No action needed
-                g.clog.log.info('No filter change needed\n')
+                g.clog.log.info('No filter change needed')
                 current_filter = g.cpars['active_filter_names'][currentPosition-1]
 
             # Set position of slide
@@ -1327,24 +1327,24 @@ class Start(drvs.ActButton):
                 if g.cpars['ccd_temperature_on']:
                     raise
                 else:
-                    g.clog.log.warn('Failed to read temperature but will start anyway.\n')
-                    g.clog.log.warn(str(err) + '\n')
+                    g.clog.log.warn('Failed to read temperature but will start anyway.')
+                    g.clog.log.warn(str(err))
                     ccd_temp.text = 'UNDEF'
                     finger_temp.text = 'UNDEF'
                     heater_percent.text = 'UNDEF'
 
             # Post the XML it to the server
-            g.clog.log.info('Posting application to the servers\n')
+            g.clog.log.info('Posting application to the servers')
 
             if drvs.postXML(root):
-                g.clog.log.info('Post successful; starting run\n')
+                g.clog.log.info('Post successful; starting run')
 
                 if drvs.execCommand('GO'):
                     # start the exposure timer
                     g.info.timer.start()
 
                     g.clog.log.info('Run started on target = ' + \
-                                    g.rpars.target.value() + '\n')
+                                    g.rpars.target.value())
 
                     # configure buttons
                     self.disable()
@@ -1386,15 +1386,15 @@ class Start(drvs.ActButton):
 
                     return True
                 else:
-                    g.clog.log.warn('Failed to start run\n')
+                    g.clog.log.warn('Failed to start run')
                     return False
             else:
-                g.clog.log.warn('Failed to post the application\n')
+                g.clog.log.warn('Failed to post the application')
                 return False
 
         except Exception, err:
-            g.clog.log.warn('Failed to start run\n')
-            g.clog.log.warn(str(err) + '\n')
+            g.clog.log.warn('Failed to start run')
+            g.clog.log.warn(str(err))
             return False
 
 class Load(drvs.ActButton):
@@ -1450,18 +1450,18 @@ class Save(drvs.ActButton):
         """
         Carries out the action associated with the Save button
         """
-        g.clog.log.info('\nSaving current application to disk\n')
+        g.clog.log.info('\nSaving current application to disk')
 
         # check instrument parameters
         if not g.ipars.check():
-            g.clog.log.warn('Invalid instrument parameters; save failed.\n')
+            g.clog.log.warn('Invalid instrument parameters; save failed.')
             return False
 
         # check run parameters
         rok, msg = g.rpars.check()
         if not rok:
-            g.clog.log.warn('Invalid run parameters; save failed.\n')
-            g.clog.log.warn(msg + '\n')
+            g.clog.log.warn('Invalid run parameters; save failed.')
+            g.clog.log.warn(msg)
             return False
 
         # Get XML from template
@@ -1654,11 +1654,11 @@ class CountsFrame(tk.LabelFrame):
         """
 
         if not self.check():
-            g.clog.log.warn('Current observing parameters are not valid.\n')
+            g.clog.log.warn('Current observing parameters are not valid.')
             return False
 
         if not g.ipars.check():
-            g.clog.log.warn('Current instrument parameters are not valid.\n')
+            g.clog.log.warn('Current instrument parameters are not valid.')
             return False
 
     def check(self):
