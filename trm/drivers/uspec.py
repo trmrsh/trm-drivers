@@ -79,7 +79,7 @@ class InstPars(tk.LabelFrame):
         # Application (mode)
         tk.Label(lhs, text='Mode').grid(row=0,column=0,sticky=tk.W)
         self.app = drvs.Radio(lhs, ('Wins', 'Drift'), 2, self.check,
-                                 ('Windows', 'Drift'))
+                              ('Windows', 'Drift'))
         self.app.grid(row=0,column=1,sticky=tk.W)
 
         # Clear enabled
@@ -107,7 +107,8 @@ class InstPars(tk.LabelFrame):
         self.readSpeed.grid(row=3,column=1,pady=2,sticky=tk.W)
 
         # Exposure delay
-        tk.Label(lhs, text='Exposure delay (s)').grid(row=4,column=0, sticky=tk.W)
+        tk.Label(lhs, text='Exposure delay (s)').grid(row=4,column=0,
+                                                      sticky=tk.W)
 
         elevel = g.cpars['expert_level']
         if elevel == 0 or elevel == 1:
@@ -129,7 +130,6 @@ class InstPars(tk.LabelFrame):
         self.led = drvs.RangedInt(lhs, 0, 0, 4095, None, False, width=7)
         self.led.grid(row=6,column=1,pady=2,sticky=tk.W)
         self.ledValue = self.led.value()
-
 
         # Right-hand side: the window parameters
         rhs = tk.Frame(self)
@@ -221,8 +221,8 @@ class InstPars(tk.LabelFrame):
 
     def loadXML(self, xml):
         """
-        Sets the values of instrument parameters given an ElementTree
-        containing suitable XML
+        Sets the values of instrument parameters given an
+        ElementTree containing suitable XML
         """
 
         # find application
@@ -240,7 +240,6 @@ class InstPars(tk.LabelFrame):
             pdict[param.attrib['ref']] = param.attrib['value']
 
         xbin, ybin = int(pdict['X_BIN']), int(pdict['Y_BIN'])
-        print('xb,yb = ', xbin, ybin)
 
         # Set them.
 
@@ -262,8 +261,8 @@ class InstPars(tk.LabelFrame):
         # Readout speed
         speed = pdict['SPEED']
         self.readSpeed.set('Slow' if \
-                               speed == '0' else 'Medium' if speed == '1' \
-                               else 'Fast')
+                           speed == '0' else 'Medium' if speed == '1' \
+                           else 'Fast')
 
         if app == 'Windows':
             # Clear or not
@@ -356,7 +355,6 @@ class InstPars(tk.LabelFrame):
             p.ny[0].set(nyv)
             p.npair.set(1)
 
-
     def check(self, *args):
         """Callback function for running validity checks on the CCD
         parameters. It spots and flags overlapping windows, windows with null
@@ -375,8 +373,6 @@ class InstPars(tk.LabelFrame):
         """
         # Switch visible widget according to the application
         if self.isDrift():
-            # prevent frame from re-sizing when switching to drift
-            self.pack_propagate(False)
             self.wframe.grid_forget()
             self.pframe.grid(row=2,column=0,columnspan=3,sticky=tk.W+tk.N)
             self.clearLab.config(state='disable')
