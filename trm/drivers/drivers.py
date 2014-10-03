@@ -1190,14 +1190,12 @@ class Radio(tk.Frame):
             if values is None:
                 self.buttons.append(
                     tk.Radiobutton(self, text=option, variable=self.val,
-                                   font=g.ENTRY_FONT,
-                                   value=option))
+                                   font=g.ENTRY_FONT,value=option))
                 self.buttons[-1].grid(row=row, column=col, sticky=tk.W)
             else:
                 self.buttons.append(
                     tk.Radiobutton(self, text=option, variable=self.val,
-                                   font=g.ENTRY_FONT,
-                                   value=values[nopt]))
+                                   font=g.ENTRY_FONT,value=values[nopt]))
                 self.buttons[-1].grid(row=row, column=col, sticky=tk.W)
             col += 1
             if col == ncmax:
@@ -1213,7 +1211,8 @@ class Radio(tk.Frame):
         return self.val.get()
 
     def set(self, choice):
-        return self.val.set(choice)
+        print('choice =',choice)
+        self.val.set(choice)
 
     def disable(self):
         for b in self.buttons:
@@ -3367,10 +3366,11 @@ class WinPairs (tk.Frame):
             # set, we count that as "synced" because the purpose of this is
             # to enable / disable the sync button and we don't want it to be
             # enabled just because xs or ys are not set.
-            synced = True if xsl is None or xsr is None or \
-                ys is None or nx is None or ny is None or \
-                ((xsl - 1) % xbin == 0 and (xsr - 1) % xbin == 0 \
-                     and (ys - 1) % ybin == 0) else synced
+            if xsl is not None and xsr is not None and ys is not None and \
+                    nx is not None and ny is not None and \
+                    ((xsl - 1) % xbin != 0 or (xsr - 1) % xbin != 0 or \
+                         (ys - 1) % ybin != 0):
+                synced = False
 
             # Range checks
             if xsl is None or nx is None or xsl + nx - 1 > xslw.imax:
@@ -3645,7 +3645,7 @@ class Windows (tk.Frame):
         """
 
         status = True
-        synced = False
+        synced = True
 
         xbin = self.xbin.value()
         ybin = self.ybin.value()
@@ -3685,10 +3685,10 @@ class Windows (tk.Frame):
             # "synced" because the purpose of this is to enable
             # / disable the sync button and we don't want it to be
             # enabled just because xs or ys are not set.
-            synced = True if \
-                xs is None or ys is None or nx is None or ny is None or \
-                ((xs - 1) % xbin == 0 and (ys - 1) % ybin == 0) \
-                else synced
+            if xs is not None and ys is not None and nx is not None and \
+                    ny is not None and \
+                    ((xs - 1) % xbin != 0 or (ys - 1) % ybin != 0):
+                synced = False
 
             # Range checks
             if xs is None or nx is None or xs + nx - 1 > xsw.imax:
