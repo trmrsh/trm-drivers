@@ -49,13 +49,13 @@ class SetWheel(object):
                 try:
                     self.wc = fwheel.WheelController(self.wheel)
                 except Exception, err:
-                    g.clog.log.warn('Failed to open filter control window')
-                    g.clog.log.warn('Error = ' + str(err))
+                    g.clog.warn('Failed to open filter control window')
+                    g.clog.warn('Error = ' + str(err))
                     self.wc = None
             else:
-                g.clog.log.info('There already is a wheel control window')
+                g.clog.info('There already is a wheel control window')
         else:
-            g.clog.log.warn('Filter wheel access is OFF; see settings.')
+            g.clog.warn('Filter wheel access is OFF; see settings.')
 
 class EditFilter(object):
     """
@@ -70,11 +70,11 @@ class EditFilter(object):
             try:
                 self.ef = fwheel.FilterEditor()
             except Exception, err:
-                g.clog.log.warn('Failed to open filter editor window')
-                g.clog.log.warn('Error = ' + str(err))
+                g.clog.warn('Failed to open filter editor window')
+                g.clog.warn('Error = ' + str(err))
                 self.ef = None
         else:
-            g.clog.log.info('There already is a filter editor window')
+            g.clog.info('There already is a filter editor window')
 
 class GUI(tk.Tk):
     """
@@ -97,9 +97,11 @@ class GUI(tk.Tk):
         # be passed to later ones. This is achived using the globals
         # of the 'globals' sub-module.
 
-        # First the logging windows, command and response
-        g.clog = drvs.LogDisplay(self, 5, 56, 'Command log')
-        g.rlog = drvs.LogDisplay(self, 5, 56, 'Response log')
+        # Construct the command logging window
+        g.clog = drvs.LabelGuiLogger('CMM', self, 5, 56, 'Command log')
+
+        # Construct the response logging window
+        g.rlog = drvs.LabelGuiLogger('RSP', self, 5, 56, 'Response log')
 
         # Instrument parameters frame.
         g.ipars = uspec.InstPars(self)
@@ -134,8 +136,8 @@ class GUI(tk.Tk):
                 # CCD temperature
                 g.lakeshore = lake.LakeFile()
             except Exception, err:
-                g.clog.log.warn(str(err))
-                g.clog.log.warn('Switching off Lakeshore access (settings)')
+                g.clog.warn(str(err))
+                g.clog.warn('Switching off Lakeshore access (settings)')
                 g.cpars['ccd_temperature_on'] = False
 
         # Switcher frame to select between setup, observe, focal plane slide
@@ -255,10 +257,11 @@ class GUI(tk.Tk):
                 xml = ET.parse(settings).getroot()
                 g.ipars.loadXML(xml)
                 g.rpars.loadXML(xml)
-                print('Loaded instrument and run settings from ' + settings)
+                g.clog.info('Loaded instrument and run settings from '
+                            + settings)
             except Exception, err:
-                g.clog.log.warn('Failed to load saved settings.')
-                g.clog.log.warn(str(err))
+                g.clog.warn('Failed to load saved settings.')
+                g.clog.warn(str(err))
 
         # run instrument setting checks
         g.ipars.check()
@@ -272,11 +275,13 @@ class GUI(tk.Tk):
                 t = threading.Thread(target=self.startRtplotServer, args=[q,])
                 t.daemon = True
                 t.start()
-                print('rtplot server started on port', g.cpars['rtplot_server_port'])
+                g.clog.info('rtplot server started on port' +
+                            g.cpars['rtplot_server_port'])
             except Exception, e:
-                print('Problem trying to start rtplot server:', e)
+                g.clog.error('Problem trying to start rtplot server: ' +
+                            str(e))
         else:
-            print('rtplot server was not started')
+            g.clog.info('rtplot server was not started')
 
         if g.cpars['file_logging_on']:
             # get name of file to log messages to. If set
@@ -286,15 +291,16 @@ class GUI(tk.Tk):
                 defaultextension='.log', filetypes=[('log files', '.log'),],
                 title='Name of usdriver log file')
 
-            if not g.logfile:
-                g.clog.log.warn('Will not log usdriver messages')
-
-            # update the command logger
-            g.clog.update()
+            if g.logfile:
+                # update the loggers
+                g.clog.update(g.logfile)
+                g.rlog.update(g.logfile)
+                g.fpslide.log.update(g.logfile)
+            else:
+                g.clog.info('Will not log usdriver messages')
 
         else:
-            g.clog.log.warn('Logging to a file is disabled')
-
+            g.clog.warn('Logging to a file is disabled')
 
     def startRtplotServer(self, x):
         """
@@ -312,16 +318,16 @@ class GUI(tk.Tk):
 
         if g.cpars['confirm_on_quit'] and \
            not tkMessageBox.askokcancel('Quit', 'Really quit usdriver?'):
-            g.clog.log.warn('Quit usdriver cancelled.')
+            g.clog.warn('Quit usdriver cancelled.')
         else:
 
             # try to close the filter wheel; trap errors
             try:
                 if g.wheel.connected:
                     g.wheel.close()
-                    g.clog.log.warn('closed filter wheel')
+                    g.clog.warn('closed filter wheel')
             except Exception, err:
-                g.clog.log.warn('Error closing filter wheel: ' + str(err))
+                g.clog.warn('Error closing filter wheel: ' + str(err))
 
 
             try:
@@ -342,7 +348,7 @@ class GUI(tk.Tk):
 
                 conf = os.path.join(config_dir, 'usdriver.conf')
                 config.writeCpars(config.ULTRASPEC, conf)
-                g.clog.log.info('Saved usdriver configuration to ' + conf)
+                g.clog.info('Saved usdriver configuration to ' + conf)
 
                 try:
 
@@ -350,10 +356,10 @@ class GUI(tk.Tk):
                     root  = uspec.createXML(False)
                     settings = os.path.join(config_dir, 'settings.xml')
                     ET.ElementTree(root).write(settings)
-                    g.clog.log.info('Saved instrument and run settings to ' +
+                    g.clog.info('Saved instrument and run settings to ' +
                                     settings)
                 except Exception, err:
-                    g.clog.log.warn("""
+                    g.clog.warn("""
 Failed to save the instrument settings to disk. This
 could be because you have already killed the servers
 which are needed to define the XML to save the settings.
@@ -361,11 +367,12 @@ This is not a disaster, so the program will still exit
 but in future, exit usdriver before ctrl-C-ing the
 server windows.
 """)
-                time.sleep(2)
+                    time.sleep(2)
+
                 self.destroy()
 
             except Exception, err:
-                g.clog.log.warn("""
+                g.clog.warn("""
 Failed to save the usdriver configuration to disk.
 Directory of saved files should be = {0}.
 Please check that this directory is writeable and try

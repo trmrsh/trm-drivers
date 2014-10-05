@@ -7,6 +7,7 @@ dependent components.
 """
 
 from __future__ import print_function
+import sys
 import Tkinter as tk
 import tkFont, tkFileDialog
 import xml.etree.ElementTree as ET
@@ -1211,7 +1212,6 @@ class Radio(tk.Frame):
         return self.val.get()
 
     def set(self, choice):
-        print('choice =',choice)
         self.val.set(choice)
 
     def disable(self):
@@ -1270,11 +1270,11 @@ def saveXML(root):
     fname = tkFileDialog.asksaveasfilename(
         defaultextension='.xml', filetypes=[('xml files', '.xml'),])
     if not fname:
-        g.clog.log.warn('Aborted save to disk')
+        g.clog.warn('Aborted save to disk')
         return False
     tree = ET.ElementTree(root)
     tree.write(fname)
-    g.clog.log.info('Saved setup to' + fname)
+    g.clog.info('Saved setup to' + fname)
     return True
 
 def postXML(root):
@@ -1285,10 +1285,10 @@ def postXML(root):
     The current setup.
 
     """
-    g.clog.log.debug('Entering postXML')
+    g.clog.debug('Entering postXML')
 
     if not g.cpars['cdf_servers_on']:
-        g.clog.log.warn('postXML: servers are not active')
+        g.clog.warn('postXML: servers are not active')
         return False
 
     # Write setup to an xml string
@@ -1296,30 +1296,30 @@ def postXML(root):
 
     # Send the xml to the camera server
     url = g.cpars['http_camera_server'] + g.HTTP_PATH_CONFIG
-    g.clog.log.debug('Camera URL = ' + url)
+    g.clog.debug('Camera URL = ' + url)
 
     opener = urllib2.build_opener()
-    g.clog.log.debug('content length = ' + str(len(sxml)))
+    g.clog.debug('content length = ' + str(len(sxml)))
     req = urllib2.Request(url, data=sxml, headers={'Content-type': 'text/xml'})
     response = opener.open(req, timeout=5)
     csr = ReadServer(response.read())
-    g.rlog.log.warn(csr.resp())
+    g.rlog.warn(csr.resp())
     if not csr.ok:
-        g.clog.log.warn('Camera response was not OK')
+        g.clog.warn('Camera response was not OK')
         return False
 
     # Send the xml to the data server
     url = g.cpars['http_data_server'] + g.HTTP_PATH_CONFIG
-    g.clog.log.debug('Data server URL = ' + url)
+    g.clog.debug('Data server URL = ' + url)
     req = urllib2.Request(url, data=sxml, headers={'Content-type': 'text/xml'})
     response = opener.open(req, timeout=5) # ?? need to check whether this is needed
     fsr = ReadServer(response.read())
-    g.rlog.log.warn(fsr.resp())
+    g.rlog.warn(fsr.resp())
     if not csr.ok:
-        g.clog.log.warn('Fileserver response was not OK')
+        g.clog.warn('Fileserver response was not OK')
         return False
 
-    g.clog.log.debug('Leaving postXML')
+    g.clog.debug('Leaving postXML')
     return True
 
 class ActButton(tk.Button):
@@ -1450,21 +1450,21 @@ class Stop(ActButton):
         Carries out the action associated with Stop button
         """
 
-        g.clog.log.debug('Stop pressed')
+        g.clog.debug('Stop pressed')
 
         def stop_in_background():
             try:
                 self.stopping   = True
                 if execCommand('EX,0'):
                     # Report that run has stopped
-                    g.clog.log.info('Run stopped')
+                    g.clog.info('Run stopped')
                     self.stopped_ok = True
                 else:
-                    g.clog.log.warn('Failed to stop run')
+                    g.clog.warn('Failed to stop run')
                     self.stopped_ok = False
                 self.stopping   = False
             except Exception, err:
-                g.clog.log.warn('Failed to stop run. Error = ' + str(err))
+                g.clog.warn('Failed to stop run. Error = ' + str(err))
                 self.stopping   = False
                 self.stopped_ok = False
 
@@ -1636,21 +1636,21 @@ class Target(tk.Frame):
 
         tname = self.val.get()
 
-        g.clog.log.info('Checking ' + tname + ' in simbad')
+        g.clog.info('Checking ' + tname + ' in simbad')
         ret = checkSimbad(tname)
         if len(ret) == 0:
             self.verify.config(bg=g.COL['stop'])
-            g.clog.log.warn('No matches to "' + tname + '" found.')
+            g.clog.warn('No matches to "' + tname + '" found.')
             if tname not in self.failures:
                 self.failures.append(tname)
         elif len(ret) == 1:
             self.verify.config(bg=g.COL['start'])
-            g.clog.log.info(tname + ' verified OK in simbad')
-            g.clog.log.info('Primary simbad name = ' + ret[0]['Name'])
+            g.clog.info(tname + ' verified OK in simbad')
+            g.clog.info('Primary simbad name = ' + ret[0]['Name'])
             if tname not in self.successes:
                 self.successes.append(tname)
         else:
-            g.clog.log.warn('More than one match to "' + tname + '" found')
+            g.clog.warn('More than one match to "' + tname + '" found')
             self.verify.config(bg=g.COL['stop'])
             if tname not in self.failures:
                 self.failures.append(tname)
@@ -1759,27 +1759,27 @@ def execCommand(command):
     succeeded or not.
     """
     if not g.cpars['cdf_servers_on']:
-        g.clog.log.warn('execCommand: servers are not active')
+        g.clog.warn('execCommand: servers are not active')
         return False
 
     try:
         url = g.cpars['http_camera_server'] + g.HTTP_PATH_EXEC + \
             '?' + command
-        g.clog.log.info('execCommand, command = "' + command + '"')
+        g.clog.info('execCommand, command = "' + command + '"')
         response = urllib2.urlopen(url)
         rs  = ReadServer(response.read())
 
-        g.rlog.log.info('Camera response =\n' + rs.resp())
+        g.rlog.info('Camera response =\n' + rs.resp())
         if rs.ok:
-            g.clog.log.info('Response from camera server was OK')
+            g.clog.info('Response from camera server was OK')
             return True
         else:
-            g.clog.log.warn('Response from camera server was not OK')
-            g.clog.log.warn('Reason: ' + rs.err)
+            g.clog.warn('Response from camera server was not OK')
+            g.clog.warn('Reason: ' + rs.err)
             return False
     except urllib2.URLError, err:
-        g.clog.log.warn('execCommand failed')
-        g.clog.log.warn(str(err))
+        g.clog.warn('execCommand failed')
+        g.clog.warn(str(err))
 
     return False
 
@@ -1798,7 +1798,7 @@ def execServer(name, app):
     Returns True/False according to success or otherwise
     """
     if not g.cpars['cdf_servers_on']:
-        g.clog.log.warn('execServer: servers are not active')
+        g.clog.warn('execServer: servers are not active')
         return False
 
     if name == 'camera':
@@ -1809,16 +1809,16 @@ def execServer(name, app):
     else:
         raise Exception('Server name = ' + name + ' not recognised.')
 
-    g.clog.log.debug('execServer, url = ' + url)
+    g.clog.debug('execServer, url = ' + url)
 
     response = urllib2.urlopen(url)
     rs  = ReadServer(response.read())
     if not rs.ok:
-        g.clog.log.warn('Response from ' + name + ' server not OK')
-        g.clog.log.warn('Reason: ' + rs.err)
+        g.clog.warn('Response from ' + name + ' server not OK')
+        g.clog.warn('Reason: ' + rs.err)
         return False
 
-    g.clog.log.debug('execServer command was successful')
+    g.clog.debug('execServer command was successful')
     return True
 
 def execRemoteApp(app):
@@ -1854,10 +1854,10 @@ class ResetSDSUhard(ActButton):
         Carries out the action associated with the Reset SDSU hardware button
         """
 
-        g.clog.log.debug('Reset SDSU hardware pressed')
+        g.clog.debug('Reset SDSU hardware pressed')
 
         if execCommand('RCO'):
-            g.clog.log.info('Reset SDSU hardware succeeded')
+            g.clog.info('Reset SDSU hardware succeeded')
 
             # adjust buttons
             self.disable()
@@ -1870,7 +1870,7 @@ class ResetSDSUhard(ActButton):
             g.setup.powerOff.disable()
             return True
         else:
-            g.clog.log.warn('Reset SDSU hardware failed')
+            g.clog.warn('Reset SDSU hardware failed')
             return False
 
 class ResetSDSUsoft(ActButton):
@@ -1889,10 +1889,10 @@ class ResetSDSUsoft(ActButton):
         """
         Carries out the action associated with the Reset SDSU software button
         """
-        g.clog.log.debug('Reset SDSU software pressed')
+        g.clog.debug('Reset SDSU software pressed')
 
         if execCommand('RS'):
-            g.clog.log.info('Reset SDSU software succeeded')
+            g.clog.info('Reset SDSU software succeeded')
 
             # alter buttons
             self.disable()
@@ -1905,7 +1905,7 @@ class ResetSDSUsoft(ActButton):
             g.setup.powerOff.disable()
             return True
         else:
-            g.clog.log.warn('Reset SDSU software failed')
+            g.clog.warn('Reset SDSU software failed')
             return False
 
 class ResetPCI(ActButton):
@@ -1924,10 +1924,10 @@ class ResetPCI(ActButton):
         """
         Carries out the action associated with the Reset PCI button
         """
-        g.clog.log.debug('Reset PCI pressed')
+        g.clog.debug('Reset PCI pressed')
 
         if execCommand('RST'):
-            g.clog.log.info('Reset PCI succeeded')
+            g.clog.info('Reset PCI succeeded')
 
             # alter buttons
             self.disable()
@@ -1941,7 +1941,7 @@ class ResetPCI(ActButton):
             g.setup.powerOff.disable()
             return True
         else:
-            g.clog.log.warn('Reset PCI failed')
+            g.clog.warn('Reset PCI failed')
             return False
 
 class SystemReset(ActButton):
@@ -1962,10 +1962,10 @@ class SystemReset(ActButton):
         Carries out the action associated with the System Reset
         """
 
-        g.clog.log.debug('System Reset pressed')
+        g.clog.debug('System Reset pressed')
 
         if execCommand('SRS'):
-            g.clog.log.info('System Reset succeeded')
+            g.clog.info('System Reset succeeded')
 
             # alter buttons here
             g.observe.start.disable()
@@ -1978,7 +1978,7 @@ class SystemReset(ActButton):
             g.setup.powerOff.disable()
             return True
         else:
-            g.clog.log.warn('System Reset failed')
+            g.clog.warn('System Reset failed')
             return False
 
 class SetupServers(ActButton):
@@ -1998,7 +1998,7 @@ class SetupServers(ActButton):
         Carries out the action associated with the 'Setup servers' button
         """
 
-        g.clog.log.debug('Setup servers pressed')
+        g.clog.debug('Setup servers pressed')
         tapp = g.TINS[g.cpars['telins_name']]['app']
 
         if execServer('camera', tapp) and \
@@ -2006,7 +2006,7 @@ class SetupServers(ActButton):
                 execServer('data', tapp) and \
                 execServer('data', g.cpars['instrument_app']):
 
-            g.clog.log.info('Setup servers succeeded')
+            g.clog.info('Setup servers succeeded')
 
             # alter buttons
             self.disable()
@@ -2022,7 +2022,7 @@ class SetupServers(ActButton):
             g.cpars['servers_initialised'] = True
             return True
         else:
-            g.clog.log.warn('Setup servers failed')
+            g.clog.warn('Setup servers failed')
             return False
 
 class PowerOn(ActButton):
@@ -2041,11 +2041,11 @@ class PowerOn(ActButton):
         """
         Power on action
         """
-        g.clog.log.debug('Power on pressed')
+        g.clog.debug('Power on pressed')
 
         if execRemoteApp(g.cpars['power_on_app']) and execCommand('GO'):
 
-            g.clog.log.info('Power on successful')
+            g.clog.info('Power on successful')
 
             # change other buttons
             self.disable()
@@ -2066,20 +2066,20 @@ class PowerOn(ActButton):
                     time.sleep(1)
 
                 if isRunActive():
-                    g.clog.log.warn(
+                    g.clog.warn(
                         'Timed out waiting for power on run to ' + \
                             'de-activate; cannot initialise run number. ' + \
                             'Tell trm if this happens')
                 else:
                     g.info.run.configure(text='{0:03d}'.format(getRunNumber(True)))
             except Exception, err:
-                g.clog.log.warn(\
+                g.clog.warn(\
                     'Failed to determine run number at start of run')
-                g.clog.log.warn(str(err))
+                g.clog.warn(str(err))
                 g.info.run.configure(text='UNDEF')
             return True
         else:
-            g.clog.log.warn('Power on failed\n')
+            g.clog.warn('Power on failed\n')
             return False
 
 class PowerOff(ActButton):
@@ -2100,11 +2100,11 @@ class PowerOff(ActButton):
         """
         Power off action
         """
-        g.clog.log.debug('Power off pressed')
+        g.clog.debug('Power off pressed')
 
         if execRemoteApp(g.cpars['power_off_app']) and execCommand('GO'):
 
-            g.clog.log.info('Powered off SDSU')
+            g.clog.info('Powered off SDSU')
 
             # alter buttons
             self.disable()
@@ -2117,7 +2117,7 @@ class PowerOff(ActButton):
             g.setup.powerOn.enable()
             return True
         else:
-            g.clog.log.warn('Power off failed')
+            g.clog.warn('Power off failed')
             return False
 
 class Initialise(ActButton):
@@ -2137,21 +2137,21 @@ class Initialise(ActButton):
         """
         Initialise action
         """
-        g.clog.log.debug('Initialise pressed')
+        g.clog.debug('Initialise pressed')
 
         if not g.setup.systemReset.act():
-            g.clog.log.warn('Initialise failed on system reset')
+            g.clog.warn('Initialise failed on system reset')
             return False
 
         if not g.setup.setupServers.act():
-            g.clog.log.warn('Initialise failed on server setup')
+            g.clog.warn('Initialise failed on server setup')
             return False
 
         if not g.setup.powerOn.act():
-            g.clog.log.warn('Initialise failed on power on')
+            g.clog.warn('Initialise failed on power on')
             return False
 
-        g.clog.log.info('Initialise succeeded')
+        g.clog.info('Initialise succeeded')
         return True
 
 class InstSetup(tk.LabelFrame):
@@ -2255,43 +2255,46 @@ class InstSetup(tk.LabelFrame):
             self.powerOff.setExpert()
             self.initialise.setExpert()
 
-class LoggingToGUI(logging.Handler):
+# start of logging stuff with definition of
+# three handlers
+
+class GuiHandler(logging.Handler):
     """
-    Used to redirect logging output to the widget passed in parameters
+    This defines the output sent to a text widget GUI
     """
-    def __init__(self, console):
+    def __init__(self, twidget):
         """
-        console : widget to display logging messages
+        twidget : text widget to display logging messages
         """
+
         logging.Handler.__init__(self)
         logging.Formatter.converter = time.gmtime
-        formatter = logging.Formatter('%(asctime)s - %(message)s','%H:%M:%S')
+        formatter = logging.Formatter('%(asctime)s - %(message)s\n','%H:%M:%S')
         self.setFormatter(formatter)
+
+        # ignore DEBUG messages
         self.setLevel(logging.INFO)
-        self.console = console
-        self.console.tag_config('DEBUG', background=g.COL['debug'])
-        self.console.tag_config('INFO')
-        self.console.tag_config('WARNING', background=g.COL['warn'])
-        self.console.tag_config('ERROR', background=g.COL['error'])
-        self.console.tag_config('CRITICAL', background=g.COL['critical'])
+
+        # configure and store the text widget
+        twidget.tag_config('DEBUG', background=g.COL['debug'])
+        twidget.tag_config('INFO')
+        twidget.tag_config('WARNING', background=g.COL['warn'])
+        twidget.tag_config('ERROR', background=g.COL['error'])
+        twidget.tag_config('CRITICAL', background=g.COL['critical'])
+        self.twidget = twidget
 
     def emit(self, message):
-        """
-        Overwrites the default handler's emit method:
-
-        message : the message to display
-        """
         formattedMessage = self.format(message)
 
-        # Write message to console
-        self.console.configure(state=tk.NORMAL,font=g.ENTRY_FONT)
-        self.console.insert(tk.END, formattedMessage + '\n',
-                            (message.levelname))
-        # Prevent further input
-        self.console.configure(state=tk.DISABLED)
-        self.console.see(tk.END)
+        # Write message to twidget
+        self.twidget.configure(state=tk.NORMAL,font=g.ENTRY_FONT)
+        self.twidget.insert(tk.END, formattedMessage, (message.levelname,))
 
-class LoggingToFile(logging.FileHandler):
+        # Prevent further input
+        self.twidget.configure(state=tk.DISABLED)
+        self.twidget.see(tk.END)
+
+class FileHandler(logging.FileHandler):
     """
     Used to send logging output to a file
     """
@@ -2301,51 +2304,140 @@ class LoggingToFile(logging.FileHandler):
         """
         logging.FileHandler.__init__(self, fname)
         logging.Formatter.converter = time.gmtime
-        formatter = logging.Formatter('%(asctime)s %(levelname)-7s %(message)s','%Y-%m-%d %H:%M:%S')
+        formatter = logging.Formatter('%(asctime)s %(name)s %(levelname)-7s %(message)s','%Y-%m-%d %H:%M:%S')
         self.setFormatter(formatter)
 
-#    def emit(self, message):
-#        """
-#        Overwrites the default handler's emit method:
-#
-#        message : the message to display
-#        """
-#        self.fout.write(self.format(message))
-#        self.fout.flush()
-
-
-class LogDisplay(tk.LabelFrame):
+class StreamHandler(logging.StreamHandler):
     """
-    A simple logging console
+    Used to send logging output to stderr
+    """
+    def __init__(self):
+        """
+        fout: file pointer to send messages to
+        """
+        logging.StreamHandler.__init__(self)
+        logging.Formatter.converter = time.gmtime
+        formatter = logging.Formatter('%(asctime)s %(name)s %(levelname)-7s %(message)s\n','%H:%M:%S')
+        self.setFormatter(formatter)
+        self.setLevel(logging.INFO)
+
+    def emit(self, message):
+        """
+        Overwrites the default handler's emit method:
+
+        message : the message to display
+        """
+        sys.stderr.write(self.format(message))
+
+class Logger(object):
+    """
+    Defines an object for logging. This uses the logging module to
+    define an internal logger and then defines how it reports to
+    stderr and, optionally, a file. It also defines shortcuts to
+    the standard logging methods warn, info etc. This is mainly
+    as a base class for two GUI-based loggers that come next.
+
+     logname : unique name for logger
+
     """
 
-    def __init__(self, root, height, width, text, **options):
+    def __init__(self, logname):
 
-        tk.LabelFrame.__init__(self, root, text=text, **options);
+        # make a logger
+        self._log = logging.getLogger(logname)
+
+        # disable automatic logging to the terminal
+        self._log.propagate = False
+
+        # add terminal handler that avoids debug messages
+        self._log.addHandler(StreamHandler())
+
+    def update(self, fname):
+        """
+        Adds a handler to save to a file. Includes debug stuff.
+        """
+        ltfh = FileHandler(fname)
+        self._log.addHandler(ltfh)
+
+    def debug(self, message):
+        self._log.debug(message)
+
+    def info(self, message):
+        self._log.info(message)
+
+    def warn(self, message):
+        self._log.warn(message)
+
+    def error(self, message):
+        self._log.error(message)
+
+    def critical(self, message):
+        self._log.critical(message)
+
+class GuiLogger(Logger, tk.Frame):
+    """
+    Defines a GUI logger, a combination of Logger and a Frame
+
+     logname : unique name for logger
+     root    : the root widget the LabelFrame descends from
+     height  : height in pixels
+     width   : width in pixels
+
+    """
+
+    def __init__(self, logname, root, height, width):
+
+        # configure the Logger
+        Logger.__init__(self, logname);
+
+        # configure the LabelFrame
+        tk.Frame.__init__(self, root);
 
         scrollbar = tk.Scrollbar(self)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        self.console = tk.Text(
+        twidget = tk.Text(
             self, height=height, width=width, bg=g.COL['log'],
             yscrollcommand=scrollbar.set)
-        self.console.configure(state=tk.DISABLED)
-        self.console.pack(side=tk.LEFT)
-        scrollbar.config(command=self.console.yview)
+        twidget.configure(state=tk.DISABLED)
+        twidget.pack(side=tk.LEFT)
+        scrollbar.config(command=twidget.yview)
 
-        # make a handler for GUIs
-        ltgh = LoggingToGUI(self.console)
+        # create and add a handler for the GUI
+        self._log.addHandler(GuiHandler(twidget))
 
-        # make a logger and set the handler
-        self.log = logging.getLogger(text)
-        self.log.addHandler(ltgh)
+class LabelGuiLogger(Logger, tk.LabelFrame):
+    """
+    Defines a GUI logger, a combination of Logger and a LabelFrame
 
-    def update(self):
-        """
-        Adds a handler to save to a file
-        """
-        if g.logfile:
-            ltfh = LoggingToFile(g.logfile)
-            self.log.addHandler(ltfh)
+     logname : unique name for logger
+     root    : the root widget the LabelFrame descends from
+     height  : height in pixels
+     width   : width in pixels
+     label   : label for the LabelFrame
+
+    """
+
+    def __init__(self, logname, root, height, width, label):
+
+        # configure the Logger
+        Logger.__init__(self, logname);
+
+        # configure the LabelFrame
+        tk.LabelFrame.__init__(self, root, text=label);
+
+        scrollbar = tk.Scrollbar(self)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        twidget = tk.Text(
+            self, height=height, width=width, bg=g.COL['log'],
+            yscrollcommand=scrollbar.set)
+        twidget.configure(state=tk.DISABLED)
+        twidget.pack(side=tk.LEFT)
+        scrollbar.config(command=twidget.yview)
+
+        # create and add a handler for the GUI
+        self._log.addHandler(GuiHandler(twidget))
+
+# ok, that's last of logging stuff
 
 class Switch(tk.Frame):
     """
@@ -2462,7 +2554,7 @@ class RtplotServer (SocketServer.TCPServer):
             try:
                 self.serve_forever()
             except Exception, e:
-                print('RtplotServer.run', e)
+                g.clog.warn('RtplotServer.run', e)
 
 class Timer(tk.Label):
     """
@@ -2503,7 +2595,7 @@ class Timer(tk.Label):
                     g.setup.setupServers.disable()
                     g.setup.powerOn.disable()
                     g.setup.powerOff.enable()
-                    g.clog.log.info('Run stopped')
+                    g.clog.info('Run stopped')
                     self.stop()
                     return
 
@@ -2757,9 +2849,9 @@ class InfoFrame(tk.LabelFrame):
                         self.az.configure(text='UNDEF')
                         self.airmass.configure(text='UNDEF')
                         self.mdist.configure(text='UNDEF')
-                        g.clog.log.warn('TCS error: ' + str(err))
+                        g.clog.warn('TCS error: ' + str(err))
                 else:
-                    g.clog.log.debug('TCS error: could not recognise ' +
+                    g.clog.debug('TCS error: could not recognise ' +
                                      g.cpars['telins_name'])
 
             if g.cpars['cdf_servers_on'] and \
@@ -2810,15 +2902,15 @@ class InfoFrame(tk.LabelFrame):
                             self.frame.configure(text='{0:d}'.format(nframe))
                     except Exception, err:
                         if err.code == 404:
-#                            g.clog.log.debug('Error trying to set frame: ' +
+#                            g.clog.debug('Error trying to set frame: ' +
 #                                             str(err))
                             self.frame.configure(text='0')
                         else:
-                            g.clog.log.debug('Error occurred trying to set frame')
+                            g.clog.debug('Error occurred trying to set frame')
                             self.frame.configure(text='UNDEF')
 
                 except Exception, err:
-                    g.clog.log.debug('Error trying to set run: ' + str(err))
+                    g.clog.debug('Error trying to set run: ' + str(err))
 
             # get the current filter, which is set during the start
             # operation
@@ -2837,7 +2929,7 @@ class InfoFrame(tk.LabelFrame):
                     else:
                         self.fpslide.configure(bg=g.COL['main'])
                 except Exception, err:
-                    g.clog.log.warn('Slide error: ' + str(err))
+                    g.clog.warn('Slide error: ' + str(err))
                     self.fpslide.configure(text='UNDEF')
                     self.fpslide.configure(bg=g.COL['warn'])
 
@@ -2855,14 +2947,14 @@ class InfoFrame(tk.LabelFrame):
                     else:
                         self.lake.configure(bg=g.COL['main'])
                 except Exception, err:
-                    g.clog.log.warn(str(err))
+                    g.clog.warn(str(err))
                     self.lake.configure(text='UNDEF')
                     self.lake.configure(bg=g.COL['warn'])
 
         except Exception, err:
             # this is a safety catchall trap as it is important
             # that this routine keeps going
-            g.clog.log.warn('Unexpected error: ' + str(err))
+            g.clog.warn('Unexpected error: ' + str(err))
 
         # run every 2 seconds
         self.count += 1
@@ -2943,10 +3035,10 @@ class AstroFrame(tk.LabelFrame):
 
         # report back to the user
         tins = g.TINS[g.cpars['telins_name']]
-        g.clog.log.info('Tel/ins  = ' + g.cpars['telins_name'])
-        g.clog.log.info('Longitude = ' + tins['longitude'] + ' E')
-        g.clog.log.info('Latitude   = ' + tins['latitude'] + ' N')
-        g.clog.log.info('Elevation  = ' + str(tins['elevation']) + ' m')
+        g.clog.info('Tel/ins  = ' + g.cpars['telins_name'])
+        g.clog.info('Longitude = ' + tins['longitude'] + ' E')
+        g.clog.info('Latitude   = ' + tins['latitude'] + ' N')
+        g.clog.info('Elevation  = ' + str(tins['elevation']) + ' m')
 
         # parameters used to reduce re-calculation of sun rise etc, and
         # to provide info for other widgets
@@ -3066,7 +3158,7 @@ class AstroFrame(tk.LabelFrame):
 
         except Exception, err:
             # catchall
-            g.clog.log.warn('AstroFrame.update: error = ' + str(err))
+            g.clog.warn('AstroFrame.update: error = ' + str(err))
 
         # run again after 100 milli-seconds
         self.after(100, self.update)
@@ -3148,8 +3240,8 @@ def checkSimbad(target, maxobj=5):
     resp.close()
 
     if error and len(results):
-        print('drivers.check: Simbad: there appear to be some ' + \
-                  'results but an error was unexpectedly raised.')
+        g.clog.warn('drivers.check: Simbad: there appear to be some ' + \
+                        'results but an error was unexpectedly raised.')
     return results
 
 
@@ -3303,7 +3395,7 @@ class WinPairs (tk.Frame):
         """
 
         status = True
-        synced = False
+        synced = True
 
         xbin  = self.xbin.value()
         ybin  = self.ybin.value()

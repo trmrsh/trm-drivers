@@ -7,7 +7,7 @@ Written by Stu.
 """
 
 from __future__ import print_function
-import serial, struct, logging, threading, time
+import serial, struct, threading, time
 import Tkinter as tk
 import drivers as drvs
 import globals as g
@@ -85,13 +85,18 @@ class Slide(object):
         """
         Creates a Slide. Arguments::
 
-         log  : a logger to display results
+         log  : a logger to display results (a default one will be
+                provided log=None)
          port : port device representing the slide
+
         """
         self.port = port
         self.default_timeout = MIN_TIMEOUT
         self.connected = False
-        self.log = log
+        if log is None:
+            self.log = drvs.Logger('SLD') 
+        else:
+            self.log = log
 
     def _open_port(self):
         try:
@@ -275,10 +280,7 @@ class Slide(object):
             start_pos = self._getPosition()
             return self.compute_timeout(start_pos)
         else:
-            if self.log is not None:
-                self.log.info('position undefined: setting max timeout for home\n')
-            else:
-                print('position undefined: setting max timeout for home\n')
+            self.log.info('position undefined: setting max timeout for home')
             return MAX_TIMEOUT
 
     def home(self, timeout=None):
@@ -297,11 +299,8 @@ class Slide(object):
         self._close_port()
         if byteArr[1] == ERROR:
             raise SlideError('Error occurred setting to the home position')
-        if self.log is not None:
-            self.log.info('Slide returned to home position' +
-                          ' (click "position" to confirm)\n')
-        else:
-            print('Slide returned to home position')
+        self.log.info('Slide returned to home position ' +
+                      '(click "position" to confirm)')
 
     def reset(self):
         """
@@ -329,10 +328,7 @@ class Slide(object):
         self._sendByteArr(byteArr,self.default_timeout)
         byteArr = self._readBytes(timeout=self.default_timeout)
         self._close_port()
-        if self.log is not None:
-            self.log.info('finished restore\n')
-        else:
-            print('finished restore\n')
+        self.log.info('finished restore')
         return byteArr
 
     def disable(self):
@@ -347,10 +343,7 @@ class Slide(object):
         self._sendByteArr(byteArr,self.default_timeout)
         byteArr = self._readBytes(timeout=self.default_timeout)
         self._close_port()
-        if self.log is not None:
-            self.log.info('manual adjustment disabled\n')
-        else:
-            print('manual adjustment disabled\n')
+        self.log.info('manual adjustment disabled')
         return byteArr
 
     def enable(self):
@@ -365,10 +358,7 @@ class Slide(object):
         self._sendByteArr(byteArr,self.default_timeout)
         byteArr = self._readBytes(timeout=self.default_timeout)
         self._close_port()
-        if self.log is not None:
-            self.log.info('manual adjustment enabled\n')
-        else:
-            print('manual adjustment enabled\n')
+        self.log.info('manual adjustment enabled')
         return byteArr
 
     def stop(self):
@@ -382,10 +372,7 @@ class Slide(object):
         if byteArr[1] == ERROR:
             raise SlideError('Error stopping the slide')
         else:
-            if self.log is not None:
-                self.log.info('slide stopped\n')
-            else:
-                print('Slide Stopped')
+            self.log.info('slide stopped')
             self.report_position()
 
     def move_relative(self,amount,units,timeout=None):
@@ -400,11 +387,8 @@ class Slide(object):
 
         nstep = self._convert_to_microstep(amount, units)
         self._move_relative(nstep,timeout)
-        if self.log is not None:
-            self.log.info('moved slide by ' + str(amount) + ' ' + units +
-                          ' (click "position" to confirm)\n')
-        else:
-            print('moved slide by ' + str(amount) + ' ' + units + '\n')
+        self.log.info('moved slide by ' + str(amount) + ' ' + units +
+                      ' (click "position" to confirm)')
 
     def move_absolute(self,amount,units,timeout=None):
         '''move the slide to an absolute position.
@@ -416,11 +400,8 @@ class Slide(object):
 
         nstep = self._convert_to_microstep(amount, units)
         self._move_absolute(nstep,timeout)
-        if self.log is not None:
-            self.log.info('Moved slide to ' + str(amount) + ' ' + units +
-                          ' (click "position" to confirm)\n')
-        else:
-            print('Moved slide to ' + str(amount) + ' ' + units + '\n')
+        self.log.info('Moved slide to ' + str(amount) + ' ' + units +
+                          ' (click "position" to confirm)')
 
     def return_position(self):
         """
@@ -438,11 +419,7 @@ class Slide(object):
         (ms,mm,px)
         """
         pos_ms,pos_mm,pos_px = self.return_position()
-        if self.log is not None:
-            self.log.info('Current position = {0:6.1f} pixels\n'.format(pos_px))
-        else:
-            print("Current position = %d ms, %f mm, %f pixels" % (pos_ms,pos_mm,pos_px))
-
+        self.log.info('Current position = {0:6.1f} pixels'.format(pos_px))
 
 class FocalPlaneSlide(tk.LabelFrame):
     """
@@ -497,32 +474,13 @@ class FocalPlaneSlide(tk.LabelFrame):
 
         top.pack(pady=2)
 
-        # make a region to display results of
-        # slide commands
-        bot = tk.Frame(self)
-        scrollbar = tk.Scrollbar(bot)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        console = tk.Text(bot, height=5, width=45, bg=g.COL['log'],
-                          yscrollcommand=scrollbar.set)
-        console.configure(state=tk.DISABLED)
-        console.pack(side=tk.LEFT)
-        scrollbar.config(command=console.yview)
-
-        # make a handler for GUIs
-        ltgh = drvs.LoggingToGUI(console)
-
-        # define the formatting
-        formatter = logging.Formatter('%(message)s')
-        ltgh.setFormatter(formatter)
-
-        # make a logger and set the handler
-        self.log = logging.getLogger('Slide log')
-        self.log.addHandler(ltgh)
-        bot.pack(pady=2)
+        # region to log slide command results
+        self.log = drvs.GuiLogger('SLD', self, 5, 53)
+        self.log.pack(pady=2)
 
         # Finish off
-        self.where   = 'UNDEF'
-        self.slide   = Slide(self.log)
+        self.where = 'UNDEF'
+        self.slide = Slide(self.log)
 
     def setExpertLevel(self):
         """
@@ -552,8 +510,8 @@ class FocalPlaneSlide(tk.LabelFrame):
         """
         if g.cpars['focal_plane_slide_on']:
 
-            self.log.info('\nExecuting command: ' +
-                          ' '.join([str(it) for it in comm]) + '\n')
+            self.log.info('Executing command: ' +
+                          ' '.join([str(it) for it in comm]))
 
             try:
                 inback = False
@@ -614,9 +572,10 @@ class FocalPlaneSlide(tk.LabelFrame):
                             self.slide.move_absolute(comm[1],'px',timeout)
                     else:
                         self.log.warn('You must enter an integer pixel position' +
-                                      ' for the mask first\n')
+                                      ' for the mask first')
                 else:
-                    self.log.warn('Command = ' + str(comm) + ' not implemented yet.\n')
+                    self.log.warn('Command = ' + str(comm) +
+                                  ' not implemented yet.')
 
                 self.where = comm[0]
                 if inback:
@@ -624,11 +583,9 @@ class FocalPlaneSlide(tk.LabelFrame):
                     t.start()
 
             except Exception, err:
-                self.log.warn('Error: ' + str(err) + '\n')
+                self.log.warn('Error: ' + str(err))
                 self.log.warn('You may want to try again; the slide is unreliable\n' +
-                              'in its error reporting. Try "position" for example\n')
+                              'in its error reporting. Try "position" for example')
         else:
-            self.log.warn('Focal plane slide access is OFF; see settings.\n')
-
-
+            self.log.warn('Focal plane slide access is OFF; see settings.')
 
