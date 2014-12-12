@@ -275,11 +275,9 @@ class GUI(tk.Tk):
                 t = threading.Thread(target=self.startRtplotServer, args=[q,])
                 t.daemon = True
                 t.start()
-                g.clog.info('rtplot server started on port' +
-                            g.cpars['rtplot_server_port'])
+                g.clog.info('rtplot server started on port ' + str(g.cpars['rtplot_server_port']))
             except Exception, e:
-                g.clog.error('Problem trying to start rtplot server: ' +
-                            str(e))
+                g.clog.error('Problem trying to start rtplot server: ' + str(e))
         else:
             g.clog.info('rtplot server was not started')
 
