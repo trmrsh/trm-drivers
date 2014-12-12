@@ -1637,23 +1637,28 @@ class Target(tk.Frame):
         tname = self.val.get()
 
         g.clog.info('Checking ' + tname + ' in simbad')
-        ret = checkSimbad(tname)
-        if len(ret) == 0:
-            self.verify.config(bg=g.COL['stop'])
-            g.clog.warn('No matches to "' + tname + '" found.')
-            if tname not in self.failures:
-                self.failures.append(tname)
-        elif len(ret) == 1:
-            self.verify.config(bg=g.COL['start'])
-            g.clog.info(tname + ' verified OK in simbad')
-            g.clog.info('Primary simbad name = ' + ret[0]['Name'])
-            if tname not in self.successes:
-                self.successes.append(tname)
-        else:
-            g.clog.warn('More than one match to "' + tname + '" found')
-            self.verify.config(bg=g.COL['stop'])
-            if tname not in self.failures:
-                self.failures.append(tname)
+        try:
+            ret = checkSimbad(tname)
+            if len(ret) == 0:
+                self.verify.config(bg=g.COL['stop'])
+                g.clog.warn('No matches to "' + tname + '" found.')
+                if tname not in self.failures:
+                    self.failures.append(tname)
+            elif len(ret) == 1:
+                self.verify.config(bg=g.COL['start'])
+                g.clog.info(tname + ' verified OK in simbad')
+                g.clog.info('Primary simbad name = ' + ret[0]['Name'])
+                if tname not in self.successes:
+                    self.successes.append(tname)
+            else:
+                g.clog.warn('More than one match to "' + tname + '" found')
+                self.verify.config(bg=g.COL['stop'])
+                if tname not in self.failures:
+                    self.failures.append(tname)
+        except URLError, e:
+            g.clog.warn('Simbad lookup timed out')
+        except socket.timeout:
+            g.clog.warn('Simbad lookup timed out')
 
 class ReadServer(object):
     """
@@ -3213,17 +3218,17 @@ def getRunNumber(nocheck=False):
     else:
         raise DriverError('getRunNumber error')
 
-def checkSimbad(target, maxobj=5):
+def checkSimbad(target, maxobj=5, timeout=5):
     """
     Sends off a request to Simbad to check whether a target is recognised.
-    Returns with a list of results.
+    Returns with a list of results, or raises an exception if it times out
     """
     url   = 'http://simbad.u-strasbg.fr/simbad/sim-script'
     q     = 'set limit ' + str(maxobj) + \
         '\nformat object form1 "Target: %IDLIST(1) | %COO(A D;ICRS)"\nquery ' \
         + target
     query = urllib.urlencode({'submit' : 'submit script', 'script' : q})
-    resp  = urllib2.urlopen(url, query)
+    resp  = urllib2.urlopen(url, query, timeout)
     data  = False
     error = False
     results = []
@@ -3906,15 +3911,18 @@ def d2hms(d, decp, sign):
     h, fh = divmod(dp,1)
     m, fm = divmod(60.*fh,1)
     s = 60.*fm
-    h  = int(h) if d >= 0. else -int(h)
+    h  = int(h)
     m  = int(m)
     ns = int(round(s))
-    form = '{0:'
-    if sign:
-        form += '+03d'
+
+    # add sign, depending on case
+    if d < 0.:
+        form = '-'
+    elif sign:
+        form = '+'
     else:
-        form += '02d'
-    form += '}:{1:02d}:{2:0'
+        form =''
+    form += '{0:02d}:{1:02d}:{2:0'
     if decp == 0:
         form += '2d}'
         if ns == 60:
