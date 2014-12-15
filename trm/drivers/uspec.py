@@ -1276,6 +1276,8 @@ class Start(drvs.ActButton):
             # wheel. Raises an Exception if no wheel available
             if not g.wheel.connected:
                 g.wheel.connect()
+
+            if not g.wheel.initialised:
                 g.wheel.init()
 
             currentPosition = g.wheel.getPos()
@@ -1301,6 +1303,7 @@ class Start(drvs.ActButton):
             else:
                 # No action needed
                 g.clog.info('No filter change needed')
+                g.wheel.close()
                 current_filter = g.cpars['active_filter_names'][currentPosition-1]
 
             # Set position of slide
