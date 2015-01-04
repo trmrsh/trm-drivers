@@ -94,7 +94,7 @@ class GUI(tk.Tk):
 
         # We now create the various container widgets. The order here
         # is mostly a case of the most basic first which often need to
-        # be passed to later ones. This is achived using the globals
+        # be passed to later ones. This is achieved using the globals
         # of the 'globals' sub-module.
 
         # Construct the command logging window
@@ -299,6 +299,24 @@ class GUI(tk.Tk):
 
         else:
             g.clog.warn('Logging to a file is disabled')
+
+        self.update()
+
+    def update(self):
+        """
+        Run regular checks on the FIFO queue which stores
+        Exceptions thrown in threaded operations
+        """
+        try:
+            exc = g.FIFO.get(block=False)
+        except Queue.Empty:
+            pass
+        else:
+            exc_type, exc_obj, exc_trace = exc
+            g.clog.warn('Caught exception in threaded process')
+            g.clog.warn(exc_type + ':' + exc_obj)
+
+        self.after(2000, self.update)
 
     def startRtplotServer(self, x):
         """
