@@ -1218,11 +1218,12 @@ class Start(drvs.ActButton):
                 if g.cpars['telins_name'] == 'TNO-USPEC':
                     try:
                         ra,dec,pa,focus,tflag,epa = tcs.getTntTcs()
-                        if not g.info.tracking and not tkMessageBox.askokcancel(
-                                'TCS error',
-                                'The telescope does not appear to be tracking and the\n' +
-                                'RA, Dec and/or PA could be wrong as a result.\n' +
-                                'Continue?'):
+                        if not g.info.tracking and \
+                           not tkMessageBox.askokcancel(
+                               'TCS error',
+                               'The telescope does not appear to be tracking and the\n' +
+                               'RA, Dec and/or PA could be wrong as a result.\n' +
+                               'Continue?'):
                             g.clog.warn('Start operation cancelled')
                             return False
 
@@ -1287,11 +1288,12 @@ class Start(drvs.ActButton):
                 # We must change the filter before starting the run. This means
                 # that we also have to update the filters element of the 'user'
                 # part of the xml
-                g.clog.info('Changing filter from "' + \
-                                    g.cpars['active_filter_names'][currentPosition-1] + \
-                                    '" to "' + \
-                                    g.cpars['active_filter_names'][desiredPosition-1] + \
-                                    '"')
+                g.clog.info(
+                    'Changing filter from "' + \
+                    g.cpars['active_filter_names'][currentPosition-1] + \
+                    '" to "' + \
+                    g.cpars['active_filter_names'][desiredPosition-1] + \
+                    '"')
                 g.wheel.goto(desiredPosition)
                 g.wheel.close()
                 current_filter = g.cpars['active_filter_names'][desiredPosition-1]
