@@ -3938,5 +3938,26 @@ def d2hms(d, decp, sign):
         form += str(3+decp) + '.' + str(decp) + 'f}'
         return form.format(h,m,s)
 
+class FifoThread(threading.Thread):
+    """
+    Adds a fifo Queue to a thread in order to store up disasters which are
+    added to the fifo for later retrieval. This is to get around the problem
+    that otherwise exceptions thrown from withins threaded operations are
+    lost.
+    """
+    def __init__(self, target, fifo, args=()):
+        threading.Thread.__init__(self, target=target, args=args)
+        self.fifo = fifo
+
+    def run(self):
+        """
+        Version of run that traps Exceptions and stores
+        them in the fifo
+        """
+        try:
+            super(ExcThread, self).run()
+        except Exception:
+            self.fifo.put(sys.exc_info())
+
 class DriverError(Exception):
     pass
