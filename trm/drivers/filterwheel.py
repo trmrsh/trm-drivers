@@ -206,8 +206,8 @@ class WheelController(tk.Toplevel):
 
             findex = self.wheel.getPos()-1
 
-            self.current = drvs.Ilabel(self,
-                                       text=g.cpars['active_filter_names'][findex])
+            self.current = drvs.Ilabel(
+                self,text=g.cpars['active_filter_names'][findex])
 
         except Exception, err:
             g.clog.warn('Failed to get current filter position.\n')
@@ -217,18 +217,19 @@ class WheelController(tk.Toplevel):
 
         self.current.grid(row=0,column=1, sticky=tk.W, pady=3)
 
-        self.filter = drvs.Choice(self, g.cpars['active_filter_names'],
-                                  initial=g.cpars['active_filter_names'][findex],
-                                  width=width-1)
+        self.filter = drvs.Choice(
+            self, g.cpars['active_filter_names'],
+            initial=g.cpars['active_filter_names'][findex],
+            width=width-1)
         self.filter.grid(row=1,column=0)
 
-        self.go     = drvs.ActButton(self, width, self._go, text='go')
+        self.go = drvs.ActButton(self, width, self._go, text='go')
         self.go.grid(row=1, column=1)
 
-        self.home   = drvs.ActButton(self, width, self._home, text='home wheel')
+        self.home = drvs.ActButton(self, width, self._home, text='home wheel')
         self.home.grid(row=2, column=0)
 
-        self.init   = drvs.ActButton(self, width, self._init, text='init wheel')
+        self.init = drvs.ActButton(self, width, self._init, text='init wheel')
         self.init.grid(row=2, column=1)
 
         # override the 'x' to kill the window
@@ -236,8 +237,9 @@ class WheelController(tk.Toplevel):
 
     def _go(self, *args):
         if drvs.isRunActive():
-            tkMessageBox.showwarning('Run active',
-                                     'Sorry; you cannot change filters during a run.')
+            tkMessageBox.showwarning(
+                'Run active',
+                'Sorry; you cannot change filters during a run.')
             return
 
         try:
@@ -246,9 +248,10 @@ class WheelController(tk.Toplevel):
                 self.wheel.init()
             findex = self.filter.options.index(self.filter.value())+1
             g.clog.info('Moving to filter position = ' + str(findex) +
-                            ', name = ' + g.cpars['active_filter_names'][findex-1])
+                        ', name = ' + g.cpars['active_filter_names'][findex-1])
             self.wheel.goto(findex)
-            self.current.configure(text=g.cpars['active_filter_names'][findex-1])
+            self.current.configure(
+                text=g.cpars['active_filter_names'][findex-1])
             g.clog.info('Filter moved successfully')
         except Exception, err:
             g.clog.warn('Filter change failed.')
@@ -337,10 +340,11 @@ class FilterEditor(tk.Toplevel):
 
                 # reconfig the filters in RunPars
                 g.rpars.filter.buttons[i].config(text=nfilter)
+                g.rpars.filter.buttons[i].config(value=nfilter)
 
                 # report changes
                 g.clog.info('Filter change: ' + ofilter + ' ---> ' + \
-                                    nfilter + '\n')
+                            nfilter + '\n')
 
                 nchange += 1
         if nchange:
