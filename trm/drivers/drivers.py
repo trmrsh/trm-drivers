@@ -3955,7 +3955,7 @@ class FifoThread(threading.Thread):
         them in the fifo
         """
         try:
-            super(ExcThread, self).run()
+            super(threading.Thread, self).run()
         except Exception:
             self.fifo.put(sys.exc_info())
 

@@ -314,7 +314,8 @@ class GUI(tk.Tk):
         else:
             exc_type, exc_obj, exc_trace = exc
             g.clog.warn('Caught exception in threaded process')
-            g.clog.warn(exc_type + ':' + exc_obj)
+            g.clog.warn(str(exc_type) + ':' + str(exc_obj))
+            g.clog.debug(str(exc_trace))
 
         self.after(2000, self.update)
 
