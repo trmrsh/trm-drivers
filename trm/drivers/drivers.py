@@ -8,6 +8,7 @@ dependent components.
 
 from __future__ import print_function
 import sys
+import traceback
 import Tkinter as tk
 import tkFont, tkFileDialog
 import xml.etree.ElementTree as ET
@@ -3957,7 +3958,11 @@ class FifoThread(threading.Thread):
         try:
             threading.Thread.run(self)
         except Exception:
-            self.fifo.put(sys.exc_info())
+            t, v, tb = sys.exc_info()
+            error = traceback.format_exception_only(t,v)[0][:-1]
+            tback = 'Traceback (most recent call last):\n' + \
+                    ''.join(traceback.format_tb(tb))
+            self.fifo.put((error, tback))
 
 class DriverError(Exception):
     pass
