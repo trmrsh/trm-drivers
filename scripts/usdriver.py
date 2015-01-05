@@ -19,7 +19,7 @@ any of these can be switched off.
 """
 
 # core
-import argparse, os, time
+import argparse, os, time, traceback
 import Tkinter as tk
 import tkFont, tkMessageBox, tkFileDialog
 import logging, Queue, threading
@@ -312,10 +312,9 @@ class GUI(tk.Tk):
         except Queue.Empty:
             pass
         else:
-            exc_type, exc_obj, exc_trace = exc
-            g.clog.warn('Caught exception in threaded process')
-            g.clog.warn(str(exc_type) + ':' + str(exc_obj))
-            g.clog.debug(str(exc_trace))
+            error, tback = exc
+            g.clog.warn('Error in thread: ' + error)
+            g.clog.debug(tback)
 
         self.after(2000, self.update)
 
