@@ -19,7 +19,7 @@ any of these can be switched off.
 """
 
 # core
-import argparse, os, time, traceback
+import argparse, os, time
 import Tkinter as tk
 import tkFont, tkMessageBox, tkFileDialog
 import logging, Queue, threading
