@@ -315,6 +315,8 @@ class GUI(tk.Tk):
             error, tback = exc
             g.clog.warn('Error in thread: ' + error)
             g.clog.debug(tback)
+            g.clog.warn('this is a test')
+            g.clog.debug('this is also a test')
 
         self.after(2000, self.update)
 
