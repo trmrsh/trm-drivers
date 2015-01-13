@@ -1594,6 +1594,7 @@ class CountsFrame(tk.LabelFrame):
 
         # results
         self.cadence   = drvs.Ilabel(rframe,text='UNDEF',width=10,anchor=tk.W)
+        self.exposure  = drvs.Ilabel(rframe,text='UNDEF',width=10,anchor=tk.W)
         self.duty      = drvs.Ilabel(rframe,text='UNDEF',width=10,anchor=tk.W)
         self.peak      = drvs.Ilabel(rframe,text='UNDEF',width=10,anchor=tk.W)
         self.total     = drvs.Ilabel(rframe,text='UNDEF',width=10,anchor=tk.W)
@@ -1627,25 +1628,29 @@ class CountsFrame(tk.LabelFrame):
             row=0,column=0,padx=5,pady=3,sticky=tk.W)
         self.cadence.grid(row=0,column=1,padx=5,pady=3,sticky=tk.W)
 
-        tk.Label(rframe,text='Duty cycle:').grid(
+        tk.Label(rframe,text='Exposure:').grid(
             row=1,column=0,padx=5,pady=3,sticky=tk.W)
-        self.duty.grid(row=1,column=1,padx=5,pady=3,sticky=tk.W)
+        self.exposure.grid(row=1,column=1,padx=5,pady=3,sticky=tk.W)
+
+        tk.Label(rframe,text='Duty cycle:').grid(
+            row=2,column=0,padx=5,pady=3,sticky=tk.W)
+        self.duty.grid(row=2,column=1,padx=5,pady=3,sticky=tk.W)
 
         tk.Label(rframe,text='Peak:').grid(
-            row=2,column=0,padx=5,pady=3,sticky=tk.W)
-        self.peak.grid(row=2,column=1,padx=5,pady=3,sticky=tk.W)
+            row=3,column=0,padx=5,pady=3,sticky=tk.W)
+        self.peak.grid(row=3,column=1,padx=5,pady=3,sticky=tk.W)
 
         tk.Label(rframe,text='Total:').grid(
-            row=3,column=0,padx=5,pady=3,sticky=tk.W)
-        self.total.grid(row=3,column=1,padx=5,pady=3,sticky=tk.W)
+            row=4,column=0,padx=5,pady=3,sticky=tk.W)
+        self.total.grid(row=4,column=1,padx=5,pady=3,sticky=tk.W)
 
         tk.Label(rframe,text='S/N:').grid(
-            row=4,column=0,padx=5,pady=3,sticky=tk.W)
-        self.ston.grid(row=4,column=1,padx=5,pady=3,sticky=tk.W)
+            row=5,column=0,padx=5,pady=3,sticky=tk.W)
+        self.ston.grid(row=5,column=1,padx=5,pady=3,sticky=tk.W)
 
         tk.Label(rframe,text='S/N (3h):').grid(
-            row=5,column=0,padx=5,pady=3,sticky=tk.W)
-        self.ston3.grid(row=5,column=1,padx=5,pady=3,sticky=tk.W)
+            row=6,column=0,padx=5,pady=3,sticky=tk.W)
+        self.ston3.grid(row=6,column=1,padx=5,pady=3,sticky=tk.W)
 
         # slot frames in
         lframe.grid(row=0,column=0,sticky=tk.W+tk.N)
@@ -1717,6 +1722,22 @@ class CountsFrame(tk.LabelFrame):
             self.cadence.config(text='{0:4.0f} s'.format(cycleTime))
         else:
             self.cadence.config(text='{0:5.0f} s'.format(cycleTime))
+
+        if expTime < 0.01:
+            self.exposure.config(text='{0:7.5f} s'.format(expTime))
+        elif expTime < 0.1:
+            self.exposure.config(text='{0:6.4f} s'.format(expTime))
+        elif expTime < 1.:
+            self.exposure.config(text='{0:5.3f} s'.format(expTime))
+        elif expTime < 10.:
+            self.exposure.config(text='{0:4.2f} s'.format(expTime))
+        elif expTime < 100.:
+            self.exposure.config(text='{0:4.1f} s'.format(expTime))
+        elif expTime < 1000.:
+            self.exposure.config(text='{0:4.0f} s'.format(expTime))
+        else:
+            self.exposure.config(text='{0:5.0f} s'.format(expTime))
+
         self.duty.config(text='{0:4.1f} %'.format(dutyCycle))
         self.peak.config(text='{0:d} cts'.format(int(round(peak))))
         if peakSat:
