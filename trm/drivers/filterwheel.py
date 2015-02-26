@@ -52,8 +52,13 @@ class FilterWheel(object):
 
         response = self.sendCommand('WSMODE')
         if response != "!":
-            raise FilterWheelError('Could not initialise wheel for' + \
-                                   ' serial commands')
+            g.clog.debug('First attempt at initialising failed; trying again')
+            # wait a bit, try once more
+            time.sleep(2)
+            response = self.sendCommand('WSMODE')
+            if response != "!":
+                raise FilterWheelError('Could not initialise wheel for' +
+                                       ' serial commands')
         self.initialised = True
         g.clog.debug('Filterwheel: serial mode enabled (WSMODE)')
 
@@ -73,7 +78,7 @@ class FilterWheel(object):
             self.ser.setTimeout(30)
         else:
             g.clog.debug('Filterwheel: setting timeout to ' +
-                             str(self.default_timeout) + ' secs')
+                         str(self.default_timeout) + ' secs')
             self.ser.setTimeout(self.default_timeout)
 
         g.clog.debug('Filterwheel: sending command = ' + comm)
@@ -116,6 +121,7 @@ class FilterWheel(object):
             raise FilterWheelError('Could not ID filter wheel after HOME')
         elif response == 'ER=6':
             raise FilterWheelError('Filter wheel is slipping')
+        g.clog.debug('Filterwheel: home returned ' + response)
 
     def getID(self):
         """
@@ -125,7 +131,7 @@ class FilterWheel(object):
         response = self.sendCommand('WIDENT').strip()
         validIDs = ['A','B','C','D','E']
         if not response in validIDs:
-            raise FilterWheelError('Bad filter wheel ID\n'+response)
+            raise FilterWheelError('Bad filter wheel ID\n'+response.strip())
         return response
 
     def getPos(self):
@@ -134,6 +140,7 @@ class FilterWheel(object):
         """
         g.clog.debug('Filterwheel: getting position')
         response = self.sendCommand('WFILTR')
+        g.clog.debug('Poisition response = ' + response.strip())
         filtNum = int(response)
         return filtNum
 
@@ -143,6 +150,7 @@ class FilterWheel(object):
         """
         g.clog.debug('Filterwheel: getting names')
         response = self.sendCommand("WREAD")
+        g.clog.debug('Names = ' + response.strip())
         return response.split()
 
     def goto(self,position):
@@ -150,21 +158,23 @@ class FilterWheel(object):
         moves to desired position. positions 1 thru 6 are valid
         """
         g.clog.debug('Filterwheel: changing to position ' +
-                         str(position))
+                     str(position))
 
         if position > 6 or position < 1:
             raise FilterWheelError('Invalid filter wheel position')
+
         response = self.sendCommand('WGOTO'+repr(position))
+
         if response == 'ER=4':
             raise FilterWheelError('filter wheel is stuck')
-        if response == 'ER=5':
+        elif response == 'ER=5':
             raise FilterWheelError('requested position (' +
                                    position + ') not valid')
-        if response == 'ER=6':
+        elif response == 'ER=6':
             raise FilterWheelError('filter wheel is slipping')
-
-        if response != '*':
-            raise FilterWheelError('unrecognised error ' + response)
+        elif response != '*':
+            raise FilterWheelError('unrecognised error = [' +
+                                   response.strip() + ']')
 
     def reboot(self):
         """
