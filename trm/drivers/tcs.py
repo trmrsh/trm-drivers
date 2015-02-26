@@ -51,4 +51,4 @@ def getTntTcs():
     focus  = 1000.*float(focus)
     engpa  = math.degrees(float(engpa))
 
-    return (ra,dec,pa,focus,tracking == 'Tracking',engpa)
+    return (ra,dec,pa,focus,tracking,engpa)

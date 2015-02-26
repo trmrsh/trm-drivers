@@ -1217,7 +1217,7 @@ class Start(drvs.ActButton):
                 # get positional info from telescope
                 if g.cpars['telins_name'] == 'TNO-USPEC':
                     try:
-                        ra,dec,pa,focus,tflag,epa = tcs.getTntTcs()
+                        ra,dec,pa,focus,tracking,epa = tcs.getTntTcs()
                         if not g.info.tracking and \
                            not tkMessageBox.askokcancel(
                                'TCS error',
@@ -1226,18 +1226,6 @@ class Start(drvs.ActButton):
                                'Continue?'):
                             g.clog.warn('Start operation cancelled')
                             return False
-
-                        # only bother about the telescope's tracking flag
-                        # if we have not over-ridden the more reliable flag
-                        # from 'info'
-#                        if g.info.tracking and not tflag and \
-#                                not tkMessageBox.askokcancel(
-#                            'TCS error',
-#                            'The telescope reports that it is not tracking;\n' +
-#                            'the RA, Dec and or PA could be wrong as a result.\n' +
-#                            'Continue?'):
-#                            g.clog.warn('Start operation cancelled')
-#                            return False
 
                         # all systems are go...
                         tra         = ET.SubElement(uconfig, 'RA')
@@ -1253,7 +1241,7 @@ class Start(drvs.ActButton):
                         tracking    = ET.SubElement(uconfig, 'Tracking')
                         tracking.text = 'yes' if g.info.tracking else 'no'
                         ttflag      = ET.SubElement(uconfig, 'TTflag')
-                        ttflag.text = 'yes' if tflag else 'no'
+                        ttflag.text = tracking
 
                     except Exception, err:
                         g.clog.warn(err)

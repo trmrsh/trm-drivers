@@ -2736,7 +2736,7 @@ class InfoFrame(tk.LabelFrame):
                     try:
 
                         # Poll TCS for ra,dec etc.
-                        ra,dec,pa,focus,tflag,engpa = tcs.getTntTcs()
+                        ra,dec,pa,focus,tracking,engpa = tcs.getTntTcs()
 
                         self.ra.configure(text=d2hms(ra/15., 1, False))
                         self.dec.configure(text=d2hms(dec, 0, True))
