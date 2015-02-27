@@ -1227,6 +1227,9 @@ class Start(drvs.ActButton):
                             g.clog.warn('Start operation cancelled')
                             return False
 
+                        # log the tracking
+                        g.clog.debug('At run start, tracking = ' + tracking)
+
                         # all systems are go...
                         tra         = ET.SubElement(uconfig, 'RA')
                         tra.text    = drvs.d2hms(ra/15., 1, False)
