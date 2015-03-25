@@ -855,6 +855,7 @@ class RunPars(tk.LabelFrame):
         Unfreeze all settings so that they can be altered
         """
         self.filter.enable()
+        dtype = self.dtype.value()
         if dtype == 'data caution' or dtype == 'data' or dtype == 'technical':
             self.progid.configure(state='normal')
             self.pi.configure(state='normal')
