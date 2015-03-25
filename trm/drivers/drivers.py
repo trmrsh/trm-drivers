@@ -1269,7 +1269,8 @@ def saveXML(root):
     The current setup.
     """
     fname = tkFileDialog.asksaveasfilename(
-        defaultextension='.xml', filetypes=[('xml files', '.xml'),])
+        defaultextension='.xml', filetypes=[('xml files', '.xml'),],
+        initialdir=g.cpars['app_directory'])
     if not fname:
         g.clog.warn('Aborted save to disk')
         return False

@@ -1422,7 +1422,8 @@ class Load(drvs.ActButton):
         """
 
         fname = tkFileDialog.askopenfilename(
-            defaultextension='.xml', filetypes=[('xml files', '.xml'),])
+            defaultextension='.xml', filetypes=[('xml files', '.xml'),],
+            initialdir=g.cpars['app_directory'])
         if not fname:
             g.clog.warn('Aborted load from disk')
             return False
