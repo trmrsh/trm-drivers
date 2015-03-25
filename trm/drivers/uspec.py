@@ -782,7 +782,7 @@ class RunPars(tk.LabelFrame):
     def check(self, *args):
         """
         Checks the validity of the run parameters. Returns
-        flag (True = OK), and a messge which indicates the
+        flag (True = OK), and a message which indicates the
         nature of the problem if the flag is False.
         """
 
@@ -790,14 +790,14 @@ class RunPars(tk.LabelFrame):
         msg = ''
 
         if self.dtype.value() == 'bias' or self.dtype.value() == 'flat' or \
-                self.dtype.value() == 'dark':
+           self.dtype.value() == 'dark':
             self.pi.configure(state='disable')
             self.progid.configure(state='disable')
-#            self.target.disable()
+            self.target.disable()
         else:
             self.pi.configure(state='normal')
             self.progid.configure(state='normal')
-#            self.target.enable()
+            self.target.enable()
 
         if g.cpars['require_run_params']:
             dtype = self.dtype.value()
@@ -854,10 +854,11 @@ class RunPars(tk.LabelFrame):
         """
         Unfreeze all settings so that they can be altered
         """
-        self.target.enable()
         self.filter.enable()
-        self.progid.configure(state='normal')
-        self.pi.configure(state='normal')
+        if dtype == 'data caution' or dtype == 'data' or dtype == 'technical':
+            self.progid.configure(state='normal')
+            self.pi.configure(state='normal')
+            self.target.enable()
         self.observers.configure(state='normal')
         self.comment.configure(state='normal')
         self.dtype.enable()
@@ -1219,11 +1220,20 @@ class Start(drvs.ActButton):
                     try:
                         ra,dec,pa,focus,tracking,epa = tcs.getTntTcs()
                         if not g.info.tracking and \
-                           not tkMessageBox.askokcancel(
-                               'TCS error',
-                               'The telescope does not appear to be tracking and the\n' +
-                               'RA, Dec and/or PA could be wrong as a result.\n' +
-                               'Continue?'):
+                                not tkMessageBox.askokcancel(
+                            'TCS error',
+                            'The telescope does not appear to be tracking and the\n' +
+                            'RA, Dec and/or PA could be wrong as a result.\n\n' +
+                            'Do you want to continue with the run?'):
+                            g.clog.warn('Start operation cancelled')
+                            return False
+                        elif tracking == 'disabled' and \
+                                not tkMessageBox.askokcancel(
+                            'TCS error',
+                            'The TCS server says that tracking is disabled. The RA, Dec\n' +
+                            'and PA are probably wrong (and possibly frozen) as a result.\n' +
+                            'Please check on the TCS server with NARIT staff.\n\n' +
+                            'Do you want to continue with the run?'):
                             g.clog.warn('Start operation cancelled')
                             return False
 
