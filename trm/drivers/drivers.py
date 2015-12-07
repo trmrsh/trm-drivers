@@ -2552,7 +2552,9 @@ class RtplotServer (SocketServer.TCPServer):
     their positions.
     """
     def __init__(self, instpars, port):
-        SocketServer.TCPServer.__init__(self, ('localhost', port),
+        # '' opens port on localhots and makes it visible
+        # outside localhost
+        SocketServer.TCPServer.__init__(self, ('', port),
                                         RtplotHandler)
         self.instpars = instpars
 
