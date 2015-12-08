@@ -6,6 +6,7 @@
 # To test this, you need to switch off the genuine server designed for this
 # purpose inside usdriver.
 
+import socket
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 import os
 
@@ -35,9 +36,13 @@ def run():
 
     # ip and port of server
     server_address = ('localhost', 5100)
-    httpd = HTTPServer(server_address, KodeFunHTTPRequestHandler)
-    print('Test usdriver http server is running...')
-    httpd.serve_forever()
+    try:
+        httpd = HTTPServer(server_address, KodeFunHTTPRequestHandler)
+        print('Test usdriver http server is running...')
+        httpd.serve_forever()
+    except socket.error, err:
+        print 'socket.error:',err, type(err), str(err)
+
 
 if __name__ == '__main__':
     run()
