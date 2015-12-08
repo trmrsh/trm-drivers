@@ -9,6 +9,7 @@ dependent components.
 from __future__ import print_function
 import sys
 import traceback
+import socket, errno
 import Tkinter as tk
 import tkFont, tkFileDialog
 import xml.etree.ElementTree as ET
@@ -1814,7 +1815,7 @@ def execServer(name, app):
     elif name == 'data':
         url = g.cpars['http_data_server'] + g.HTTP_PATH_CONFIG + '?' + app
     else:
-        raise Exception('Server name = ' + name + ' not recognised.')
+        raise DriverError('Server name = ' + name + ' not recognised.')
 
     g.clog.debug('execServer, url = ' + url)
 
@@ -2552,11 +2553,26 @@ class RtplotServer (SocketServer.TCPServer):
     their positions.
     """
     def __init__(self, instpars, port):
-        # '' opens port on localhots and makes it visible
+        # '' opens port on localhost and makes it visible
         # outside localhost
-        SocketServer.TCPServer.__init__(self, ('', port),
-                                        RtplotHandler)
-        self.instpars = instpars
+        try:
+            SocketServer.TCPServer.__init__(
+                self, ('', port), RtplotHandler)
+            self.instpars = instpars
+        except socket.error, err:
+            errorcode =  err[0]
+            if errorcode == errno.EADDRINUSE:
+                message = str(err) + '. '
+                message += 'Failed to start the rtplot server. '
+                message += 'There may be another instance of usdriver running. '
+                message += 'Suggest that you shut down usdriver, close all other instances,'
+                message += ' and then restart it.'
+            else:
+                message = str(err)
+                message += 'Failed to start the rtplot server'
+
+            raise DriverError(message)
+        print('rtplot server started')
 
     def run(self):
         while True:
@@ -3044,10 +3060,10 @@ class AstroFrame(tk.LabelFrame):
 
         # report back to the user
         tins = g.TINS[g.cpars['telins_name']]
-        g.clog.info('Tel/ins  = ' + g.cpars['telins_name'])
+        g.clog.info('Tel/ins = ' + g.cpars['telins_name'])
         g.clog.info('Longitude = ' + tins['longitude'] + ' E')
-        g.clog.info('Latitude   = ' + tins['latitude'] + ' N')
-        g.clog.info('Elevation  = ' + str(tins['elevation']) + ' m')
+        g.clog.info('Latitude = ' + tins['latitude'] + ' N')
+        g.clog.info('Elevation = ' + str(tins['elevation']) + ' m')
 
         # parameters used to reduce re-calculation of sun rise etc, and
         # to provide info for other widgets
