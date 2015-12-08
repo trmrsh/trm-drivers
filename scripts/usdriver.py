@@ -267,16 +267,15 @@ class GUI(tk.Tk):
         g.ipars.check()
 
         if g.cpars['rtplot_server_on']:
+            g.clog.info('Starting rtplot server in a separate thread')
             # the rtplot server is tricky since it needs to run all the time
             # along with the GUI which brings in issues such as concurrency,
             # threads etc.
             try:
                 q = Queue.Queue()
-                t = threading.Thread(target=self.startRtplotServer, args=[q,])
+                t = drvs.FifoThread(self.startRtplotServer, g.FIFO, args=[q,])
                 t.daemon = True
                 t.start()
-                g.clog.info('rtplot server started on port ' + \
-                            str(g.cpars['rtplot_server_port']))
             except Exception, e:
                 g.clog.error('Problem trying to start rtplot server: ' + str(e))
         else:
