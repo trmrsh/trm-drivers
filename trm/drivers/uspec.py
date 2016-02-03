@@ -111,11 +111,14 @@ class InstPars(tk.LabelFrame):
                                                       sticky=tk.W)
 
         elevel = g.cpars['expert_level']
-        if elevel == 0 or elevel == 1:
+        if elevel == 0:
             self.expose = drvs.Expose(lhs, 0.0007, 0.0007, 1677.7207,
                                       self.check, width=7)
+        elif elevel == 1:
+            self.expose = drvs.Expose(lhs, 0.0007, 0.0003, 1677.7207,
+                                      self.check, width=7)
         else:
-            self.expose = drvs.Expose(lhs, 0., 0., 1677.7207,
+            self.expose = drvs.Expose(lhs, 0.0007, 0., 1677.7207,
                                       self.check, width=7)
         self.expose.grid(row=4,column=1,pady=2,sticky=tk.W)
 
@@ -187,6 +190,7 @@ class InstPars(tk.LabelFrame):
         """
 
         level = g.cpars['expert_level']
+#        print('setting expert level')
 
         if level == 0:
             self.expose.fmin = 0.0007
@@ -196,13 +200,13 @@ class InstPars(tk.LabelFrame):
             self.led.set(0)
 
         elif level == 1:
-            self.expose.fmin = 0.0007
+            self.expose.fmin = 0.0003
             self.led.set(self.ledValue)
             self.ledLab.grid(row=6,column=0, sticky=tk.W)
             self.led.grid(row=6,column=1,pady=2,sticky=tk.W)
 
         elif level == 2:
-            self.expose.fmin = 0
+            self.expose.fmin = 0.0
             self.led.set(self.ledValue)
             self.ledLab.grid(row=6,column=0, sticky=tk.W)
             self.led.grid(row=6,column=1,pady=2,sticky=tk.W)
