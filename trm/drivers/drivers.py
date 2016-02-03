@@ -1021,13 +1021,13 @@ class Expose (RangedFloat):
 
         fval, fmin and fmax must be multiples of 0.0001
         """
-        if round(10000*fval) != 10000*fval:
+        if abs(round(10000*fval)-10000*fval) > 1.e-12:
             raise DriverError(
                 'drivers.Expose.__init__: fval must be a multiple of 0.0001')
-        if round(10000*fmin) != 10000*fmin:
+        if abs(round(10000*fmin)-10000*fmin) > 1.e-12:
             raise DriverError(
                 'drivers.Expose.__init__: fmin must be a multiple of 0.0001')
-        if round(10000*fmax) != 10000*fmax:
+        if abs(round(10000*fmax)-10000*fmax) > 1.e-12:
             raise DriverError(
                 'drivers.Expose.__init__: fmax must be a multiple of 0.0001')
 
@@ -1044,7 +1044,7 @@ class Expose (RangedFloat):
                 v = float(value)
                 if (v != 0 and v < self.fmin) or v > self.fmax:
                     return None
-                if round(10000*v) != 10000*v:
+                if abs(round(10000*v)-10000*v) > 1.e-12:
                     return None
             return value
         except ValueError:
