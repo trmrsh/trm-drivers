@@ -267,7 +267,7 @@ class GUI(tk.Tk):
         g.ipars.check()
 
         if g.cpars['rtplot_server_on']:
-            g.clog.info('Starting rtplot server in a separate thread')
+            g.clog.info('Attempting to start rtplot server in a separate thread')
             # the rtplot server is tricky since it needs to run all the time
             # along with the GUI which brings in issues such as concurrency,
             # threads etc.
@@ -279,7 +279,7 @@ class GUI(tk.Tk):
             except Exception, e:
                 g.clog.error('Problem trying to start rtplot server: ' + str(e))
         else:
-            g.clog.info('rtplot server was not started')
+            g.clog.info('No attempt to start rtplot server')
 
         if g.cpars['file_logging_on']:
             # get name of file to log messages to. If set
