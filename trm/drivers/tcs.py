@@ -26,8 +26,12 @@ def getTntTcs():
     """
 
     # TNT TCS access
-    url = \
-        'http://192.168.20.190/TCSDataSharing/DataRequest.asmx/GetTelescopeData'
+
+    #   url = \
+    #    'http://192.168.20.190/TCSDataSharing/DataRequest.asmx/GetTelescopeData'
+    # New URL as of 28 Nov 2016 (after e-mail from Pakawat Prasit)
+    url = 'http://192.168.20.190:8094/TCSDataSharing/TCSHosting'
+
     req = urllib2.Request(url,data='',
                           headers={'content-type':'application/json'})
     response = urllib2.urlopen(req,timeout=2)
