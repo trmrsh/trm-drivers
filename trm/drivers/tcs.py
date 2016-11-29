@@ -4,7 +4,7 @@ TCS access routines
 
 from __future__ import print_function
 import urllib2
-#import json
+import json
 import math
 
 def getTntTcs():
@@ -32,11 +32,14 @@ def getTntTcs():
     # New URL as of 28 Nov 2016 (after e-mail from Pakawat Prasit)
     url = 'http://192.168.20.190:8094/TCSDataSharing/TCSHosting'
 
+    # get data from server
     req = urllib2.Request(url,headers={'content-type':'application/json'})
     response = urllib2.urlopen(req,timeout=2)
     string   = response.read()
-    #jsonData = json.loads(string)
-    listData = eval(string)
+
+    # interpret it
+    jsonData = json.loads(string)
+    listData = eval(jsonData)
     ignore,ra,dec,pa,focus,tracking,engpa = listData[0]
 
     ra     = math.degrees(float(ra))
