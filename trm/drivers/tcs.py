@@ -4,7 +4,7 @@ TCS access routines
 
 from __future__ import print_function
 import urllib2
-import json
+#import json
 import math
 
 def getTntTcs():
@@ -35,9 +35,9 @@ def getTntTcs():
     req = urllib2.Request(url,headers={'content-type':'application/json'})
     response = urllib2.urlopen(req,timeout=2)
     string   = response.read()
-    jsonData = json.loads(string)
-
-    ignore,ra,dec,pa,focus,tracking,engpa = jsonData[0]
+    #jsonData = json.loads(string)
+    listData = eval(string)
+    ignore,ra,dec,pa,focus,tracking,engpa = listData[0]
 
     ra     = math.degrees(float(ra))
     dec    = math.degrees(float(dec))
