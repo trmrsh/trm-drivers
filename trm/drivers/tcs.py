@@ -32,18 +32,12 @@ def getTntTcs():
     # New URL as of 28 Nov 2016 (after e-mail from Pakawat Prasit)
     url = 'http://192.168.20.190:8094/TCSDataSharing/TCSHosting'
 
-    req = urllib2.Request(url,data='',
-                          headers={'content-type':'application/json'})
+    req = urllib2.Request(url,headers={'content-type':'application/json'})
     response = urllib2.urlopen(req,timeout=2)
     string   = response.read()
     jsonData = json.loads(string)
 
-    listData = eval(jsonData['d'])[0]
-    # print(listData)
-    # integer, ra, dec, pa on sky [all radians], focus in m
-    # string set to 'Tracking', 'Slewing' etc, engineering pa
-    # for judging rotator limit issues
-    ignore,ra,dec,pa,focus,tracking,engpa = listData
+    ignore,ra,dec,pa,focus,tracking,engpa = jsonData[0]
 
     ra     = math.degrees(float(ra))
     dec    = math.degrees(float(dec))
