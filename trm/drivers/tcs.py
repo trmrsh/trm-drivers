@@ -3,7 +3,7 @@ TCS access routines
 """
 
 from __future__ import print_function
-import urllib2
+from urllib.request import Request, urlopen
 import json
 import math
 
@@ -33,8 +33,8 @@ def getTntTcs():
     url = 'http://192.168.20.190:8094/TCSDataSharing/TCSHosting'
 
     # get data from server
-    req = urllib2.Request(url,headers={'content-type':'application/json'})
-    response = urllib2.urlopen(req,timeout=2)
+    req = Request(url,headers={'content-type':'application/json'})
+    response = urlopen(req,timeout=2)
     string   = response.read()
 
     # interpret it

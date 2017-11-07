@@ -27,10 +27,10 @@ import math, json
 import ephem
 
 # mine
-import tcs
-import slide
-import globals as g
-import lakeshore as lake
+from . import tcs
+#from . import slide
+from . import globals as g
+from . import lakeshore as lake
 
 def addStyle(root):
     """

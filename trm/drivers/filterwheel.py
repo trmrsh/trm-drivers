@@ -12,12 +12,12 @@ Two main classes::
 """
 from __future__ import print_function
 
-import Tkinter as tk
-import tkMessageBox
+import tkinter as tk
+from tkinter import messagebox as tkMessageBox
 import serial, time
 
-import globals as g
-import drivers as drvs
+from . import globals as g
+from . import drivers as drvs
 
 class FilterWheel(object):
     """

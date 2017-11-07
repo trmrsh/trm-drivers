@@ -9,9 +9,9 @@ Written by Stu.
 from __future__ import print_function
 
 import serial, struct, threading, time
-import Tkinter as tk
-import drivers as drvs
-import globals as g
+import tkinter as tk
+from . import drivers as drvs
+from . import globals as g
 
 class SlideError(Exception):
     pass

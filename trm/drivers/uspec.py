@@ -6,16 +6,19 @@ uspec provides classes and data specific to ULTRASPEC
 
 from __future__ import print_function
 
-import Tkinter as tk
-import tkFont, tkMessageBox, tkFileDialog
+import tkinter as tk
+from tkinter import font as tkFont
+from tkinter import messagebox as tkMessageBox
+from tkinter import filedialog as tkFileDialog
 import xml.etree.ElementTree as ET
-import os, urllib2, math
+import os, math
+from urllib.request import urlopen, URLError
 
 # mine
-import globals as g
-import drivers as drvs
-import lakeshore as lake
-import tcs
+from . import globals as g
+from . import drivers as drvs
+from . import lakeshore as lake
+from . import tcs
 
 # Timing, gain, noise parameters lifted from java usdriver
 VCLOCK           =  14.4e-6  # vertical clocking time
@@ -232,7 +235,7 @@ class InstPars(tk.LabelFrame):
 
         # find application
         xmlid = xml.attrib['id']
-        for app, d in g.cpars['templates'].iteritems():
+        for app, d in g.cpars['templates'].items():
             if xmlid == d['id']:
                 break
         else:
@@ -563,7 +566,7 @@ class InstPars(tk.LabelFrame):
                 dxleft  += 16
                 dxright += 16
             else:
-                for nw in xrange(nwin):
+                for nw in range(nwin):
                     xs[nw] += 16
         else:
             if isDriftMode:
@@ -574,7 +577,7 @@ class InstPars(tk.LabelFrame):
                 dxright, dxleft = dxleft, dxright
             else:
                 # in avalanche mode, need to swap windows around
-                for nw in xrange(nwin):
+                for nw in range(nwin):
                     xs[nw] = FFX - (xs[nw]-1) - (nx[nw]-1)
 
         # convert timing parameters to seconds
@@ -633,11 +636,11 @@ class InstPars(tk.LabelFrame):
 
             yshift = nwin*[0.]
             yshift[0]=(ys[0]-1.0)*VCLOCK
-            for nw in xrange(1,nwin):
+            for nw in range(1,nwin):
                 yshift[nw] = (ys[nw]-ys[nw-1]-ny[nw-1])*VCLOCK
 
             line_clear = nwin*[0.]
-            for nw in xrange(nwin):
+            for nw in range(nwin):
                 if yshift[nw] != 0:
                     line_clear[nw] = hclockFactor*FFX*HCLOCK
 
@@ -647,20 +650,20 @@ class InstPars(tk.LabelFrame):
             # 8 HCLOCK cycles. This created ramps and bright rows/columns in
             # the images, so was removed.
             numhclocks = nwin*[0]
-            for nw in xrange(nwin):
+            for nw in range(nwin):
                 numhclocks[nw] = FFX;
                 if not lnormal:
                     numhclocks[nw] += AVALANCHE_PIXELS
 
             line_read = nwin*[0.]
-            for nw in xrange(nwin):
+            for nw in range(nwin):
                 line_read[nw] = VCLOCK*ybin + numhclocks[nw]*HCLOCK + \
                     video*nx[nw]/xbin
 
             # multiply time to shift one row into serial register by
             # number of rows for total readout time
             readout = nwin*[0.]
-            for nw in xrange(nwin):
+            for nw in range(nwin):
                 readout[nw] = (ny[nw]/ybin) * line_read[nw]
 
         # now get the total time to read out one exposure.
@@ -668,7 +671,7 @@ class InstPars(tk.LabelFrame):
         if isDriftMode:
             cycleTime += pshift*VCLOCK+yshift[0]+line_clear[0]+readout[0]
         else:
-            for nw in xrange(nwin):
+            for nw in range(nwin):
                 cycleTime += yshift[nw] + line_clear[nw] + readout[nw]
 
         frameRate = 1.0/cycleTime
@@ -896,7 +899,7 @@ def createXML(post):
         url = g.cpars['http_camera_server'] + g.HTTP_PATH_GET + '?' + \
               g.HTTP_SEARCH_ATTR_NAME + '=' + g.cpars['templates'][app]['app']
         g.clog.debug('url = ' + url)
-        sxml = urllib2.urlopen(url).read()
+        sxml = urlopen(url).read()
         root = ET.fromstring(sxml)
 
     else:
@@ -960,7 +963,7 @@ def createXML(post):
 
         # Load up enabled windows, null disabled windows
         npix = 0
-        for nw in xrange(nwin):
+        for nw in range(nwin):
             xs, ys, nx, ny = w.xs[nw].value(), w.ys[nw].value(), \
                 w.nx[nw].value(), w.ny[nw].value()
 
@@ -978,7 +981,7 @@ def createXML(post):
             npix += (nx // xbin)*(ny // ybin)
 
 
-        for nw in xrange(nwin,4):
+        for nw in range(nwin,4):
             pdict['X' + str(nw+1) + '_START']['value'] = '1'
             pdict['Y' + str(nw+1) + '_START']['value'] = '1'
             pdict['X' + str(nw+1) + '_SIZE']['value']  = '0'
@@ -1085,7 +1088,7 @@ def createXML(post):
                 url = g.cpars['http_camera_server'] + g.HTTP_PATH_EXEC + \
                     '?RM,X,0x2E'
                 g.clog.info('exec = "' + url + '"')
-                response = urllib2.urlopen(url)
+                response = urlopen(url)
                 rs = drvs.ReadServer(response.read())
                 g.rlog.info('Camera response =\n' + rs.resp())
                 if rs.ok:
@@ -1097,7 +1100,7 @@ def createXML(post):
                     g.clog.warn('Reason: ' + rs.err)
                     raise Exception()
 
-            except urllib2.URLError as err:
+            except URLError as err:
                 g.clog.warn('Failed to get version from camera server')
                 g.clog.warn(str(err))
                 raise Exception()
