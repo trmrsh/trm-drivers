@@ -7,6 +7,7 @@ dependent components.
 """
 
 from __future__ import print_function
+
 import sys
 import traceback
 import socket, errno
@@ -1466,7 +1467,7 @@ class Stop(ActButton):
                     g.clog.warn('Failed to stop run')
                     self.stopped_ok = False
                 self.stopping   = False
-            except Exception, err:
+            except Exception as err:
                 g.clog.warn('Failed to stop run. Error = ' + str(err))
                 self.stopping   = False
                 self.stopped_ok = False
@@ -1658,7 +1659,7 @@ class Target(tk.Frame):
                 self.verify.config(bg=g.COL['stop'])
                 if tname not in self.failures:
                     self.failures.append(tname)
-        except URLError, e:
+        except URLError as e:
             g.clog.warn('Simbad lookup timed out')
         except socket.timeout:
             g.clog.warn('Simbad lookup timed out')
@@ -1785,7 +1786,7 @@ def execCommand(command):
             g.clog.warn('Response from camera server was not OK')
             g.clog.warn('Reason: ' + rs.err)
             return False
-    except urllib2.URLError, err:
+    except urllib2.URLError as err:
         g.clog.warn('execCommand failed')
         g.clog.warn(str(err))
 
@@ -2080,7 +2081,7 @@ class PowerOn(ActButton):
                             'Tell trm if this happens')
                 else:
                     g.info.run.configure(text='{0:03d}'.format(getRunNumber(True)))
-            except Exception, err:
+            except Exception as err:
                 g.clog.warn(\
                     'Failed to determine run number at start of run')
                 g.clog.warn(str(err))
@@ -2559,7 +2560,7 @@ class RtplotServer (SocketServer.TCPServer):
             SocketServer.TCPServer.__init__(
                 self, ('', port), RtplotHandler)
             self.instpars = instpars
-        except socket.error, err:
+        except socket.error as err:
             errorcode =  err[0]
             if errorcode == errno.EADDRINUSE:
                 message = str(err) + '. '
@@ -2578,7 +2579,7 @@ class RtplotServer (SocketServer.TCPServer):
         while True:
             try:
                 self.serve_forever()
-            except Exception, e:
+            except Exception as e:
                 g.clog.warn('RtplotServer.run', e)
 
 class Timer(tk.Label):
@@ -2624,7 +2625,7 @@ class Timer(tk.Label):
                     self.stop()
                     return
 
-        except Exception, err:
+        except Exception as err:
             if self.count % 100 == 0:
                 g.clog.warn('Timer.update: error = ' + str(err))
 
@@ -2865,7 +2866,7 @@ class InfoFrame(tk.LabelFrame):
                         else:
                             self.mdist.configure(bg=g.COL['main'])
 
-                    except Exception, err:
+                    except Exception as err:
                         self.ra.configure(text='UNDEF')
                         self.dec.configure(text='UNDEF')
                         self.pa.configure(text='UNDEF')
@@ -2925,7 +2926,7 @@ class InfoFrame(tk.LabelFrame):
                             ind += 9
                             nframe = int(rstr[ind:ind+rstr[ind:].find('"')])
                             self.frame.configure(text='{0:d}'.format(nframe))
-                    except Exception, err:
+                    except Exception as err:
                         if err.code == 404:
 #                            g.clog.debug('Error trying to set frame: ' +
 #                                             str(err))
@@ -2934,7 +2935,7 @@ class InfoFrame(tk.LabelFrame):
                             g.clog.debug('Error occurred trying to set frame')
                             self.frame.configure(text='UNDEF')
 
-                except Exception, err:
+                except Exception as err:
                     g.clog.debug('Error trying to set run: ' + str(err))
 
             # get the current filter, which is set during the start
@@ -2953,7 +2954,7 @@ class InfoFrame(tk.LabelFrame):
                         self.fpslide.configure(bg=g.COL['warn'])
                     else:
                         self.fpslide.configure(bg=g.COL['main'])
-                except Exception, err:
+                except Exception as err:
                     g.clog.warn('Slide error: ' + str(err))
                     self.fpslide.configure(text='UNDEF')
                     self.fpslide.configure(bg=g.COL['warn'])
@@ -2971,12 +2972,12 @@ class InfoFrame(tk.LabelFrame):
                         self.lake.configure(bg=g.COL['warn'])
                     else:
                         self.lake.configure(bg=g.COL['main'])
-                except Exception, err:
+                except Exception as err:
                     g.clog.warn(str(err))
                     self.lake.configure(text='UNDEF')
                     self.lake.configure(bg=g.COL['warn'])
 
-        except Exception, err:
+        except Exception as err:
             # this is a safety catchall trap as it is important
             # that this routine keeps going
             g.clog.warn('Unexpected error: ' + str(err))
@@ -3181,7 +3182,7 @@ class AstroFrame(tk.LabelFrame):
                     text='{0:02d} %'.format(
                         int(round(100.*self.moon.moon_phase))))
 
-        except Exception, err:
+        except Exception as err:
             # catchall
             g.clog.warn('AstroFrame.update: error = ' + str(err))
 

@@ -26,13 +26,13 @@ import logging, Queue, threading
 import xml.etree.ElementTree as ET
 
 # my stuff
-import trm.drivers.config      as config
-import trm.drivers.globals     as g
-import trm.drivers.drivers     as drvs
-import trm.drivers.slide       as slide
-import trm.drivers.uspec       as uspec
-import trm.drivers.filterwheel as fwheel
-import trm.drivers.lakeshore   as lake
+from . import config
+from . import globals as g
+from . import drivers as drvs
+from . import slide
+from . import uspec
+from . import filterwheel as fwheel
+from . import lakeshore as lake
 
 class SetWheel(object):
     """
@@ -48,7 +48,7 @@ class SetWheel(object):
             if self.wc is None or not self.wc.winfo_exists():
                 try:
                     self.wc = fwheel.WheelController(self.wheel)
-                except Exception, err:
+                except Exception as err:
                     g.clog.warn('Failed to open filter control window')
                     g.clog.warn('Error = ' + str(err))
                     self.wc = None
@@ -69,7 +69,7 @@ class EditFilter(object):
         if self.ef is None or not self.ef.winfo_exists():
             try:
                 self.ef = fwheel.FilterEditor()
-            except Exception, err:
+            except Exception as err:
                 g.clog.warn('Failed to open filter editor window')
                 g.clog.warn('Error = ' + str(err))
                 self.ef = None
@@ -135,7 +135,7 @@ class GUI(tk.Tk):
             try:
                 # CCD temperature
                 g.lakeshore = lake.LakeFile()
-            except Exception, err:
+            except Exception as err:
                 g.clog.warn(str(err))
                 g.clog.warn('Switching off Lakeshore access (settings)')
                 g.cpars['ccd_temperature_on'] = False
@@ -259,7 +259,7 @@ class GUI(tk.Tk):
                 g.rpars.loadXML(xml)
                 g.clog.info('Loaded instrument and run settings from '
                             + settings)
-            except Exception, err:
+            except Exception as err:
                 g.clog.warn('Failed to load saved settings.')
                 g.clog.warn(str(err))
 
@@ -276,7 +276,7 @@ class GUI(tk.Tk):
                 t = drvs.FifoThread(self.startRtplotServer, g.FIFO, args=[q,])
                 t.daemon = True
                 t.start()
-            except Exception, e:
+            except Exception as e:
                 g.clog.error('Problem trying to start rtplot server: ' + str(e))
         else:
             g.clog.info('No attempt to start rtplot server')
@@ -342,7 +342,7 @@ class GUI(tk.Tk):
                 if g.wheel.connected:
                     g.wheel.close()
                     g.clog.warn('closed filter wheel')
-            except Exception, err:
+            except Exception as err:
                 g.clog.warn('Error closing filter wheel: ' + str(err))
 
 
@@ -374,7 +374,7 @@ class GUI(tk.Tk):
                     ET.ElementTree(root).write(settings)
                     g.clog.info('Saved instrument and run settings to ' +
                                     settings)
-                except Exception, err:
+                except Exception as err:
                     g.clog.warn("""
 Failed to save the instrument settings to disk. This
 could be because you have already killed the servers
@@ -387,7 +387,7 @@ server windows.
 
                 self.destroy()
 
-            except Exception, err:
+            except Exception as err:
                 g.clog.warn("""
 Failed to save the usdriver configuration to disk.
 Directory of saved files should be = {0}.
@@ -421,14 +421,14 @@ if __name__ == '__main__':
             config.readCpars(config.ULTRASPEC, args.cpars)
             print('Loaded configuration from ' +  args.cpars)
 
-        except KeyError, err:
+        except KeyError as err:
             print('Failed to load configuration from  ' +  args.cpars)
             print('KeyError = ' + str(err))
             print('Possibly a corrupt configuration file.')
             print('Will start with a default configuration;' +
                   ' a config file will be saved on exit.\n')
             config.loadCpars(config.ULTRASPEC)
-        except IOError, err:
+        except IOError as err:
             print('Failed to load configuration from  ' +  args.cpars)
             print('Error = ' + str(err))
             print('Will start with a default configuration;' +
@@ -453,7 +453,7 @@ if __name__ == '__main__':
         print('\nusdriver was brought to you by ULTRASPEC Productions')
         print('\n... delivering you a faster camera ...\n')
 
-    except IOError, err:
+    except IOError as err:
         print('\nERROR:',err)
         print('You might want to use the -c option to specify the name')
         print('Script aborted.')

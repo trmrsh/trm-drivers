@@ -7,6 +7,7 @@ Written by Stu.
 """
 
 from __future__ import print_function
+
 import serial, struct, threading, time
 import Tkinter as tk
 import drivers as drvs
@@ -584,7 +585,7 @@ class FocalPlaneSlide(tk.LabelFrame):
                     t.daemon = True
                     t.start()
 
-            except Exception, err:
+            except Exception as err:
                 self.log.warn('Error: ' + str(err))
                 self.log.warn('You may want to try again; the slide is unreliable\n' +
                               'in its error reporting. Try "position" for example')

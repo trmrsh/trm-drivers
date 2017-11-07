@@ -5,6 +5,7 @@ uspec provides classes and data specific to ULTRASPEC
 """
 
 from __future__ import print_function
+
 import Tkinter as tk
 import tkFont, tkMessageBox, tkFileDialog
 import xml.etree.ElementTree as ET
@@ -1096,7 +1097,7 @@ def createXML(post):
                     g.clog.warn('Reason: ' + rs.err)
                     raise Exception()
 
-            except urllib2.URLError, err:
+            except urllib2.URLError as err:
                 g.clog.warn('Failed to get version from camera server')
                 g.clog.warn(str(err))
                 raise Exception()
@@ -1261,7 +1262,7 @@ class Start(drvs.ActButton):
                         ttflag      = ET.SubElement(uconfig, 'TTflag')
                         ttflag.text = tracking
 
-                    except Exception, err:
+                    except Exception as err:
                         g.clog.warn(err)
                         if not tkMessageBox.askokcancel(
                             'TCS error',
@@ -1378,7 +1379,7 @@ class Start(drvs.ActButton):
                         run  = int(g.info.run.cget('text'))
                         run += 1
                         g.info.run.configure(text='{0:03d}'.format(run))
-                    except Exception, err:
+                    except Exception as err:
                         g.clog.warn('Failed to update run number')
 
                     # take it that if we have successfully started a
@@ -1403,7 +1404,7 @@ class Start(drvs.ActButton):
                 g.clog.warn('Failed to post the application')
                 return False
 
-        except Exception, err:
+        except Exception as err:
             g.clog.warn('Failed to start run')
             g.clog.warn(str(err))
             return False

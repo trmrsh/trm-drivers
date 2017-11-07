@@ -10,6 +10,8 @@ Two main classes::
 
  WheelController : creates a window with buttons which use the FilterWheel
 """
+from __future__ import print_function
+
 import Tkinter as tk
 import tkMessageBox
 import serial, time
@@ -219,7 +221,7 @@ class WheelController(tk.Toplevel):
             self.current = drvs.Ilabel(
                 self,text=g.cpars['active_filter_names'][findex])
 
-        except Exception, err:
+        except Exception as err:
             g.clog.warn('Failed to get current filter position.\n')
             g.clog.warn('Error: ' + str(err) + '\n')
             self.current = drvs.Ilabel(self,text='UNKNOWN')
@@ -263,7 +265,7 @@ class WheelController(tk.Toplevel):
             self.current.configure(
                 text=g.cpars['active_filter_names'][findex-1])
             g.clog.info('Filter moved successfully')
-        except Exception, err:
+        except Exception as err:
             g.clog.warn('Filter change failed.')
             g.clog.warn('Error: ' + str(err))
             g.clog.warn('You might want to try an "init".')
@@ -277,7 +279,7 @@ class WheelController(tk.Toplevel):
             self.wheel.home()
             self.current.configure(text=g.cpars['active_filter_names'][0])
             g.clog.info('Filter homed\n')
-        except Exception, err:
+        except Exception as err:
             g.clog.warn('Could not home wheel.')
             g.clog.warn('Error: ' + str(err))
             g.clog.warn('You might want to try an "init".')
@@ -288,7 +290,7 @@ class WheelController(tk.Toplevel):
             self.wheel.reboot()
             self.current.configure(text=g.cpars['active_filter_names'][0])
             g.clog.info('Filter wheel initialised')
-        except Exception, err:
+        except Exception as err:
             g.clog.warn('Could not initialise wheel.')
             g.clog.warn('Error: ' + str(err))
             g.clog.warn('You might want to try again once or twice, or stop & restart usdriver, or perhaps the wheel needs adjusting. See the online ultraspec manual.')
@@ -300,7 +302,7 @@ class WheelController(tk.Toplevel):
         try:
             self.wheel.close()
             g.clog.info('Filter wheel closed')
-        except Exception, err:
+        except Exception as err:
             g.clog.warn('Problem closing wheel.')
             g.clog.warn('Error: ' + str(err))
         self.destroy()
@@ -369,18 +371,18 @@ if __name__ == "__main__":
     try:
         wheel.connect()
         wheel.init()
-        print 'Started'
-        print 'Currently in filter position ', wheel.getPos()
-        print 'This is filter wheel ', wheel.getID()
-        print 'Available positions: ', wheel.getNames()
-        print "GOTO 3"
+        print('Started')
+        print('Currently in filter position ', wheel.getPos())
+        print('This is filter wheel ', wheel.getID())
+        print('Available positions: ', wheel.getNames())
+        print("GOTO 3")
         wheel.goto(3)
-        print "HOME"
+        print("HOME")
         wheel.home()
-        print 'Disconnecting'
+        print('Disconnecting')
         wheel.close()
-        print 'Finished normally'
+        print('Finished normally')
     except:
         wheel.close()
-        print 'Finished badly'
+        print('Finished badly')
 
