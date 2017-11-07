@@ -1322,12 +1322,16 @@ class Start(drvs.ActButton):
                     current_filter = g.cpars['active_filter_names'][currentPosition-1]
 
             else:
-                g.clog.warn('Filter wheel currently off, so just assuming filter is OK')
+                g.clog.warn('Filter wheel is set to off. will not try talking to it')
 
-            # Set position of slide
-            pos_ms,pos_mm,pos_px = g.fpslide.slide.return_position()
-            fpslide = ET.SubElement(uconfig, 'SlidePos')
-            fpslide.text = '{0:d}'.format(int(round(pos_px)))
+            if g.cpars['focal_plane_slide_on']:
+                # Set position of slide
+                pos_ms,pos_mm,pos_px = g.fpslide.slide.return_position()
+                fpslide = ET.SubElement(uconfig, 'SlidePos')
+                fpslide.text = '{0:d}'.format(int(round(pos_px)))
+            else:
+                g.clog.warn('Slide is set to off. Will not try to talk to it')
+
 
             # Attempt to get CCD temperature data. Abort if it fails and
             # the Lakeshore is said to be working.
@@ -1335,24 +1339,25 @@ class Start(drvs.ActButton):
             finger_temp = ET.SubElement(uconfig, 'finger_temp')
             heater_percent = ET.SubElement(uconfig, 'heater_percent')
 
-            try:
-                if g.lakeshore is None:
-                    g.lakeshore = lake.LakeFile()
+            if g.cpars['ccd_temperature_on']:
+                try:
+                    if g.lakeshore is None:
+                        g.lakeshore = lake.LakeFile()
 
-                tempa, tempb, heater = g.lakeshore.temps()
-                ccd_temp.text = '{0:5.1f}'.format(tempa)
-                finger_temp.text = '{0:5.1f}'.format(tempb)
-                heater_percent.text = '{0:4.1f}'.format(heater)
+                    tempa, tempb, heater = g.lakeshore.temps()
+                    ccd_temp.text = '{0:5.1f}'.format(tempa)
+                    finger_temp.text = '{0:5.1f}'.format(tempb)
+                    heater_percent.text = '{0:4.1f}'.format(heater)
 
-            except:
-                if g.cpars['ccd_temperature_on']:
-                    raise
-                else:
+                except:
                     g.clog.warn('Failed to read temperature but will start anyway.')
                     g.clog.warn(str(err))
                     ccd_temp.text = 'UNDEF'
                     finger_temp.text = 'UNDEF'
                     heater_percent.text = 'UNDEF'
+
+            else:
+                g.clog.warn('CCD temperature set to off. Will not try to talk to the Lakeshore')
 
             # Post the XML it to the server
             g.clog.info('Posting application to the servers')
