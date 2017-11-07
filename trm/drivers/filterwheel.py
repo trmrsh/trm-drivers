@@ -59,8 +59,7 @@ class FilterWheel(object):
             time.sleep(2)
             response = self.sendCommand('WSMODE')
             if response != "!":
-                raise FilterWheelError('Could not initialise wheel for' +
-                                       ' serial commands')
+                raise FilterWheelError('Could not initialise wheel for serial commands')
         self.initialised = True
         g.clog.debug('Filterwheel: serial mode enabled (WSMODE)')
 
