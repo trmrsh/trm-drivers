@@ -1285,38 +1285,44 @@ class Start(drvs.ActButton):
 
             # Change the filter if necessary. Try to connect to the
             # wheel. Raises an Exception if no wheel available
-            if not g.wheel.connected:
-                g.wheel.connect()
+            if g.cpars['filter_wheel_on']:
 
-            if not g.wheel.initialised:
-                g.wheel.init()
+                if not g.wheel.connected:
+                    g.wheel.connect()
 
-            currentPosition = g.wheel.getPos()
-            desiredPosition = g.rpars.filter.getIndex() + 1
+                if not g.wheel.initialised:
+                    g.wheel.init()
 
-            if currentPosition != desiredPosition:
-                # We must change the filter before starting the run. This means
-                # that we also have to update the filters element of the 'user'
-                # part of the xml
-                g.clog.info(
-                    'Changing filter from "' + \
-                    g.cpars['active_filter_names'][currentPosition-1] + \
-                    '" to "' + \
-                    g.cpars['active_filter_names'][desiredPosition-1] + \
-                    '"')
-                g.wheel.goto(desiredPosition)
-                g.wheel.close()
-                current_filter = g.cpars['active_filter_names'][desiredPosition-1]
+                currentPosition = g.wheel.getPos()
+                desiredPosition = g.rpars.filter.getIndex() + 1
 
-                # update the XML
-                filtr      = uconfig.find('filters')
-                filtr.text = current_filter
+                if currentPosition != desiredPosition:
+                    # We must change the filter before starting the run. This means
+                    # that we also have to update the filters element of the 'user'
+                    # part of the xml
+                    g.clog.info(
+                        'Changing filter from "' + \
+                            g.cpars['active_filter_names'][currentPosition-1] + \
+                            '" to "' + \
+                            g.cpars['active_filter_names'][desiredPosition-1] + \
+                            '"'
+                        )
+                    g.wheel.goto(desiredPosition)
+                    g.wheel.close()
+                    current_filter = g.cpars['active_filter_names'][desiredPosition-1]
+
+                    # update the XML
+                    filtr      = uconfig.find('filters')
+                    filtr.text = current_filter
+
+                else:
+                    # No action needed
+                    g.clog.info('No filter change needed')
+                    g.wheel.close()
+                    current_filter = g.cpars['active_filter_names'][currentPosition-1]
 
             else:
-                # No action needed
-                g.clog.info('No filter change needed')
-                g.wheel.close()
-                current_filter = g.cpars['active_filter_names'][currentPosition-1]
+                g.clog.warn('Filter wheel currently off, so just assuming filter is OK')
 
             # Set position of slide
             pos_ms,pos_mm,pos_px = g.fpslide.slide.return_position()
