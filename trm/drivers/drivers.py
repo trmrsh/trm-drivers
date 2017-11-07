@@ -11,12 +11,15 @@ from __future__ import print_function
 import sys
 import traceback
 import socket, errno
-import Tkinter as tk
-import tkFont, tkFileDialog
+import tkinter as tk
+from tkinter import font as tkFont
+from tkinter import filedialog as tkFileDialog
 import xml.etree.ElementTree as ET
-import urllib, urllib2
+import urllib
+from urllib.request import build_opener, Request, urlopen, URLError
 import logging, time, datetime
-import BaseHTTPServer, SocketServer
+from http.server import BaseHTTPRequestHandler
+from socketserver import TCPServer
 import threading, subprocess
 import math, json
 
@@ -1302,9 +1305,9 @@ def postXML(root):
     url = g.cpars['http_camera_server'] + g.HTTP_PATH_CONFIG
     g.clog.debug('Camera URL = ' + url)
 
-    opener = urllib2.build_opener()
+    opener = build_opener()
     g.clog.debug('content length = ' + str(len(sxml)))
-    req = urllib2.Request(url, data=sxml, headers={'Content-type': 'text/xml'})
+    req = Request(url, data=sxml, headers={'Content-type': 'text/xml'})
     response = opener.open(req, timeout=5)
     csr = ReadServer(response.read())
     g.rlog.warn(csr.resp())
@@ -1315,7 +1318,7 @@ def postXML(root):
     # Send the xml to the data server
     url = g.cpars['http_data_server'] + g.HTTP_PATH_CONFIG
     g.clog.debug('Data server URL = ' + url)
-    req = urllib2.Request(url, data=sxml, headers={'Content-type': 'text/xml'})
+    req = Request(url, data=sxml, headers={'Content-type': 'text/xml'})
     response = opener.open(req, timeout=5) # ?? need to check whether this is needed
     fsr = ReadServer(response.read())
     g.rlog.warn(fsr.resp())
@@ -1775,7 +1778,7 @@ def execCommand(command):
         url = g.cpars['http_camera_server'] + g.HTTP_PATH_EXEC + \
             '?' + command
         g.clog.info('execCommand, command = "' + command + '"')
-        response = urllib2.urlopen(url)
+        response = urlopen(url)
         rs  = ReadServer(response.read())
 
         g.rlog.info('Camera response =\n' + rs.resp())
@@ -1786,7 +1789,7 @@ def execCommand(command):
             g.clog.warn('Response from camera server was not OK')
             g.clog.warn('Reason: ' + rs.err)
             return False
-    except urllib2.URLError as err:
+    except URLError as err:
         g.clog.warn('execCommand failed')
         g.clog.warn(str(err))
 
@@ -1820,7 +1823,7 @@ def execServer(name, app):
 
     g.clog.debug('execServer, url = ' + url)
 
-    response = urllib2.urlopen(url)
+    response = urlopen(url)
     rs  = ReadServer(response.read())
     if not rs.ok:
         g.clog.warn('Response from ' + name + ' server not OK')
@@ -2531,7 +2534,7 @@ class ExpertMenu(tk.Menu):
             else:
                 self.root.entryconfig(index,state=tk.DISABLED)
 
-class RtplotHandler(BaseHTTPServer.BaseHTTPRequestHandler):
+class RtplotHandler(BaseHTTPRequestHandler):
     """
     Handler for requests from rtplot. It accesses the window
     parameters via the 'server' attribute; the Server class
@@ -2547,7 +2550,7 @@ class RtplotHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         else:
             self.wfile.write(wins)
 
-class RtplotServer (SocketServer.TCPServer):
+class RtplotServer (TCPServer):
     """
     Server for requests from rtplot.
     The response delivers the binning factors, number of windows and
@@ -2557,8 +2560,7 @@ class RtplotServer (SocketServer.TCPServer):
         # '' opens port on localhost and makes it visible
         # outside localhost
         try:
-            SocketServer.TCPServer.__init__(
-                self, ('', port), RtplotHandler)
+            super().__init__( ('', port), RtplotHandler)
             self.instpars = instpars
         except socket.error as err:
             errorcode =  err[0]
@@ -2899,7 +2901,7 @@ class InfoFrame(tk.LabelFrame):
                     # the run number from the FileServer directory listing
                     if rtxt == 'UNDEF':
                         url = g.cpars['http_file_server'] + '?action=dir'
-                        response = urllib2.urlopen(url)
+                        response = urlopen(url)
                         resp = response.read()
 
                         # parse response from server
@@ -2919,7 +2921,7 @@ class InfoFrame(tk.LabelFrame):
                     rstr = 'run{0:03d}'.format(run)
                     try:
                         url = g.cpars['http_file_server'] + rstr + '?action=get_num_frames'
-                        response = urllib2.urlopen(url)
+                        response = urlopen(url)
                         rstr = response.read()
                         ind = rstr.find('nframes="')
                         if ind > -1:
@@ -3198,7 +3200,7 @@ def isRunActive():
     """
     if g.cpars['cdf_servers_on']:
         url = g.cpars['http_data_server'] + 'status'
-        response = urllib2.urlopen(url, timeout=2)
+        response = urlopen(url, timeout=2)
         rs  = ReadServer(response.read())
         if not rs.ok:
             raise DriverError('isRunActive error: ' + str(rs.err))
@@ -3230,7 +3232,7 @@ def getRunNumber(nocheck=False):
 
     if nocheck or isRunActive():
         url = g.cpars['http_data_server'] + 'fstatus'
-        response = urllib2.urlopen(url)
+        response = urlopen(url)
         rs  = ReadServer(response.read())
         if rs.ok:
             return rs.run
@@ -3249,7 +3251,7 @@ def checkSimbad(target, maxobj=5, timeout=5):
         '\nformat object form1 "Target: %IDLIST(1) | %COO(A D;ICRS)"\nquery ' \
         + target
     query = urllib.urlencode({'submit' : 'submit script', 'script' : q})
-    resp  = urllib2.urlopen(url, query, timeout)
+    resp  = urlopen(url, query, timeout)
     data  = False
     error = False
     results = []

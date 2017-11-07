@@ -11,8 +11,9 @@ Defines configuration options, how to read them and save them.
 # understandable file is created when dumping to disk. The list preserves
 # the order defined here.
 
-import globals as g
-import drivers as drvs
+from . import drivers as drvs
+from . import globals as g
+
 
 ULTRASPEC = \
     ["""

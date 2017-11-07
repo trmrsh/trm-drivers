@@ -20,19 +20,21 @@ any of these can be switched off.
 
 # core
 import argparse, os, time
-import Tkinter as tk
-import tkFont, tkMessageBox, tkFileDialog
-import logging, Queue, threading
+import tkinter as tk
+from tkinter import font as tkFont
+from tkinter import messagebox as tkMessageBox
+from tkinter import filedialog as tkFileDialog
+import logging, queue, threading
 import xml.etree.ElementTree as ET
 
 # my stuff
-from . import config
-from . import globals as g
-from . import drivers as drvs
-from . import slide
-from . import uspec
-from . import filterwheel as fwheel
-from . import lakeshore as lake
+from trm.drivers import config
+from trm.drivers import globals as g
+from trm.drivers import drivers as drvs
+from trm.drivers import slide
+from trm.drivers import uspec
+from trm.drivers import filterwheel as fwheel
+from trm.drivers import lakeshore as lake
 
 class SetWheel(object):
     """
@@ -272,7 +274,7 @@ class GUI(tk.Tk):
             # along with the GUI which brings in issues such as concurrency,
             # threads etc.
             try:
-                q = Queue.Queue()
+                q = queue.Queue()
                 t = drvs.FifoThread(self.startRtplotServer, g.FIFO, args=[q,])
                 t.daemon = True
                 t.start()
@@ -309,7 +311,7 @@ class GUI(tk.Tk):
         """
         try:
             exc = g.FIFO.get(block=False)
-        except Queue.Empty:
+        except queue.Empty:
             pass
         else:
             error, tback = exc

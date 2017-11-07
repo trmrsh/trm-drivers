@@ -11,3 +11,6 @@ widgets. One way to do this would have been with callbacks, but in the end I
 decided it was much easier to use a set of globals. Many of the classes therefore
 really serve just to loosely group functions associated with them.
 """
+
+#from . import config
+#from . import globals

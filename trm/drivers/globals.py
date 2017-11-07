@@ -49,7 +49,7 @@ logfile : file to log usdriver messages
 from __future__ import print_function
 
 import datetime
-import Queue
+import queue
 
 # Ratio of FWHM/sigma for a gaussian
 EFAC = 2.3548
@@ -63,7 +63,7 @@ DAY   = 86400.
 
 # FIFO Queue for retrieving exceptions from
 # threaded operations
-FIFO = Queue.Queue()
+FIFO = queue.Queue()
 
 # ATC server stuff
 HTTP_PATH_GET         = 'get'
