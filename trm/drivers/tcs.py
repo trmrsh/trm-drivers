@@ -36,7 +36,6 @@ def getTntTcs():
     req = Request(url,headers={'content-type':'application/json'})
     response = urlopen(req,timeout=2)
     string   = response.read()
-    print(string)
 
     # interpret it
     jsonData = json.loads(string.decode())
