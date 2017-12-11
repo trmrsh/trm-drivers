@@ -84,7 +84,7 @@ class FilterWheel(object):
 
         g.clog.debug('Filterwheel: sending command = ' + comm)
         self.ser.write((comm+'\r\n').encode())
-        retVal = self.ser.readline()
+        retVal = self.ser.readline().decode()
         g.clog.debug('Filterwheel: received = ' + retVal.strip())
 
         # return command with leading and trailing whitespace removed
@@ -129,10 +129,10 @@ class FilterWheel(object):
         returns ID of filter wheel, and checks for valid response
         """
         g.clog.debug('Filterwheel: getting ID')
-        response = self.sendCommand('WIDENT').strip()
+        response = self.sendCommand('WIDENT')
         validIDs = ['A','B','C','D','E']
         if not response in validIDs:
-            raise FilterWheelError('Bad filter wheel ID\n'+response.strip())
+            raise FilterWheelError('Bad filter wheel ID\n'+response)
         return response
 
     def getPos(self):
@@ -141,7 +141,7 @@ class FilterWheel(object):
         """
         g.clog.debug('Filterwheel: getting position')
         response = self.sendCommand('WFILTR')
-        g.clog.debug('Poisition response = ' + response.strip())
+        g.clog.debug('Position response = ' + response)
         filtNum = int(response)
         return filtNum
 
@@ -151,7 +151,7 @@ class FilterWheel(object):
         """
         g.clog.debug('Filterwheel: getting names')
         response = self.sendCommand("WREAD")
-        g.clog.debug('Names = ' + response.strip())
+        g.clog.debug('Names = ' + response)
         return response.split()
 
     def goto(self,position):
@@ -175,7 +175,7 @@ class FilterWheel(object):
             raise FilterWheelError('filter wheel is slipping')
         elif response != '*':
             raise FilterWheelError('unrecognised error = [' +
-                                   response.strip() + ']')
+                                   response + ']')
 
     def reboot(self):
         """
