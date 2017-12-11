@@ -1299,7 +1299,7 @@ def postXML(root):
         return False
 
     # Write setup to an xml string
-    sxml = ET.tostring(root)
+    sxml = ET.tostring(root,'unicode')
 
     # Send the xml to the camera server
     url = g.cpars['http_camera_server'] + g.HTTP_PATH_CONFIG
@@ -1745,7 +1745,7 @@ class ReadServer(object):
             self.run = 0
 
     def resp(self):
-        return ET.tostring(self.root)
+        return ET.tostring(self.root,'unicode')
 
 def execCommand(command):
     """
