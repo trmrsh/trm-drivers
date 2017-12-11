@@ -76,11 +76,11 @@ class FilterWheel(object):
 
         if comm == 'WHOME' or comm.startswith('WGOTO'):
             g.clog.debug('Filterwheel: setting timeout to 30 secs')
-            self.ser.setTimeout(30)
+            self.ser.timeout = 30
         else:
             g.clog.debug('Filterwheel: setting timeout to ' +
                          str(self.default_timeout) + ' secs')
-            self.ser.setTimeout(self.default_timeout)
+            self.ser.timeout = self.default_timeout
 
         g.clog.debug('Filterwheel: sending command = ' + comm)
         self.ser.write(comm+'\r\n',)
