@@ -1684,7 +1684,7 @@ class ReadServer(object):
 
     def __init__(self, resp):
         # Store the entire response
-        self.root = ET.fromstring(resp)
+        self.root = ET.fromstring(resp.decode())
 
         # Identify the source: camera or filesave
         cfind = self.root.find('source')
