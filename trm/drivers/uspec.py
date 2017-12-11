@@ -899,7 +899,7 @@ def createXML(post):
         url = g.cpars['http_camera_server'] + g.HTTP_PATH_GET + '?' + \
               g.HTTP_SEARCH_ATTR_NAME + '=' + g.cpars['templates'][app]['app']
         g.clog.debug('url = ' + url)
-        sxml = urlopen(url).read()
+        sxml = urlopen(url).read().decode()
         root = ET.fromstring(sxml)
 
     else:

@@ -406,7 +406,7 @@ def createXML(config, ccdpars, userpars):
             config.http_search_attr_name + '='  + config.templates[appLab]
         if config.debug:
             print ('DEBUG: url = ' + url)
-        sxml = urllib2.urlopen(url).read()
+        sxml = urllib2.urlopen(url).read().decode()
         txml = ET.fromstring(sxml)
     else:
         # get template from local file

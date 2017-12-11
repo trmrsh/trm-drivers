@@ -2902,7 +2902,7 @@ class InfoFrame(tk.LabelFrame):
                     if rtxt == 'UNDEF':
                         url = g.cpars['http_file_server'] + '?action=dir'
                         response = urlopen(url)
-                        resp = response.read()
+                        resp = response.read().decode()
 
                         # parse response from server
                         ldir = resp.split('<li>')
@@ -2922,7 +2922,7 @@ class InfoFrame(tk.LabelFrame):
                     try:
                         url = g.cpars['http_file_server'] + rstr + '?action=get_num_frames'
                         response = urlopen(url)
-                        rstr = response.read()
+                        rstr = response.read().decode()
                         ind = rstr.find('nframes="')
                         if ind > -1:
                             ind += 9
