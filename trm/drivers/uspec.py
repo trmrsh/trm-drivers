@@ -11,7 +11,7 @@ from tkinter import font as tkFont
 from tkinter import messagebox as tkMessageBox
 from tkinter import filedialog as tkFileDialog
 import xml.etree.ElementTree as ET
-import os, math
+import os, math, sys, traceback
 from urllib.request import urlopen, URLError
 
 # mine
@@ -1105,7 +1105,7 @@ def createXML(post):
                 g.clog.warn(str(err))
                 raise Exception()
 
-        revision      = ET.SubElement(uconfig, 'revision')
+        revision = ET.SubElement(uconfig, 'revision')
         revision.text = str(createXML.revision)
 
     # finally return with the XML
@@ -1221,7 +1221,7 @@ class Start(drvs.ActButton):
             root = createXML(True)
 
             # locate user stuff
-            uconfig    = root.find('user')
+            uconfig = root.find('user')
 
             if g.cpars['tcs_on']:
                 # get positional info from telescope
@@ -1419,6 +1419,7 @@ class Start(drvs.ActButton):
                 return False
 
         except Exception as err:
+            traceback.print_exc(file=sys.stdout)
             g.clog.warn('Failed to start run')
             g.clog.warn(str(err))
             return False
