@@ -9,7 +9,10 @@ class Lakeshore(object):
     '''python class to communicate with the lakeshore temperature controller'''
     def __init__(self, port='/dev/ttyS0'):
         # create serial port object with timeout of 2 secs
-        self.com = serial.Serial(port, 9600, serial.SEVENBITS, serial.PARITY_ODD, serial.STOPBITS_ONE, 2, 0, 0)
+        self.com = serial.Serial(
+            port, 9600, serial.SEVENBITS,
+            serial.PARITY_ODD, serial.STOPBITS_ONE, 2, 0, 0
+        )
         if not self.com.isOpen():
             self.com.open()
         self.com.flushInput()
@@ -36,13 +39,15 @@ class Lakeshore(object):
         self.com.flushOutput()
 
         # send command to lakeshore
-        self.com.write(tmp)
+        self.com.write(tmp.encode())
+
         # get response
-        rep = self.com.readline()
+        rep = self.com.readline().decode()
 
         #close down
         if self.com.isOpen():
             self.com.close()
+
         # strip leading and trailing whitespace from response and return
         return rep.lstrip().rstrip()
 
@@ -100,8 +105,9 @@ class LakeFile(object):
         """
 
         # find log files
-        fnames = [os.path.join(LakeFile.DDIR, fname) for fname in os.listdir(LakeFile.DDIR) \
-                      if fname.startswith('Lakeshore_log') > -1]
+        fnames = [os.path.join(LakeFile.DDIR, fname)
+                  for fname in os.listdir(LakeFile.DDIR) \
+                  if fname.startswith('Lakeshore_log') > -1]
         if len(fnames) == 0:
             raise LakeshoreError('Failed to find any Lakeshore log files in ' + LakeFile.DDIR)
 

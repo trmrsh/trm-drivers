@@ -83,7 +83,7 @@ class FilterWheel(object):
             self.ser.timeout = self.default_timeout
 
         g.clog.debug('Filterwheel: sending command = ' + comm)
-        self.ser.write(comm+'\r\n',)
+        self.ser.write((comm+'\r\n').encode())
         retVal = self.ser.readline()
         g.clog.debug('Filterwheel: received = ' + retVal.strip())
 

@@ -126,8 +126,7 @@ class Slide(object):
     def _readBytes(self,timeout):
         if self.connected:
             self.ser.timeout = timeout
-            bytes = self.ser.read(6)
-            byteArr = bytearray(bytes)
+            byteArr = self.ser.read(6)
             if len(byteArr) != 6:
                 raise SlideError('did not get 6 bytes back from slide')
             return byteArr
@@ -142,8 +141,10 @@ class Slide(object):
 
     def _encodeByteArr(self,intArr):
         if len(intArr) != 6:
-            raise SlideError('must send 6 bytes to slide: cannot send ' +
-                             repr(intArr))
+            raise SlideError(
+                'must send 6 bytes to slide: cannot send ' +
+                repr(intArr)
+            )
         return bytearray(intArr)
 
     def compute_timeout(self,nmicrostep):
