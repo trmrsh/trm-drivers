@@ -774,6 +774,7 @@ class RunPars(tk.LabelFrame):
 
         def getUser(user, param):
            val = user.find(param)
+           print('param=',param,', val=',val)
            if val is None or val.text is None:
                return ''
            else:
