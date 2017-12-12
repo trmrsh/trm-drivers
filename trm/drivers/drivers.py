@@ -1307,7 +1307,7 @@ def postXML(root):
 
     opener = build_opener()
     g.clog.debug('content length = ' + str(len(sxml)))
-    req = Request(url, data=sxml, headers={'Content-type': 'text/xml'})
+    req = Request(url, data=sxml.encode(), headers={'Content-type': 'text/xml'})
     response = opener.open(req, timeout=5)
     csr = ReadServer(response.read())
     g.rlog.warn(csr.resp())
@@ -1318,7 +1318,7 @@ def postXML(root):
     # Send the xml to the data server
     url = g.cpars['http_data_server'] + g.HTTP_PATH_CONFIG
     g.clog.debug('Data server URL = ' + url)
-    req = Request(url, data=sxml, headers={'Content-type': 'text/xml'})
+    req = Request(url, data=sxml.encode(), headers={'Content-type': 'text/xml'})
     response = opener.open(req, timeout=5) # ?? need to check whether this is needed
     fsr = ReadServer(response.read())
     g.rlog.warn(fsr.resp())
