@@ -484,8 +484,7 @@ class InstPars(tk.LabelFrame):
                     ret   += str(xs) + ' ' + str(ys) + ' ' + str(nx) + ' ' + \
                         str(ny) + '\r\n'
             elif self.app.value() == 'Drift':
-                nwin = 2*self.wframe.npair.value()
-                ret  = str(xbin) + ' ' + str(ybin) + ' ' + str(nwin) + '\r\n'
+                ret  = str(xbin) + ' ' + str(ybin) + ' 2\r\n'
                 for xsl, xsr, ys, nx, ny in self.pframe:
                     ret   += str(xsl) + ' ' + str(ys) + ' ' + str(nx) + ' ' + \
                         str(ny) + '\r\n'
