@@ -469,14 +469,13 @@ class InstPars(tk.LabelFrame):
         self.check()
 
     def getRtplotWins(self):
-        """
-        Returns a string suitable to sending off to rtplot when
-        it asks for window parameters. Returns null string '' if
-        the windows are not OK. This operates on the basis of
-        trying to send something back, even if it might not be
-        OK as a window setup. Note that we have to take care
-        here not to update any GUI components because this is
-        called outside of the main thread.
+        """Returns bytes suitable to sending off to rtplot when it asks for
+        window parameters. Returns null string '' if the windows are
+        not OK. This operates on the basis of trying to send something
+        back, even if it might not be OK as a window setup. Note that
+        we have to take care here not to update any GUI components
+        because this is called outside of the main thread.
+
         """
         try:
             xbin = self.wframe.xbin.value()
@@ -487,18 +486,18 @@ class InstPars(tk.LabelFrame):
                 for xs, ys, nx, ny in self.wframe:
                     ret   += str(xs) + ' ' + str(ys) + ' ' + str(nx) + ' ' + \
                         str(ny) + '\r\n'
+
             elif self.app.value() == 'Drift':
-                nwin = 2*self.wframe.npair.value()
-                ret  = str(xbin) + ' ' + str(ybin) + ' ' + str(nwin) + '\r\n'
+                ret  = str(xbin) + ' ' + str(ybin) + ' 2\r\n'
                 for xsl, xsr, ys, nx, ny in self.pframe:
                     ret   += str(xsl) + ' ' + str(ys) + ' ' + str(nx) + ' ' + \
                         str(ny) + '\r\n'
                     ret   += str(xsr) + ' ' + str(ys) + ' ' + str(nx) + ' ' + \
                         str(ny) + '\r\n'
 
-            return ret
+            return bytes(ret,'utf8')
         except:
-            return ''
+            return b''
 
     def timing(self):
         """
