@@ -2543,8 +2543,8 @@ class RtplotHandler(BaseHTTPRequestHandler):
         self.send_header('Content-type', 'text/plain')
         self.end_headers()
         wins = self.server.instpars.getRtplotWins()
-        if wins == '':
-            self.wfile.write('No valid data available\r\n')
+        if wins == b'':
+            self.wfile.write(b'No valid data available\r\n')
         else:
             self.wfile.write(wins)
 
