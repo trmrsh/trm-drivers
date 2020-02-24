@@ -1,12 +1,10 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """
 As far as possible drivers contains classes of generic use, such as
 PosInt for positive integer input. See e.g. 'uspec' for more instrument
 dependent components.
 """
-
-from __future__ import print_function
 
 import sys
 import traceback
